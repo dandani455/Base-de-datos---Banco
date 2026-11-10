@@ -1,0 +1,8 @@
+body { font-family: system-ui, sans-serif; margin: 0; color: #1a1a2e; }
+main { max-width: 960px; margin: 0 auto; padding: 1rem; }
+form label { display: block; margin: .5rem 0; }
+form input:not([type=checkbox]) { display: block; width: 100%; padding: .4rem; }
+.banner { background: #b00020; color: #fff; padding: .75rem 1rem; display: flex; justify-content: space-between; }
+.nav { display: flex; justify-content: space-between; }
+.productos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+[data-ok=true] { color: #1b7f3b; } [data-ok=false] { color: #b00020; }
