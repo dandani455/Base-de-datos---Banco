@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "mock": "node mock/server.mjs",
+    "dev:mock": "node mock/dev.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
