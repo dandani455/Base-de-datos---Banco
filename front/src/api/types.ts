@@ -1,5 +1,5 @@
 // Formas de respuesta asumidas del backend (a alinear luego). El front solo las muestra.
-export type Yo = { username: string };
+export type Yo = { username: string; rol?: 'ADMIN' | 'CLIENTE' };
 
 export type Transaccion = {
   id: string | number;
@@ -40,3 +40,28 @@ export type MiCdt = {
 };
 
 export type Perfil = { username: string; numero_cuenta: string; codigo_referido: string };
+
+// ---- Admin (contrato asumido; lo implementa el backend) ----
+export type AdminUsuario = {
+  id: string | number; username: string; nombre: string; cedula: string; correo: string;
+  numero_cuenta: string; estado: 'ACTIVO' | 'BLOQUEADO';
+};
+export type AdminUsuarioDetalle = AdminUsuario & {
+  balance: {
+    total: number; principal: number; bolsillos: Bolsillo[];
+    cdts: { id: string | number; monto: number }[];
+    creditos: { id: string | number; producto: string; saldo: number }[];
+  };
+  historial: Transaccion[];
+};
+export type AdminReloj = { usar_fecha_real: boolean; fecha_sistema: string; fecha_actual: string };
+export type AdminTasas = {
+  cdts: { id: string | number; nombre: string; tasa: string | number }[];
+  creditos: { id: string | number; nombre: string; tasa: string | number }[];
+  mora: string | number;
+};
+export type EsquemaColumna = { nombre: string; tipo?: string; llave?: boolean; unico?: boolean; no_nulo?: boolean };
+export type EsquemaFk = { columna: string; tabla_destino: string; columna_destino?: string };
+export type EsquemaTabla = { nombre: string; columnas: EsquemaColumna[]; fks: EsquemaFk[] };
+export type Esquema = { tablas: EsquemaTabla[] };
+export type PaginaTabla = { columnas: string[]; filas: Record<string, unknown>[]; pagina: number; total_paginas: number };
