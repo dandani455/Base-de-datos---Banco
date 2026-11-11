@@ -17,10 +17,12 @@ function MiCreditoItem({ c, onCambio }: { c: MiCredito; onCambio: () => void }) 
     });
   }
   return (
-    <li data-testid="mi-credito">
-      <strong>{c.producto}</strong> · Cuotas pagadas: {c.cuotas_pagadas} · Faltantes: {c.cuotas_faltantes} · Interés del mes: {moneda(c.interes_mes)}
+    <li data-testid="mi-credito" className="item">
+      <span className="item-titulo"><strong>{c.producto}</strong> · Cuotas pagadas: {c.cuotas_pagadas} · Faltantes: {c.cuotas_faltantes} · Interés del mes: {moneda(c.interes_mes)}</span>
+      <span className="item-acciones">
       <input aria-label={`Abono ${c.producto}`} type="number" value={monto} onChange={(e) => setMonto(e.target.value)} />
       <button onClick={abonar} disabled={!monto || enVuelo}>Abonar a capital</button>
+      </span>
       {error && <p role="alert">{error}</p>}
     </li>
   );
@@ -37,16 +39,16 @@ export default function Creditos() {
     <>
       <h1>Créditos</h1>
       {productos.error && <p role="alert">{productos.error}</p>}
-      <ul>
+      <ul className="lista">
         {lista.map((p) => (
-          <li key={p.id} data-testid="producto-credito">
+          <li key={p.id} data-testid="producto-credito" className="item">
             <strong>{p.nombre}</strong> · Tasa {p.tasa} · Monto {moneda(p.monto_min)} a {moneda(p.monto_max)} · Plazo {p.plazo_min} a {p.plazo_max} meses
           </li>
         ))}
       </ul>
       {lista.length > 0 && (
         <>
-          <label>Producto
+          <label className="selector">Producto
             <select value={productoId} onChange={(e) => setSel(e.target.value)}>
               {lista.map((p) => <option key={p.id} value={String(p.id)}>{p.nombre}</option>)}
             </select>
@@ -66,8 +68,8 @@ export default function Creditos() {
         </>
       )}
       <h2>Mis créditos</h2>
-      {mis.data?.length === 0 && <p>No tienes créditos</p>}
-      <ul>{mis.data?.map((c) => <MiCreditoItem key={c.id} c={c} onCambio={mis.recargar} />)}</ul>
+      {mis.data?.length === 0 && <p className="vacio">No tienes créditos</p>}
+      <ul className="lista">{mis.data?.map((c) => <MiCreditoItem key={c.id} c={c} onCambio={mis.recargar} />)}</ul>
     </>
   );
 }

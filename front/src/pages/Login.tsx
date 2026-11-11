@@ -21,15 +21,16 @@ export default function Login() {
   }
 
   return (
-    <main>
+    <main className="publico auth">
+      <Link to="/" className="marca">Banco Digital</Link>
       <h1>Ingresar</h1>
-      <form onSubmit={enviar}>
+      <form onSubmit={enviar} className="panel form">
         <label>Usuario<input value={username} onChange={(e) => setUsername(e.target.value)} required /></label>
         <label>Contraseña<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
         {error && <p role="alert">{error}</p>}
         <button type="submit">Ingresar</button>
       </form>
-      <p>¿No tienes cuenta? <Link to="/registro">Registrarse</Link></p>
+      <p className="aparte">¿No tienes cuenta? <Link to="/registro">Registrarse</Link></p>
     </main>
   );
 }

@@ -32,12 +32,14 @@ export default function Reloj() {
       {ok && <p role="status">{ok}</p>}
       {data && (
         <>
+          <div className="panel form">
           <p>Fecha actual del sistema: {data.fecha_actual.slice(0, 10)}</p>
-          <label><input type="checkbox" checked={real} onChange={(e) => setReal(e.target.checked)} /> Usar fecha real</label>
+          <label className="check"><input type="checkbox" checked={real} onChange={(e) => setReal(e.target.checked)} /> Usar fecha real</label>
           <label>Fecha del sistema
             <input type="date" value={fecha} min={minimo} disabled={real} onChange={(e) => setFecha(e.target.value)} />
           </label>
           <button disabled={invalida} onClick={guardar}>Guardar</button>
+          </div>
         </>
       )}
     </>

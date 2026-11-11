@@ -19,20 +19,22 @@ function BolsilloItem({ b, otros, onCambio, onError }: { b: Bolsillo; otros: Bol
     });
   }
   return (
-    <li data-testid="bolsillo">
-      {b.nombre}: {moneda(b.saldo)}
+    <li data-testid="bolsillo" className="item">
+      <span className="item-titulo">{b.nombre}: <strong className="num">{moneda(b.saldo)}</strong></span>
+      <span className="item-acciones">
       <input aria-label={`Monto ${b.nombre}`} type="number" value={monto} onChange={(e) => setMonto(e.target.value)} />
       <button onClick={() => accion('ingresar')} disabled={!monto || enVuelo}>Meter</button>
-      <button onClick={() => accion('retirar')} disabled={!monto || enVuelo}>Sacar</button>
+      <button className="sec" onClick={() => accion('retirar')} disabled={!monto || enVuelo}>Sacar</button>
       {otros.length > 0 && (
         <>
           <select aria-label={`Destino ${b.nombre}`} value={destino} onChange={(e) => setDestino(e.target.value)}>
             <option value="">Mover a…</option>
             {otros.map((o) => <option key={o.id} value={String(o.id)}>{o.nombre}</option>)}
           </select>
-          <button onClick={() => accion('mover', { destino_id: destino })} disabled={!monto || !destino || enVuelo}>Mover</button>
+          <button className="sec" onClick={() => accion('mover', { destino_id: destino })} disabled={!monto || !destino || enVuelo}>Mover</button>
         </>
       )}
+      </span>
     </li>
   );
 }
@@ -59,18 +61,22 @@ export default function Balance() {
       {(error || bal.error) && <p role="alert">{error || bal.error}</p>}
       {bal.data && (
         <>
-          <p>Total: <strong>{moneda(bal.data.total)}</strong></p>
-          <p>Principal: {moneda(bal.data.principal)}</p>
+          <div className="cifras">
+            <p>Total: <strong className="num">{moneda(bal.data.total)}</strong></p>
+            <p>Principal: <span className="num">{moneda(bal.data.principal)}</span></p>
+          </div>
           <h2>Bolsillos</h2>
-          <ul>
+          <ul className="lista">
             {bal.data.bolsillos.map((b) => (
               <BolsilloItem key={b.id} b={b} otros={bal.data!.bolsillos.filter((o) => o.id !== b.id)} onCambio={recargar} onError={setError} />
             ))}
           </ul>
         </>
       )}
+      <div className="panel form fila-form">
       <label>Nuevo bolsillo<input value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
       <button onClick={crear} disabled={!nombre || enVuelo}>Crear bolsillo</button>
+      </div>
       {tx.data && <><h2>Historial</h2><TransaccionList items={tx.data} /></>}
     </>
   );

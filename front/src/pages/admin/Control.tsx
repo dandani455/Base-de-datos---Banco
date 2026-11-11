@@ -66,32 +66,34 @@ export default function Control() {
   return (
     <>
       <h1>Control</h1>
-      <p>
+      <p className="estado-conexion">
         Estado:{' '}
         {conectado === null ? 'Verificando…'
-          : <strong style={{ color: conectado ? 'green' : 'red' }}>{conectado ? 'CONECTADO' : 'DESCONECTADO'}</strong>}
+          : <strong className={`pill ${conectado ? 'pill-ok' : 'pill-no'}`}>{conectado ? 'CONECTADO' : 'DESCONECTADO'}</strong>}
       </p>
-      <label>Buscar tabla
+      <label className="buscar">Buscar tabla
         <input value={filtro} onChange={(e) => setFiltro(e.target.value)} />
       </label>
-      {esquema && <Grafo tablas={esquema.tablas} filtro={filtro} seleccionada={sel} onSeleccionar={elegir} />}
+      {esquema && <div className="grafo-wrap"><Grafo tablas={esquema.tablas} filtro={filtro} seleccionada={sel} onSeleccionar={elegir} /></div>}
       {sel && (
-        <section>
+        <section className="tabla-datos">
           <h2>{sel}</h2>
           {error && <p role="alert">{error}</p>}
           {datos && conectado !== false && (
             <>
-              <table>
+              <div className="tabla-wrap"><table>
                 <thead><tr>{datos.columnas.map((c) => <th key={c}>{c}</th>)}</tr></thead>
                 <tbody>
                   {datos.filas.map((fila, i) => (
                     <tr key={i}>{datos.columnas.map((c) => <td key={c}>{String(fila[c] ?? '')}</td>)}</tr>
                   ))}
                 </tbody>
-              </table>
-              <button disabled={pagina <= 1} onClick={() => setPagina(pagina - 1)}>Anterior</button>
+              </table></div>
+              <div className="paginacion">
+              <button className="sec" disabled={pagina <= 1} onClick={() => setPagina(pagina - 1)}>Anterior</button>
               <span> Página {datos.pagina} de {datos.total_paginas} </span>
-              <button disabled={pagina >= datos.total_paginas} onClick={() => setPagina(pagina + 1)}>Siguiente</button>
+              <button className="sec" disabled={pagina >= datos.total_paginas} onClick={() => setPagina(pagina + 1)}>Siguiente</button>
+              </div>
             </>
           )}
         </section>

@@ -39,13 +39,13 @@ export default function EnvioForm({ bolsillos = [], onEnviado }: { bolsillos?: B
   }
 
   return (
-    <section aria-label="Enviar dinero">
+    <section aria-label="Enviar dinero" className="panel form">
       <h2>Enviar dinero</h2>
       <label>Número de cuenta destino<input value={numero} onChange={(e) => { setNumero(e.target.value); setNombre(''); }} /></label>
-      <button type="button" onClick={buscar} disabled={!numero}>Buscar destinatario</button>
+      <button type="button" className="sec" onClick={buscar} disabled={!numero}>Buscar destinatario</button>
       {nombre && (
-        <div>
-          <p>¿Envías a {nombre}?</p>
+        <div className="form confirmar">
+          <p className="destinatario">¿Envías a {nombre}?</p>
           <label>Monto<input type="number" value={monto} onChange={(e) => setMonto(e.target.value)} /></label>
           <label>Nota<input value={nota} onChange={(e) => setNota(e.target.value)} /></label>
           {bolsillos.length > 0 && (

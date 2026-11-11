@@ -41,18 +41,19 @@ export default function Registro() {
 
   if (username) {
     return (
-      <main>
+      <main className="publico auth">
         <h1>¡Registro exitoso!</h1>
         <p>Tu usuario es <strong>{username}</strong>. Guárdalo, solo se muestra una vez.</p>
-        <Link to="/login">Ingresar</Link>
+        <Link to="/login" className="btn btn-sun">Ingresar</Link>
       </main>
     );
   }
 
   return (
-    <main>
+    <main className="publico auth">
+      <Link to="/" className="marca">Banco Digital</Link>
       <h1>Crea tu cuenta</h1>
-      <form onSubmit={enviar}>
+      <form onSubmit={enviar} className="panel form">
         {CAMPOS.map(([k, label, type]) => (
           <label key={k}>{label}
             <input type={type} required value={form[k] ?? ''} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
@@ -61,15 +62,15 @@ export default function Registro() {
         <label>Contraseña
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
-        <ul>
+        <ul className="reglas">
           {REGLAS.map((r) => <li key={r.texto} data-ok={String(r.ok(password))}>{r.texto}</li>)}
         </ul>
-        <label>
+        <label className="check">
           <input type="checkbox" checked={politica} onChange={(e) => setPolitica(e.target.checked)} />
           Acepto la política de datos
         </label>
         {error && <p role="alert">{error}</p>}
-        <button type="submit">Registrarse</button>
+        <button type="submit" className="btn-sun">Registrarse</button>
       </form>
     </main>
   );

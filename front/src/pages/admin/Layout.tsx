@@ -23,14 +23,21 @@ export default function AdminLayout() {
 
   if (estado === 'anonimo') return <Navigate to="/login" replace />;
   if (estado === 'cliente') return <Navigate to="/app" replace />;
-  if (estado === 'cargando') return <main>Cargando…</main>;
+  if (estado === 'cargando') return <main className="cargando">Cargando…</main>;
   return (
-    <main>
-      <nav className="nav" aria-label="Menú del administrador">
-        {TABS.map(([to, texto]) => <NavLink key={to} to={to} end>{texto}</NavLink>)}
-        <button onClick={salir}>Cerrar sesión</button>
+    <div className="app admin">
+      <nav className="side" aria-label="Menú del administrador">
+        <span className="marca">Banco Digital</span>
+        <div className="side-links">
+          {TABS.map(([to, texto]) => <NavLink key={to} to={to} end>{texto}</NavLink>)}
+        </div>
+        <div className="side-pie">
+          <button className="sec salir" onClick={salir}>Cerrar sesión</button>
+        </div>
       </nav>
-      <Outlet />
-    </main>
+      <main className="contenido">
+        <Outlet />
+      </main>
+    </div>
   );
 }

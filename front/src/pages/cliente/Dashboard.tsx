@@ -14,7 +14,7 @@ export default function Dashboard() {
       {data && (
         <>
           <h1>Hola, {data.nombre}</h1>
-          <p>Balance total: <strong>{moneda(data.balance_total)}</strong></p>
+          <p className="saldo-bloque"><span className="saldo-label">Balance total:</span> <strong className="saldo-monto">{moneda(data.balance_total)}</strong></p>
           <div className="resumen">
             <article aria-label="Resumen CDTs"><h3>CDTs</h3>
               <p>Activos: {data.cdts.activos}</p><p>Generado: {moneda(data.cdts.generado)}</p></article>

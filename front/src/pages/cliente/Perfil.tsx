@@ -8,7 +8,7 @@ export default function Perfil() {
       <h1>Perfil</h1>
       {error && <p role="alert">{error}</p>}
       {data && (
-        <dl>
+        <dl className="datos panel">
           <dt>Usuario</dt><dd>{data.username}</dd>
           <dt>Número de cuenta</dt><dd>{data.numero_cuenta}</dd>
           <dt>Código de referido</dt><dd>{data.codigo_referido}</dd>

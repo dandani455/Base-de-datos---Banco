@@ -25,15 +25,22 @@ export default function ClienteLayout() {
 
   if (estado === 'anonimo') return <Navigate to="/login" replace />;
   if (estado === 'admin') return <Navigate to="/admin" replace />;
-  if (estado === 'cargando') return <main>Cargando…</main>;
+  if (estado === 'cargando') return <main className="cargando">Cargando…</main>;
   return (
-    <main>
-      <nav className="nav" aria-label="Menú del cliente">
-        {TABS.map(([to, texto]) => <NavLink key={to} to={to} end>{texto}</NavLink>)}
-        <span>{yo?.username}</span>
-        <button onClick={salir}>Cerrar sesión</button>
+    <div className="app">
+      <nav className="side" aria-label="Menú del cliente">
+        <span className="marca">Banco Digital</span>
+        <div className="side-links">
+          {TABS.map(([to, texto]) => <NavLink key={to} to={to} end>{texto}</NavLink>)}
+        </div>
+        <div className="side-pie">
+          <span className="usuario">{yo?.username}</span>
+          <button className="sec salir" onClick={salir}>Cerrar sesión</button>
+        </div>
       </nav>
-      <Outlet />
-    </main>
+      <main className="contenido">
+        <Outlet />
+      </main>
+    </div>
   );
 }

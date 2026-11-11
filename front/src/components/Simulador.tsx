@@ -48,16 +48,16 @@ export default function Simulador({ titulo, endpoint, campos, resultados, extra 
   }
 
   return (
-    <form onSubmit={simular} aria-label={titulo}>
+    <form onSubmit={simular} aria-label={titulo} className="panel form simulador">
       <h3>{titulo}</h3>
       {campos.map((c) => (
         <label key={c.name}>{c.label}
           <input type="number" value={valores[c.name] ?? ''} onChange={(e) => cambiar(c.name, e.target.value)} required />
         </label>
       ))}
-      <button type="submit">Simular</button>
+      <button type="submit" className="sec">Simular</button>
       {res && (
-        <dl>
+        <dl className="resultados">
           {resultados.map((r) => <div key={r.clave}><dt>{r.etiqueta}</dt><dd>{moneda(res[r.clave])}</dd></div>)}
         </dl>
       )}

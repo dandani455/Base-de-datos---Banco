@@ -24,7 +24,7 @@ export default function Operaciones() {
   return (
     <>
       <h1>Operaciones</h1>
-      <form onSubmit={enviar}>
+      <form onSubmit={enviar} className="panel form">
         <label>Usuario (id)<input value={usuario} onChange={(e) => setUsuario(e.target.value)} required /></label>
         <label>Monto<input type="number" step="any" value={monto} onChange={(e) => setMonto(e.target.value)} required /></label>
         <label>Nota<input value={nota} onChange={(e) => setNota(e.target.value)} /></label>

@@ -20,25 +20,25 @@ export default function Inicio() {
   }, []);
 
   return (
-    <main>
-      <header className="nav">
-        <strong>Banco Digital</strong>
-        <nav><Link to="/login">Ingresar</Link> <Link to="/registro">Registrarse</Link></nav>
+    <main className="publico">
+      <header className="topbar">
+        <strong className="marca">Banco Digital</strong>
+        <nav className="topbar-links"><Link to="/login">Ingresar</Link> <Link to="/registro">Registrarse</Link></nav>
       </header>
       <section className="hero">
         <h1>Banco Digital</h1>
         <p>Tu dinero, simple y seguro, desde cualquier lugar.</p>
-        <Link to="/registro">Registrarse</Link> <Link to="/login">Ingresar</Link>
+        <div className="hero-acciones"><Link to="/registro" className="btn btn-sun">Registrarse</Link> <Link to="/login" className="btn btn-sec">Ingresar</Link></div>
       </section>
-      <section>
+      <section className="bloque">
         <h2>Beneficios</h2>
-        <ul>
+        <ul className="beneficios">
           <li>Cuenta sin cuota de manejo</li>
           <li>Transferencias inmediatas</li>
           <li>Atención en línea todos los días</li>
         </ul>
       </section>
-      <section>
+      <section className="bloque">
         <h2>Créditos</h2>
         <div className="productos">
           {productos.map((p) => (
@@ -49,7 +49,7 @@ export default function Inicio() {
           ))}
         </div>
       </section>
-      <section>
+      <section className="bloque referidos">
         <h2>Sistema de referidos</h2>
         <p>Invita y gana $50.000 por cada amigo que se una a Banco Digital.</p>
       </section>

@@ -1,0 +1,95 @@
+:root {
+  --ink: #14202B;
+  --paper: #F3F5F7;
+  --surface: #FFFFFF;
+  --brand: #0B4F6C;
+  --brand-soft: #DCEBF1;
+  --sun: #F4B400;
+  --pos: #1B7F4B;
+  --neg: #B3261E;
+  --line: #D9DFE5;
+  --muted: #5B6B78;
+
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-20: 1.25rem;
+  --fs-28: 1.75rem;
+  --fs-44: 2.75rem;
+  --fs-72: 4.5rem;
+
+  --r-box: 10px;
+  --r-ctl: 6px;
+  --f-head: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif;
+  --f-body: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: var(--fs-16); line-height: 1.5;
+}
+#root { min-height: 100vh; }
+
+h1, h2, h3 { font-family: var(--f-head); line-height: 1.15; margin: 0 0 .5rem; font-weight: 700; letter-spacing: 0; }
+h1 { font-size: var(--fs-28); margin-bottom: 1rem; }
+h2 { font-size: var(--fs-20); margin-top: 2rem; }
+h3 { font-size: var(--fs-16); margin-top: 1rem; }
+p { margin: 0 0 .75rem; max-width: 68ch; }
+small { font-size: var(--fs-14); }
+a { color: var(--brand); text-underline-offset: 3px; transition: color 120ms; }
+a:hover { color: var(--ink); }
+ul, dl { margin: 0; padding: 0; }
+.num, strong, td, dd { font-variant-numeric: tabular-nums; }
+.vacio, .nota, .aparte { color: var(--muted); }
+
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Controles */
+button, input, select { font: inherit; color: inherit; }
+button {
+  min-height: 44px; padding: 0 1.1rem; border-radius: var(--r-ctl);
+  border: 1px solid var(--brand); background: var(--brand); color: #fff;
+  font-weight: 600; cursor: pointer; transition: background-color 120ms, color 120ms, border-color 120ms;
+}
+button:hover:not(:disabled) { background: #083B52; border-color: #083B52; }
+button.sec { background: var(--surface); color: var(--brand); border-color: var(--brand); }
+button.sec:hover:not(:disabled) { background: var(--brand-soft); border-color: var(--brand); }
+button.peligro { background: var(--surface); color: var(--neg); border-color: var(--neg); }
+button.peligro:hover:not(:disabled) { background: #FBE9E7; border-color: var(--neg); }
+button.btn-sun { background: var(--sun); border-color: var(--sun); color: var(--ink); }
+button.btn-sun:hover:not(:disabled) { background: #DDA300; border-color: #DDA300; }
+button:disabled { background: var(--line); border-color: var(--line); color: var(--muted); cursor: not-allowed; }
+
+input:not([type=checkbox]), select {
+  width: 100%; min-height: 44px; padding: 0 .75rem; border-radius: var(--r-ctl);
+  border: 1px solid #8795A1; background: var(--surface);
+}
+input:disabled, select:disabled { background: var(--paper); color: var(--muted); border-color: var(--line); cursor: not-allowed; }
+input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--brand); flex: none; margin: 0; }
+
+label { display: grid; gap: .35rem; font-weight: 500; margin-bottom: 1rem; }
+label.check { display: flex; align-items: center; gap: .6rem; font-weight: 400; min-height: 44px; }
+
+/* Mensajes */
+p[role=alert], p[role=status] {
+  padding: .65rem .9rem; border-radius: var(--r-ctl); border: 1px solid; margin: .75rem 0; font-size: var(--fs-16);
+}
+p[role=alert] { color: var(--neg); background: #FDF0EE; border-color: #E7B5B0; }
+p[role=status] { color: var(--pos); background: #EAF5EF; border-color: #B7D9C6; }
+
+/* Banner de conexión */
+.banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  background: var(--neg); color: #fff; padding: .6rem 1rem; font-weight: 500;
+}
+.banner button { min-height: 36px; min-width: 36px; padding: 0 .6rem; background: transparent; border-color: rgba(255,255,255,.7); font-size: var(--fs-20); line-height: 1; }
+.banner button:hover:not(:disabled) { background: rgba(255,255,255,.18); border-color: #fff; }
+.banner button:focus-visible { outline-color: #fff; }
+
+.cargando { padding: 2rem 1rem; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

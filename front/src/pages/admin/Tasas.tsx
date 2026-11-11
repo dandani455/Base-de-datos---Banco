@@ -29,11 +29,11 @@ export default function Tasas() {
   return (
     <>
       <h1>Tasas</h1>
-      <p>Los productos ya creados no cambian; las nuevas tasas aplican a los futuros.</p>
+      <p className="nota">Los productos ya creados no cambian; las nuevas tasas aplican a los futuros.</p>
       {(error || err) && <p role="alert">{error || err}</p>}
       {ok && <p role="status">{ok}</p>}
       {data && (
-        <>
+        <div className="panel form">
           <h2>CDT por definición</h2>
           {data.cdts.map((d) => (
             <label key={d.id}>{d.nombre}
@@ -49,7 +49,7 @@ export default function Tasas() {
           <h2>Mora</h2>
           <label>Tasa de mora<input value={mora} onChange={(e) => setMora(e.target.value)} /></label>
           <button onClick={guardar}>Guardar tasas</button>
-        </>
+        </div>
       )}
     </>
   );
