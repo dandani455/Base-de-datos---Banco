@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../api/client';
-import { mensaje } from '../api/useApi';
+import { mensaje, useAccion } from '../api/useApi';
 import type { Bolsillo, Destinatario } from '../api/types';
 
 export default function EnvioForm({ bolsillos = [], onEnviado }: { bolsillos?: Bolsillo[]; onEnviado?: () => void }) {
@@ -9,8 +9,7 @@ export default function EnvioForm({ bolsillos = [], onEnviado }: { bolsillos?: B
   const [monto, setMonto] = useState('');
   const [nota, setNota] = useState('');
   const [bolsillo, setBolsillo] = useState('');
-  const [enVuelo, setEnVuelo] = useState(false);
-  const bloqueo = useRef(false);
+  const { correr, enVuelo } = useAccion();
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
@@ -22,21 +21,21 @@ export default function EnvioForm({ bolsillos = [], onEnviado }: { bolsillos?: B
     } catch (e) { setError(mensaje(e)); }
   }
 
-  async function confirmar() {
-    if (bloqueo.current) return; // anti doble clic: una sola petición
-    bloqueo.current = true; setEnVuelo(true); setError('');
-    try {
-      await api('/envios', {
-        method: 'POST',
-        body: JSON.stringify({
-          numero_destino: numero, monto: Number(monto), nota,
-          ...(bolsillo ? { bolsillo_origen: bolsillo } : {}),
-        }),
-      });
-      setOk('Envío realizado'); setNombre(''); setNumero(''); setMonto(''); setNota('');
-      onEnviado?.();
-    } catch (e) { setError(mensaje(e)); }
-    finally { bloqueo.current = false; setEnVuelo(false); }
+  function confirmar() {
+    return correr(async () => {
+      setError('');
+      try {
+        await api('/envios', {
+          method: 'POST',
+          body: JSON.stringify({
+            numero_destino: numero, monto: Number(monto), nota,
+            ...(bolsillo ? { bolsillo_origen: bolsillo } : {}),
+          }),
+        });
+        setOk('Envío realizado'); setNombre(''); setNumero(''); setMonto(''); setNota('');
+        onEnviado?.();
+      } catch (e) { setError(mensaje(e)); }
+    });
   }
 
   return (

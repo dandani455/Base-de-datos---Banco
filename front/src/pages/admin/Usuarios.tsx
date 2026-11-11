@@ -16,13 +16,13 @@ export default function Usuarios() {
     let vivo = true;
     api<AdminUsuario[]>(`/admin/usuarios?busqueda=${encodeURIComponent(busqueda)}`).then(
       (d) => { if (vivo) { setLista(d); setErr(''); } },
-      (e) => { if (vivo) setErr(mensaje(e)); });
+      (e) => { if (vivo) { setErr(mensaje(e)); setLista([]); setDetalle(null); } });
     return () => { vivo = false; };
   }, [busqueda, tick]);
 
   async function ver(id: string | number) {
     try { setDetalle(await api<AdminUsuarioDetalle>(`/admin/usuarios/${id}`)); setErr(''); }
-    catch (e) { setErr(mensaje(e)); }
+    catch (e) { setErr(mensaje(e)); if ((e as Error).name === 'ConexionError') setDetalle(null); }
   }
 
   async function accion(u: AdminUsuario, que: 'bloquear' | 'desbloquear' | 'borrar') {

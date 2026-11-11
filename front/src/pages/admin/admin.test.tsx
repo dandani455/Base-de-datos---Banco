@@ -70,6 +70,7 @@ describe('Reloj', () => {
     vi.stubGlobal('fetch', f);
     render(<Reloj />);
     const input = await screen.findByLabelText('Fecha del sistema');
+    await waitFor(() => expect(input).toBeEnabled()); // el efecto aplica usar_fecha_real=false tras el primer render
     expect(input).toHaveAttribute('min', '2026-11-10');
     fireEvent.change(input, { target: { value: '2026-11-01' } });
     const guardar = screen.getByRole('button', { name: 'Guardar' });

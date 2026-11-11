@@ -11,7 +11,7 @@ export default function Reloj() {
   const [ok, setOk] = useState('');
 
   useEffect(() => {
-    if (data) { setReal(data.usar_fecha_real); setFecha(data.fecha_sistema.slice(0, 10)); }
+    if (data) { setReal(data.usar_fecha_real); setFecha((data.fecha_sistema ?? '').slice(0, 10)); }
   }, [data]);
 
   const minimo = data?.fecha_actual.slice(0, 10) ?? '';

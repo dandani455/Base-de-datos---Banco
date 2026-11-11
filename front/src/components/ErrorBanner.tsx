@@ -4,8 +4,13 @@ export default function ErrorBanner() {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const on = () => setVisible(true);
+    const off = () => setVisible(false);
     window.addEventListener('conexion-perdida', on);
-    return () => window.removeEventListener('conexion-perdida', on);
+    window.addEventListener('conexion-restablecida', off);
+    return () => {
+      window.removeEventListener('conexion-perdida', on);
+      window.removeEventListener('conexion-restablecida', off);
+    };
   }, []);
   if (!visible) return null;
   return (

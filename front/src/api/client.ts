@@ -30,6 +30,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     return conexionPerdida();
   }
   if (res.status === 503) return conexionPerdida();
+  window.dispatchEvent(new Event('conexion-restablecida'));
   const body = await res.json().catch(() => ({}));
   if (res.status === 400) throw new NegocioError(body.error ?? body.message ?? 'Solicitud inválida');
   if (!res.ok) throw new Error(body.error ?? `Error ${res.status}`);

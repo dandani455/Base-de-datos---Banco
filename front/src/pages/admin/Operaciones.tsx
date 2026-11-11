@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
-import { mensaje } from '../../api/useApi';
+import { mensaje, useAccion } from '../../api/useApi';
 
 export default function Operaciones() {
   const [usuario, setUsuario] = useState('');
@@ -8,13 +8,17 @@ export default function Operaciones() {
   const [nota, setNota] = useState('');
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
+  const { correr, enVuelo } = useAccion();
 
-  async function enviar(e: React.FormEvent) {
-    e.preventDefault(); setErr(''); setOk('');
-    try {
-      await api('/admin/balance', { method: 'POST', body: JSON.stringify({ usuario_id: usuario, monto: Number(monto), nota }) });
-      setOk('Balance añadido'); setMonto(''); setNota('');
-    } catch (e2) { setErr(mensaje(e2)); }
+  function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    return correr(async () => {
+      setErr(''); setOk('');
+      try {
+        await api('/admin/balance', { method: 'POST', body: JSON.stringify({ usuario_id: usuario, monto: Number(monto), nota }) });
+        setOk('Balance añadido'); setMonto(''); setNota('');
+      } catch (e2) { setErr(mensaje(e2)); }
+    });
   }
 
   return (
@@ -24,7 +28,7 @@ export default function Operaciones() {
         <label>Usuario (id)<input value={usuario} onChange={(e) => setUsuario(e.target.value)} required /></label>
         <label>Monto<input type="number" step="any" value={monto} onChange={(e) => setMonto(e.target.value)} required /></label>
         <label>Nota<input value={nota} onChange={(e) => setNota(e.target.value)} /></label>
-        <button type="submit">Añadir balance</button>
+        <button type="submit" disabled={enVuelo}>Añadir balance</button>
       </form>
       {err && <p role="alert">{err}</p>}
       {ok && <p role="status">{ok}</p>}

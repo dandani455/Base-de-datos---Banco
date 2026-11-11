@@ -61,6 +61,7 @@ describe('Panel cliente', () => {
     mockFetch({
       'GET /api/yo': () => resp(200, { username: 'jperez42' }),
       'GET /api/dashboard': () => resp(503, {}),
+      'GET /api/bolsillos': () => resp(503, {}),
     });
     render(<MemoryRouter initialEntries={['/app']}><App /></MemoryRouter>);
     expect(await screen.findByRole('alert')).toHaveTextContent(/error de conexión/i);

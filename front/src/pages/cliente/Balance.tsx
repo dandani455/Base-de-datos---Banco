@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
-import { mensaje, useCarga } from '../../api/useApi';
+import { mensaje, useAccion, useCarga } from '../../api/useApi';
 import type { Balance as Datos, Bolsillo, Transaccion } from '../../api/types';
 import TransaccionList from '../../components/TransaccionList';
 import { moneda } from '../../format';
@@ -8,26 +8,29 @@ import { moneda } from '../../format';
 function BolsilloItem({ b, otros, onCambio, onError }: { b: Bolsillo; otros: Bolsillo[]; onCambio: () => void; onError: (m: string) => void }) {
   const [monto, setMonto] = useState('');
   const [destino, setDestino] = useState('');
-  async function accion(ruta: string, extra: object = {}) {
-    onError('');
-    try {
-      await api(`/bolsillos/${b.id}/${ruta}`, { method: 'POST', body: JSON.stringify({ monto: Number(monto), ...extra }) });
-      setMonto(''); onCambio();
-    } catch (e) { onError(mensaje(e)); }
+  const { correr, enVuelo } = useAccion();
+  function accion(ruta: string, extra: object = {}) {
+    return correr(async () => {
+      onError('');
+      try {
+        await api(`/bolsillos/${b.id}/${ruta}`, { method: 'POST', body: JSON.stringify({ monto: Number(monto), ...extra }) });
+        setMonto(''); onCambio();
+      } catch (e) { onError(mensaje(e)); }
+    });
   }
   return (
     <li data-testid="bolsillo">
       {b.nombre}: {moneda(b.saldo)}
       <input aria-label={`Monto ${b.nombre}`} type="number" value={monto} onChange={(e) => setMonto(e.target.value)} />
-      <button onClick={() => accion('ingresar')} disabled={!monto}>Meter</button>
-      <button onClick={() => accion('retirar')} disabled={!monto}>Sacar</button>
+      <button onClick={() => accion('ingresar')} disabled={!monto || enVuelo}>Meter</button>
+      <button onClick={() => accion('retirar')} disabled={!monto || enVuelo}>Sacar</button>
       {otros.length > 0 && (
         <>
           <select aria-label={`Destino ${b.nombre}`} value={destino} onChange={(e) => setDestino(e.target.value)}>
             <option value="">Mover a…</option>
             {otros.map((o) => <option key={o.id} value={String(o.id)}>{o.nombre}</option>)}
           </select>
-          <button onClick={() => accion('mover', { destino_id: destino })} disabled={!monto || !destino}>Mover</button>
+          <button onClick={() => accion('mover', { destino_id: destino })} disabled={!monto || !destino || enVuelo}>Mover</button>
         </>
       )}
     </li>
@@ -39,11 +42,14 @@ export default function Balance() {
   const tx = useCarga<Transaccion[]>('/transacciones?limite=50');
   const [nombre, setNombre] = useState('');
   const [error, setError] = useState('');
+  const { correr, enVuelo } = useAccion();
 
-  async function crear() {
-    setError('');
-    try { await api('/bolsillos', { method: 'POST', body: JSON.stringify({ nombre }) }); setNombre(''); bal.recargar(); }
-    catch (e) { setError(mensaje(e)); }
+  function crear() {
+    return correr(async () => {
+      setError('');
+      try { await api('/bolsillos', { method: 'POST', body: JSON.stringify({ nombre }) }); setNombre(''); bal.recargar(); }
+      catch (e) { setError(mensaje(e)); }
+    });
   }
   const recargar = () => { bal.recargar(); tx.recargar(); };
 
@@ -64,7 +70,7 @@ export default function Balance() {
         </>
       )}
       <label>Nuevo bolsillo<input value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
-      <button onClick={crear} disabled={!nombre}>Crear bolsillo</button>
+      <button onClick={crear} disabled={!nombre || enVuelo}>Crear bolsillo</button>
       {tx.data && <><h2>Historial</h2><TransaccionList items={tx.data} /></>}
     </>
   );

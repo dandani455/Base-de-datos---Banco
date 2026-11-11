@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
-import { mensaje, useCarga } from '../../api/useApi';
+import { mensaje, useAccion, useCarga } from '../../api/useApi';
 import type { MiCredito, ProductoCredito } from '../../api/types';
 import Simulador from '../../components/Simulador';
 import { moneda } from '../../format';
@@ -8,16 +8,19 @@ import { moneda } from '../../format';
 function MiCreditoItem({ c, onCambio }: { c: MiCredito; onCambio: () => void }) {
   const [monto, setMonto] = useState('');
   const [error, setError] = useState('');
-  async function abonar() {
-    setError('');
-    try { await api(`/creditos/${c.id}/abono`, { method: 'POST', body: JSON.stringify({ monto: Number(monto) }) }); setMonto(''); onCambio(); }
-    catch (e) { setError(mensaje(e)); }
+  const { correr, enVuelo } = useAccion();
+  function abonar() {
+    return correr(async () => {
+      setError('');
+      try { await api(`/creditos/${c.id}/abono`, { method: 'POST', body: JSON.stringify({ monto: Number(monto) }) }); setMonto(''); onCambio(); }
+      catch (e) { setError(mensaje(e)); }
+    });
   }
   return (
     <li data-testid="mi-credito">
       <strong>{c.producto}</strong> · Cuotas pagadas: {c.cuotas_pagadas} · Faltantes: {c.cuotas_faltantes} · Interés del mes: {moneda(c.interes_mes)}
       <input aria-label={`Abono ${c.producto}`} type="number" value={monto} onChange={(e) => setMonto(e.target.value)} />
-      <button onClick={abonar} disabled={!monto}>Abonar a capital</button>
+      <button onClick={abonar} disabled={!monto || enVuelo}>Abonar a capital</button>
       {error && <p role="alert">{error}</p>}
     </li>
   );

@@ -7,12 +7,12 @@ const TABS = [['/app', 'Inicio'], ['/app/balance', 'Balance'], ['/app/creditos',
 
 export default function ClienteLayout() {
   const nav = useNavigate();
-  const [estado, setEstado] = useState<'cargando' | 'ok' | 'anonimo'>('cargando');
+  const [estado, setEstado] = useState<'cargando' | 'ok' | 'anonimo' | 'admin'>('cargando');
   const [yo, setYo] = useState<Yo | null>(null);
 
   useEffect(() => {
     api<Yo>('/yo').then(
-      (d) => { setYo(d); setEstado('ok'); },
+      (d) => { setYo(d); setEstado(d.rol === 'ADMIN' ? 'admin' : 'ok'); },
       // Sin conexión: se mantienen los menús (el banner global informa); cualquier otro fallo = sin sesión.
       (e) => setEstado((e as Error).name === 'ConexionError' ? 'ok' : 'anonimo'),
     );
@@ -24,6 +24,7 @@ export default function ClienteLayout() {
   }
 
   if (estado === 'anonimo') return <Navigate to="/login" replace />;
+  if (estado === 'admin') return <Navigate to="/admin" replace />;
   if (estado === 'cargando') return <main>Cargando…</main>;
   return (
     <main>

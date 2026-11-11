@@ -1,11 +1,13 @@
 import { useCarga } from '../../api/useApi';
-import type { Dashboard as Datos } from '../../api/types';
+import type { Balance, Dashboard as Datos } from '../../api/types';
 import EnvioForm from '../../components/EnvioForm';
 import TransaccionList from '../../components/TransaccionList';
 import { moneda } from '../../format';
 
 export default function Dashboard() {
   const { data, error, recargar } = useCarga<Datos>('/dashboard');
+  const bol = useCarga<Balance>('/bolsillos');
+  const enviado = () => { recargar(); bol.recargar(); };
   return (
     <>
       {error && <p role="alert">{error}</p>}
@@ -24,7 +26,7 @@ export default function Dashboard() {
           <TransaccionList items={data.transacciones} />
         </>
       )}
-      <EnvioForm onEnviado={recargar} />
+      <EnvioForm bolsillos={bol.data?.bolsillos} onEnviado={enviado} />
     </>
   );
 }

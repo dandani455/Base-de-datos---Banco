@@ -10,6 +10,7 @@ const PING_MS = 5000;
 function usePingEsquema() {
   const [esquema, setEsquema] = useState<Esquema | null>(null);
   const [conectado, setConectado] = useState<boolean | null>(null);
+  const [tick, setTick] = useState(0);
   const enVuelo = useRef(false);
   useEffect(() => {
     let vivo = true;
@@ -18,34 +19,47 @@ function usePingEsquema() {
       enVuelo.current = true;
       try {
         const e = await api<Esquema>('/admin/esquema');
-        if (vivo) { setEsquema(e); setConectado(true); }
+        if (vivo) { setEsquema(e); setConectado(true); setTick((t) => t + 1); }
       } catch (err) {
-        if (vivo && (err as Error).name === 'ConexionError') setConectado(false);
+        if (vivo && (err as Error).name === 'ConexionError') { setConectado(false); setTick((t) => t + 1); }
       } finally { enVuelo.current = false; }
     }
     ping();
     const id = setInterval(ping, PING_MS);
     return () => { vivo = false; clearInterval(id); };
   }, []);
-  return { esquema, conectado };
+  /** `tick` cambia tras cada ping resuelto: sirve para refrescar la tabla seleccionada al mismo ritmo. */
+  return { esquema, conectado, tick };
 }
 
 export default function Control() {
-  const { esquema, conectado } = usePingEsquema();
+  const { esquema, conectado, tick } = usePingEsquema();
   const [filtro, setFiltro] = useState('');
   const [sel, setSel] = useState('');
   const [pagina, setPagina] = useState(1);
   const [datos, setDatos] = useState<PaginaTabla | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!sel) return;
-    let vivo = true;
+  const cargando = useRef(false);
+  const seq = useRef(0);
+  function cargar() {
+    const id = ++seq.current;
+    cargando.current = true;
     api<PaginaTabla>(`/admin/tabla/${encodeURIComponent(sel)}?pagina=${pagina}`).then(
-      (d) => { if (vivo) { setDatos(d); setError(''); } },
-      (e) => { if (vivo) setError(mensaje(e)); });
-    return () => { vivo = false; };
-  }, [sel, pagina]);
+      (d) => { if (id === seq.current) { setDatos(d); setError(''); } },
+      (e) => { if (id === seq.current) { setDatos(null); setError(mensaje(e)); } })
+      .finally(() => { if (id === seq.current) cargando.current = false; });
+  }
+  // Al cambiar de tabla/página se carga siempre.
+  useEffect(() => {
+    if (sel) cargar();
+    return () => { seq.current++; cargando.current = false; };
+  }, [sel, pagina]); // eslint-disable-line react-hooks/exhaustive-deps
+  // En cada ping se refresca la tabla, con el mismo guard (sin solapar y sin pestaña oculta).
+  useEffect(() => {
+    if (!sel || cargando.current || document.hidden) return;
+    cargar();
+  }, [tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function elegir(nombre: string) { setSel(nombre); setPagina(1); setDatos(null); }
 
@@ -65,7 +79,7 @@ export default function Control() {
         <section>
           <h2>{sel}</h2>
           {error && <p role="alert">{error}</p>}
-          {datos && (
+          {datos && conectado !== false && (
             <>
               <table>
                 <thead><tr>{datos.columnas.map((c) => <th key={c}>{c}</th>)}</tr></thead>
