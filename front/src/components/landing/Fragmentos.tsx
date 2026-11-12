@@ -61,7 +61,7 @@ export function FragCdt() {
 }
 
 export function FragCreditos() {
-  const filas = [['1', '$412.300', 'Pagada'], ['2', '$412.300', 'Pagada'], ['3', '$398.900', 'Con abono'], ['4', '$398.900', 'Pendiente']];
+  const filas = [['3', '$412.300', 'Pagada'], ['4', '$398.900', 'Con abono'], ['5', '$398.900', 'Pendiente']];
   return (
     <div className="ui">
       <p className="ui-cabeza"><b>Libre inversión</b><span className="ui-dato">Desembolsado</span></p>

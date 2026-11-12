@@ -26,7 +26,7 @@ function Revela({ className = '', children }: { className?: string; children: Re
 
 /** Marca: un cuadrado de 2×2 celdas con una celda amarilla. */
 function Marca({ como = 'a' }: { como?: 'a' | 'strong' }) {
-  const contenido = <><span className="marca-logo" aria-hidden="true"><i /><i /><i /><i /></span>Banco Digital</>;
+  const contenido = <><span className="marca-logo" aria-hidden="true"><i /><i /><i /><i /></span><span className="marca-texto">Banco Digital</span></>;
   return como === 'a' ? <a href="#inicio" className="marca">{contenido}</a> : <strong className="marca">{contenido}</strong>;
 }
 

@@ -59,6 +59,18 @@ describe('Login', () => {
   });
 });
 
+describe('Ingresar y Registro', () => {
+  it('el titulo del formulario no lleva ninguna etiqueta encima y el panel no repite viñetas', () => {
+    for (const Pagina of [Login, Registro]) {
+      const { container, unmount } = render(<MemoryRouter><Pagina /></MemoryRouter>);
+      expect(container.querySelector('main')!.firstElementChild!.tagName).toBe('H1');
+      expect(container.querySelector('.auth-puntos')).toBeNull();
+      expect(container.querySelectorAll('.foto')).toHaveLength(1);
+      unmount();
+    }
+  });
+});
+
 describe('Inicio', () => {
   it('usa fallback estatico si la API de productos falla', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('down'))));

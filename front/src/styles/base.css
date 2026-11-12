@@ -39,6 +39,7 @@
   --r-box: 10px;
   --r-ctl: 8px;
   --r-marco: 20px;
+  --h2: clamp(2.25rem, 4vw, 3.25rem);
   --f-head: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --f-body: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }

@@ -12,8 +12,7 @@ const REGLAS = [
 const LADO = {
   zona: 'registro' as const,
   promesa: 'Tu cuenta, en minutos.',
-  detalle: 'Solo necesitas tu cédula. Sin cuota de manejo y con 12% E.A. en tus bolsillos desde el primer día.',
-  puntos: ['Sin cuota de manejo', 'Transferencias inmediatas', '$50.000 por cada amigo que invites'],
+  detalle: 'Solo necesitas tu cédula. Sin cuota de manejo.',
 };
 
 const CAMPOS = [
@@ -63,7 +62,6 @@ export default function Registro() {
   return (
     <AuthLayout {...LADO}>
     <main className="publico auth auth-registro">
-      <p className="auth-saludo">Abre tu cuenta gratis</p>
       <h1>Crea tu cuenta</h1>
       <form onSubmit={enviar} className="panel form">
         {CAMPOS.map(([k, label, type]) => (

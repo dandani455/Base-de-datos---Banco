@@ -36,8 +36,9 @@
 }
 
 /* Tipografía */
-.titulo { font-size: clamp(2rem, 3.4vw, 3rem); line-height: 1.08; font-weight: 700; letter-spacing: 0; text-wrap: balance; }
+.titulo { font-size: var(--h2); line-height: 1.06; font-weight: 700; letter-spacing: 0; text-wrap: balance; }
 .cabeza { row-gap: var(--s-3); margin-bottom: var(--s-6); }
+.cabeza:has(+ .tabs) { margin-bottom: var(--s-5); }
 .cabeza .titulo, .cabeza-linea { grid-column: 1 / span 6; }
 .cabeza-linea { color: var(--muted); }
 
@@ -84,21 +85,25 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
 .nav-cta .btn { min-height: 44px; }
 
 /* ---------- Hero ---------- */
-.hero { --pad-arriba: calc(80px + var(--s-7)); --pad-abajo: var(--s-7); padding-block: var(--pad-arriba) var(--pad-abajo); }
-.hero-in { align-items: center; row-gap: var(--s-7); }
+.hero { --pad-arriba: calc(80px + var(--s-6)); --pad-abajo: var(--s-6); padding-block: var(--pad-arriba) var(--pad-abajo); }
+.hero-in { align-items: center; row-gap: var(--s-6); }
 .hero-texto { grid-column: 1 / span 6; }
 .noche .hero-titular {
-  font-size: clamp(2.75rem, 5.6vw, 4.5rem); line-height: 1.02; font-weight: 700; color: #fff; max-width: 11ch;
+  font-size: clamp(3rem, 6vw, 5rem); line-height: 1; font-weight: 700; color: #fff; max-width: 11ch;
   margin-bottom: var(--s-4); animation: aparecer .7s .1s both;
 }
 .noche .hero-sub { font-size: 1.1875rem; color: var(--on-night); max-width: 34ch; margin-bottom: var(--s-5); animation: aparecer .7s .25s both; }
 .hero .acciones { animation: aparecer .7s .4s both; }
 
 /* Escena: teléfono a la derecha y la tarjeta a su izquierda, sin taparse */
-.escena { grid-column: 7 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); }
-.escena-tarjeta { flex: none; animation: entrar-tarjeta 1s .6s cubic-bezier(.16, 1, .3, 1) both; }
-.escena .tarjeta { width: 280px; }
-.telefono { flex: none; width: 280px; height: 544px; animation: entrar-tel 1s .3s cubic-bezier(.16, 1, .3, 1) both; }
+/* Escena: un solo grupo. El teléfono va al borde derecho de la col. 12; la tarjeta arranca en el
+   borde de la col. 7 y monta sobre el canto inferior izquierdo del teléfono (sobre los movimientos,
+   nunca sobre el saldo). La tarjeta baja 48px por debajo del teléfono. */
+.escena { --tel-w: 288px; --tel-h: 560px; --tarjeta-w: 336px; --baja: var(--s-6);
+  grid-column: 7 / -1; position: relative; height: calc(var(--tel-h) + var(--baja)); }
+.escena-tarjeta { position: absolute; left: 0; bottom: 0; z-index: 2; width: var(--tarjeta-w); animation: entrar-tarjeta 1s .6s cubic-bezier(.16, 1, .3, 1) both; }
+.escena .tarjeta { width: 100%; }
+.telefono { position: absolute; right: 0; top: 0; width: var(--tel-w); height: var(--tel-h); animation: entrar-tel 1s .3s cubic-bezier(.16, 1, .3, 1) both; }
 .tel-marco { height: 100%; padding: 10px; border-radius: 46px; background: #10212B; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 0 0 3px #1B323E; }
 .tel-pantalla { height: 100%; border-radius: 36px; overflow: hidden; background: var(--paper); color: var(--ink); padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 1.3; }
 .tel-estado { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 12px; padding: 0 8px; }
@@ -181,16 +186,18 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
 .tabs .tabs-tab[aria-selected=true], .tabs .tabs-tab[aria-selected=true]:hover:not(:disabled) { color: #fff; }
 .tabs .tabs-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .tabs-panel:focus-visible { outline-offset: 8px; }
-.panel-tab { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); row-gap: var(--s-5); align-items: center; }
-.panel-texto { grid-column: 1 / span 5; }
-.panel-texto h3 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.15; font-weight: 700; margin-bottom: var(--s-3); }
+.panel-tab { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); row-gap: var(--s-5); align-items: stretch; }
+/* El texto arranca en el borde superior del marco y el botón cierra en su borde inferior: misma altura, sin vacíos */
+.panel-texto { grid-column: 1 / span 5; display: flex; flex-direction: column; align-items: flex-start; }
+.panel-texto .btn { margin-top: auto; }
+.panel-texto h3 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.15; font-weight: 700; margin-bottom: var(--s-3); margin-top: -.2em; }
 .panel-texto > p { color: #3A4D5A; margin-bottom: var(--s-5); max-width: 36ch; text-wrap: pretty; }
 .tabs-panel:not([hidden]) .panel-texto { animation: aparecer .45s cubic-bezier(.16, 1, .3, 1) both; }
 .tabs-panel:not([hidden]) .ui { animation: aparecer .55s .08s cubic-bezier(.16, 1, .3, 1) both; }
 
 /* Marco de ilustración: el mismo para las 4 pestañas */
 .marco-ilustracion {
-  grid-column: 7 / -1; aspect-ratio: 4 / 3; display: grid; place-items: center; padding: var(--s-6);
+  grid-column: 7 / -1; align-self: start; height: 336px; display: grid; place-items: center; padding: var(--s-4);
   border-radius: var(--r-marco);
   /* el mismo papel cuadriculado, en claro: las piezas se apoyan sobre la cuadrícula */
   background:
@@ -299,7 +306,7 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
 .cierre .rejilla { align-items: center; row-gap: var(--s-6); }
 .cierre-foto { grid-column: 1 / span 5; }
 .cierre-texto { grid-column: 7 / -1; }
-.cierre-texto .titulo { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: var(--s-4); }
+.cierre-texto .titulo { margin-bottom: var(--s-4); }
 .cierre-texto p { color: #3A4D5A; font-size: 1.1875rem; max-width: 34ch; margin-bottom: var(--s-5); }
 
 /* ---------- Marco único de foto ---------- */
@@ -342,10 +349,18 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
 @keyframes llenar-celda-noche { from { fill: rgba(230, 242, 245, 0); } 50% { fill: rgba(230, 242, 245, .16); } to { fill: rgba(230, 242, 245, .07); } }
 
 /* ---------- Responsive ---------- */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  /* col. 7–12 mide ~460px: teléfono 248 + tarjeta 252, se solapan 40px (solo el canto) */
+  .escena { --tel-w: 248px; --tel-h: 504px; --tarjeta-w: 252px; }
+  .escena .tarjeta { padding: 12px 16px; }
+  .escena .tarjeta-marca { font-size: 15px; }
+  .escena .tarjeta-num { font-size: 14px; }
+  .tel-monto { font-size: 26px; }
+}
 @media (max-width: 1023px) {
   .nav-sec { display: none; }
-  .hero-texto, .escena { grid-column: 1 / -1; }
-  .escena { justify-content: center; }
+  .hero-texto { grid-column: 1 / -1; }
+  .escena { grid-column: 1 / -1; width: 100%; max-width: 560px; justify-self: start; }
   .cabeza .titulo, .cabeza-linea { grid-column: 1 / -1; }
   .panel-texto, .marco-ilustracion { grid-column: 1 / -1; }
   .panel-texto > p { max-width: 48ch; }
@@ -363,17 +378,26 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
   .nav-in { min-height: 64px; gap: var(--s-2); }
   .landing .nav .marca { font-size: 1.0625rem; }
   .nav-ingresar { padding: 0 var(--s-2); }
-  .hero { --pad-arriba: calc(64px + var(--s-6)); --pad-abajo: var(--s-7); }
+  .hero { --pad-arriba: calc(64px + var(--s-5)); --pad-abajo: var(--s-6); }
   .hero-in { row-gap: var(--s-6); }
   .noche .hero-sub { font-size: 1.0625rem; }
-  .escena { flex-direction: column; align-items: center; gap: var(--s-5); }
-  .escena-tarjeta { order: 2; margin: 0; }
-  .telefono { width: 264px; height: 520px; }
-  .escena .tarjeta { width: 264px; padding: 16px 18px; }
+  /* apilado: la tarjeta solo monta sobre el borde inferior en blanco del teléfono */
+  .escena { --tel-w: 240px; --tel-h: 504px; --tarjeta-w: 232px; --baja: var(--s-8); max-width: none; }
+  .escena .tarjeta { padding: 12px 14px; border-radius: 12px; }
+  .escena .tarjeta-marca { font-size: 14px; }
+  .escena .tarjeta-num { font-size: 13px; }
+  .escena .tarjeta-chip { width: 32px; height: 24px; }
+  .escena .tarjeta-abajo { font-size: 11px; }
+  .tel-marco { border-radius: 40px; padding: 8px; }
+  .tel-pantalla { border-radius: 32px; gap: 10px; padding: 10px 12px; }
+  .tel-monto { font-size: 25px; }
+  .tel-saldo { padding-bottom: 52px; }
+  .tel-acciones span { padding: 7px 2px; }
+  .tel-mov { padding: 8px 10px; }
   .tarjeta-num { font-size: 16px; }
   .tabs-lista { display: grid; grid-template-columns: 1fr 1fr; width: 100%; overflow: visible; }
   .tabs .tabs-tab { padding: 0 var(--s-2); white-space: normal; line-height: 1.2; }
-  .marco-ilustracion { aspect-ratio: auto; padding: var(--s-4) var(--s-3); }
+  .marco-ilustracion { height: 312px; padding: var(--s-4) var(--s-3); }
   .ui { padding: var(--s-3); gap: 12px; }
   .ui-fila { gap: 10px; }
   .anillo { width: 40px; height: 40px; }
@@ -392,8 +416,12 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
   .pie-base { flex-direction: column; }
 }
 
+/* Menú compacto: en pantallas muy angostas el logo queda solo (el nombre sigue para lectores) y caben Ingresar y Registrarse */
 @media (max-width: 400px) {
-  .nav-ingresar { display: none; }
+  .nav .marca-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .nav-cta { gap: var(--s-1); }
+  .nav-ingresar { padding: 0 var(--s-2); }
+  .nav-cta .btn { padding: 0 var(--s-3); }
 }
 
 @media (prefers-reduced-motion: reduce) {

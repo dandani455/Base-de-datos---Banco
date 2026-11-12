@@ -8,33 +8,28 @@ interface Props {
   zona: Zona;
   promesa: ReactNode;
   detalle: string;
-  puntos: string[];
   children: ReactNode;
 }
 
 /**
- * Layout dividido de Ingresar/Registro: panel oscuro sobre la cuadrícula (marca, promesa,
- * foto en el marco común y la tarjeta 3D a su lado) y el formulario a la derecha.
+ * Layout dividido de Ingresar/Registro: panel oscuro sobre la cuadrícula con la marca, el titular
+ * y dos columnas iguales: la foto (marco común) y, a su lado, una línea de texto arriba y la
+ * tarjeta 3D abajo, alineadas a los bordes de la foto. El formulario va a la derecha.
  */
-export default function AuthLayout({ zona, promesa, detalle, puntos, children }: Props) {
+export default function AuthLayout({ zona, promesa, detalle, children }: Props) {
   const tilt = useInclinacion<HTMLDivElement>(12);
   return (
     <div className="auth-split">
       <aside className="auth-lado">
         <Link to="/" className="marca"><span className="marca-logo" aria-hidden="true"><i /><i /><i /><i /></span>Banco Digital</Link>
-        <div className="auth-promesa">
-          <p className="auth-titular">{promesa}</p>
-          <p className="auth-detalle">{detalle}</p>
-        </div>
+        <p className="auth-titular">{promesa}</p>
         <div className="auth-visual">
           <Foto zona={zona} forma="vertical" className="auth-foto" prioridad decorativa />
           <div className="auth-columna">
+            <p className="auth-detalle">{detalle}</p>
             <div className="auth-tarjeta" aria-hidden="true">
               <div className="tarjeta-tilt" ref={tilt}><TarjetaVirtual /></div>
             </div>
-            <ul className="auth-puntos">
-              {puntos.map((p) => <li key={p}>{p}</li>)}
-            </ul>
           </div>
         </div>
       </aside>

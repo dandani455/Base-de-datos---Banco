@@ -25,11 +25,9 @@ export default function Login() {
     <AuthLayout
       zona="login"
       promesa="Qué bueno verte de nuevo."
-      detalle="Revisa tu saldo, mueve tu dinero y mira crecer tus bolsillos, desde cualquier lugar."
-      puntos={['Transferencias inmediatas', '12% E.A. en tus bolsillos', 'Tu sesión se cierra cuando sales']}
+      detalle="Revisa tu saldo y mueve tu plata desde cualquier lugar."
     >
     <main className="publico auth">
-      <p className="auth-saludo">Bienvenido a Banco Digital</p>
       <h1>Ingresar</h1>
       <form onSubmit={enviar} className="panel form">
         <label>Usuario<input value={username} onChange={(e) => setUsername(e.target.value)} required /></label>
