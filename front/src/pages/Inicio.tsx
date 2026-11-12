@@ -8,6 +8,7 @@ import { FragBolsillos, FragCdt, FragCreditos, FragReferidos } from '../componen
 import { prefiereMenosMovimiento, useReveal } from '../hooks/useReveal';
 import Foto from '../components/Foto';
 import { IMAGENES } from '../imagenes';
+import { DEMO } from '../demo';
 
 interface Producto { nombre: string; descripcion?: string }
 
@@ -157,6 +158,7 @@ export default function Inicio() {
             <a href="#productos">Productos</a>
             <a href="#pasos">Cómo empezar</a>
             <a href="#seguridad">Seguridad</a>
+            {DEMO && <Link to="/demo" className="nav-demo">Demo</Link>}
           </nav>
           <nav aria-label="Cuenta" className="nav-cta">
             <Link to="/login" className="nav-ingresar">Ingresar</Link>

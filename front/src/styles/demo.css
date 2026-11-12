@@ -1,0 +1,48 @@
+/* ---------- Demo: entrada directa a los paneles (solo con el mock) ---------- */
+.demo {
+  min-height: 100vh; color: var(--on-night); padding: var(--s-5) 0 var(--s-7);
+  background-color: var(--night);
+  background-image:
+    linear-gradient(rgba(230, 242, 245, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230, 242, 245, .07) 1px, transparent 1px);
+  background-size: var(--celda) var(--celda);
+  background-position: var(--gutter) var(--s-5);
+}
+.demo-in { max-width: 880px; margin: 0 auto; padding: 0 var(--gutter); }
+.demo-marca { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: #fff; font-size: 1.1875rem; font-weight: 700; text-decoration: none; }
+.demo-logo { display: grid; grid-template-columns: repeat(2, 10px); gap: 2px; }
+.demo-logo i { width: 10px; height: 10px; background: var(--on-night); }
+.demo-logo i:nth-child(4) { background: var(--sun); }
+.demo h1 { margin: var(--s-7) 0 var(--s-3); color: #fff; font-size: var(--h2); font-weight: 700; line-height: 1.05; }
+.demo-sub { max-width: 52ch; margin: 0 0 var(--s-6); font-size: 1.125rem; line-height: 1.5; color: var(--on-night); }
+.demo-sub a { color: #fff; font-weight: 600; }
+
+.demo-lista { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line-night); }
+.demo-lista li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) 0 var(--s-4) var(--s-5); border-bottom: 1px solid var(--line-night); position: relative;
+}
+.demo-lista li::before { content: ''; position: absolute; left: 0; top: calc(var(--s-4) + .55em); width: 10px; height: 10px; background: var(--sun); }
+.demo-lista li:nth-child(n+2)::before { background: var(--on-night-muted); }
+.demo-lista h2 { margin: 0 0 var(--s-1); color: #fff; font-size: 1.375rem; font-weight: 700; }
+.demo-lista p { margin: 0 0 var(--s-2); max-width: 46ch; color: var(--on-night); line-height: 1.45; }
+.demo-lista code { font-size: .875rem; color: var(--on-night-muted); }
+
+.demo-btn {
+  min-height: 48px; padding: 0 var(--s-5); border: 1px solid var(--on-night-muted); border-radius: var(--r-ctl);
+  background: transparent; color: #fff; font: inherit; font-weight: 600; cursor: pointer; transition: background-color .15s, border-color .15s;
+}
+.demo-btn:hover:not(:disabled) { border-color: #fff; background: rgba(230, 242, 245, .08); }
+.demo-btn-sun { background: var(--sun); border-color: var(--sun); color: var(--ink); }
+.demo-btn-sun:hover:not(:disabled) { background: var(--sun-press); border-color: var(--sun-press); }
+.demo-btn:disabled { opacity: .6; cursor: default; }
+.demo-btn:focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; }
+.demo-aviso { margin: var(--s-4) 0 0; padding: var(--s-3); border: 1px solid var(--line-night); border-radius: var(--r-ctl); color: #fff; }
+
+@media (max-width: 767px) {
+  .demo-lista li { grid-template-columns: 1fr; gap: var(--s-3); }
+  .demo-btn { justify-self: start; }
+}
+
+/* Pestaña Demo del menú: un cuadrado amarillo la distingue de las secciones */
+.nav-demo::before { content: ""; width: 8px; height: 8px; margin-right: var(--s-2); background: var(--sun); }

@@ -4,6 +4,7 @@ Permite ver el front sin backend. Node 22, sin dependencias, datos en memoria (s
 
 - `npm run mock`: levanta el mock en el puerto 3000.
 - `npm run dev:mock`: levanta el mock y Vite juntos (Vite hace proxy de `/api` a `127.0.0.1:3000`).
+  Con este comando el menú de la landing muestra la pestaña **Demo** (`/demo`): entra al panel de cliente, al de admin o prueba la cuenta restringida sin escribir credenciales. La pestaña y la ruta solo existen con `VITE_DEMO=true` (lo fija `dev:mock`); en el build de producción no se incluyen.
 
 ## Usuarios (clave `Banco2026`)
 

@@ -15,6 +15,8 @@ import Operaciones from './pages/admin/Operaciones';
 import Reloj from './pages/admin/Reloj';
 import Tasas from './pages/admin/Tasas';
 import Control from './pages/admin/Control';
+import Demo from './pages/Demo';
+import { DEMO } from './demo';
 
 export default function App() {
   return (
@@ -24,6 +26,7 @@ export default function App() {
         <Route path="/" element={<Inicio />} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/login" element={<Login />} />
+        {DEMO && <Route path="/demo" element={<Demo />} />}
         <Route path="/app" element={<ClienteLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="balance" element={<Balance />} />
