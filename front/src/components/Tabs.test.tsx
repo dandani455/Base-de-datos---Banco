@@ -17,6 +17,17 @@ describe('Tabs', () => {
     expect(screen.getByRole('tabpanel')).toHaveTextContent('texto uno');
     expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(3);
   });
+  it('clic cambia de panel, conserva todos los paneles en el DOM y el indicador es decorativo', async () => {
+    const u = userEvent.setup();
+    const { container } = render(<Tabs etiqueta="Prueba" tabs={tabs} />);
+    await u.click(screen.getByRole('tab', { name: 'Tres' }));
+    expect(screen.getByRole('tab', { name: 'Tres' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Uno' })).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('texto tres');
+    expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(3);
+    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(container.querySelector('.tabs-indicador')).toHaveAttribute('aria-hidden', 'true');
+  });
   it('flechas, Fin e Inicio mueven la seleccion y el foco', async () => {
     const u = userEvent.setup();
     render(<Tabs etiqueta="Prueba" tabs={tabs} />);

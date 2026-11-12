@@ -10,7 +10,9 @@ export type Zona =
   | 'tab-referidos'
   | 'pasos'
   | 'seguridad'
-  | 'cta';
+  | 'cta'
+  | 'login'
+  | 'registro';
 
 export interface Imagen {
   id: string;
@@ -24,7 +26,7 @@ export interface Imagen {
 }
 
 export const ZONAS: Zona[] = [
-  'hero', 'tab-bolsillos', 'tab-cdt', 'tab-creditos', 'tab-referidos', 'pasos', 'seguridad', 'cta',
+  'hero', 'tab-bolsillos', 'tab-cdt', 'tab-creditos', 'tab-referidos', 'pasos', 'seguridad', 'cta', 'login', 'registro',
 ];
 
 export const IMAGENES: Imagen[] = [
@@ -67,6 +69,16 @@ export const IMAGENES: Imagen[] = [
     id: 'izPZjLPrc8s', archivo: 'cta-guatape.jpg', zona: 'cta', ancho: 900, alto: 1350,
     alt: 'Mujer con vestido amarillo caminando por una calle empedrada y colorida de Guatapé',
     fotografo: 'Robbie', urlUnsplash: 'https://unsplash.com/photos/izPZjLPrc8s',
+  },
+  {
+    id: '4zUKECo8q94', archivo: 'login-cafe.jpg', zona: 'login', ancho: 1400, alto: 788,
+    alt: 'Mujer joven sonriendo mientras usa su celular en la terraza de un café',
+    fotografo: 'Vitaly Gariev', urlUnsplash: 'https://unsplash.com/photos/4zUKECo8q94',
+  },
+  {
+    id: 'FqMpoMF7sPY', archivo: 'registro-amigas.jpg', zona: 'registro', ancho: 1400, alto: 788,
+    alt: 'Tres amigas riendo mientras miran juntas un celular en la mesa de un café',
+    fotografo: 'Vitaly Gariev', urlUnsplash: 'https://unsplash.com/photos/FqMpoMF7sPY',
   },
 ];
 

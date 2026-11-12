@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { IMAGENES, ZONAS, imagen } from './imagenes';
@@ -25,6 +25,16 @@ describe('registro de imagenes', () => {
       expect(i.ancho).toBeGreaterThan(0);
       expect(i.alto).toBeGreaterThan(0);
     }
+  });
+  it('login y registro tienen su propia foto, y ninguna pesa de mas', () => {
+    expect(imagen('login').archivo).not.toBe(imagen('registro').archivo);
+    let total = 0;
+    for (const i of IMAGENES) {
+      const peso = statSync(dir + i.archivo).size;
+      expect(peso, i.archivo).toBeLessThan(350 * 1024);
+      total += peso;
+    }
+    expect(total).toBeLessThan(2 * 1024 * 1024);
   });
   it('imagen(zona) devuelve la foto o falla con mensaje claro', () => {
     expect(imagen('hero').zona).toBe('hero');

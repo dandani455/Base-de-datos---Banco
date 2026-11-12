@@ -67,4 +67,17 @@ describe('Inicio', () => {
     expect(screen.getByText(/invita y gana \$50\.000/i)).toBeInTheDocument();
     expect(await screen.findAllByTestId('producto')).toHaveLength(4);
   });
+
+  it('las piezas decorativas (telefono, tarjeta, marquesina) quedan fuera del arbol accesible', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('down'))));
+    const { container } = render(<MemoryRouter><Inicio /></MemoryRouter>);
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    for (const sel of ['.escena', '.marquesina', '.panel-frag']) {
+      const els = container.querySelectorAll(sel);
+      expect(els.length, sel).toBeGreaterThan(0);
+      els.forEach((el) => expect(el.closest('[aria-hidden="true"]'), sel).not.toBeNull());
+    }
+    expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(4);
+    expect(await screen.findAllByTestId('producto')).toHaveLength(4);
+  });
 });

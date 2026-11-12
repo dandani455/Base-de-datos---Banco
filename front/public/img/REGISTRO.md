@@ -12,6 +12,8 @@
 | pasos-cartagena.jpg | pasos | Zane Bolen | https://unsplash.com/photos/Qg0ci7cH7e4 |
 | seguridad-bogota.jpg | seguridad | Jimmy Hu | https://unsplash.com/photos/yfBzdMIbJCY |
 | cta-guatape.jpg | cta | Robbie | https://unsplash.com/photos/izPZjLPrc8s |
+| login-cafe.jpg | login | Vitaly Gariev | https://unsplash.com/photos/4zUKECo8q94 |
+| registro-amigas.jpg | registro | Vitaly Gariev | https://unsplash.com/photos/FqMpoMF7sPY |
 
 ## Licencia
 
