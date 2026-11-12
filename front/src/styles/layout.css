@@ -1,15 +1,6 @@
 /* ---------- Páginas públicas ---------- */
 .publico { max-width: 1040px; margin: 0 auto; padding: 0 1rem 3rem; }
 .marca { font-family: var(--f-head); font-weight: 700; font-size: var(--fs-20); color: var(--brand); text-decoration: none; }
-.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--line); }
-.topbar-links { display: flex; gap: 1.25rem; font-weight: 600; }
-.topbar-links a { display: inline-flex; align-items: center; min-height: 44px; }
-
-.hero { padding: 3.5rem 0 3rem; }
-.hero h1 { font-size: clamp(2.25rem, 9vw, var(--fs-72)); line-height: 1.02; margin-bottom: 1rem; color: var(--brand); }
-.hero p { font-size: var(--fs-20); color: var(--ink); max-width: 36ch; margin-bottom: 1.75rem; }
-.hero-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
-
 .btn {
   display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 1.4rem;
   border-radius: var(--r-ctl); border: 1px solid var(--brand); font-weight: 600; text-decoration: none;
@@ -19,17 +10,6 @@
 .btn-sun:hover { background: #DDA300; border-color: #DDA300; color: var(--ink); }
 .btn-sec { background: var(--surface); color: var(--brand); }
 .btn-sec:hover { background: var(--brand-soft); color: var(--brand); }
-
-.bloque { padding: 1.5rem 0; border-top: 1px solid var(--line); }
-.bloque h2 { margin-top: 0; }
-.beneficios { list-style: none; display: grid; gap: .5rem; }
-.beneficios li { padding-left: 1rem; border-left: 3px solid var(--brand); }
-.productos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-.productos article { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-box); padding: 1rem 1.1rem; }
-.productos h3 { margin-top: 0; color: var(--brand); }
-.productos p { color: var(--muted); margin: 0; }
-.referidos p { font-size: var(--fs-20); }
-.publico footer { padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: var(--fs-14); }
 
 /* Login / registro */
 .auth { max-width: 520px; margin: 0 auto; padding-top: 2rem; }
@@ -90,4 +70,3 @@
   .contenido { padding: 4.25rem 1rem 5.5rem; }
   .app::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 52px; background: var(--surface); border-bottom: 1px solid var(--line); z-index: 39; }
 }
-@media (max-width: 480px) { .hero { padding: 2rem 0; } }
