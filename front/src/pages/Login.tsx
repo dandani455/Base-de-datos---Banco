@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import AuthLayout from '../components/AuthLayout';
 
 export default function Login() {
   const nav = useNavigate();
@@ -21,8 +22,14 @@ export default function Login() {
   }
 
   return (
+    <AuthLayout
+      zona="login"
+      promesa={<>Qué bueno <span className="grad">verte de nuevo.</span></>}
+      detalle="Revisa tu saldo, mueve tu dinero y mira crecer tus bolsillos, desde cualquier lugar."
+      puntos={['Transferencias inmediatas', '12% E.A. en tus bolsillos', 'Tu sesión se cierra cuando sales']}
+    >
     <main className="publico auth">
-      <Link to="/" className="marca">Banco Digital</Link>
+      <p className="auth-saludo">Bienvenido a Banco Digital</p>
       <h1>Ingresar</h1>
       <form onSubmit={enviar} className="panel form">
         <label>Usuario<input value={username} onChange={(e) => setUsername(e.target.value)} required /></label>
@@ -32,5 +39,6 @@ export default function Login() {
       </form>
       <p className="aparte">¿No tienes cuenta? <Link to="/registro">Registrarse</Link></p>
     </main>
+    </AuthLayout>
   );
 }

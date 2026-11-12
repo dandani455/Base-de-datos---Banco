@@ -1,12 +1,20 @@
 import { FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
+import AuthLayout from '../components/AuthLayout';
 
 const REGLAS = [
   { texto: 'Mínimo 8 caracteres', ok: (p: string) => p.length >= 8 },
   { texto: 'Una mayúscula', ok: (p: string) => /[A-Z]/.test(p) },
   { texto: 'Un número', ok: (p: string) => /\d/.test(p) },
 ];
+
+const LADO = {
+  zona: 'registro' as const,
+  promesa: <>Tu cuenta, <span className="grad">en minutos.</span></>,
+  detalle: 'Solo necesitas tu cédula. Sin cuota de manejo y con 12% E.A. en tus bolsillos desde el primer día.',
+  puntos: ['Sin cuota de manejo', 'Transferencias inmediatas', '$50.000 por cada amigo que invites'],
+};
 
 const CAMPOS = [
   ['nombres', 'Nombres', 'text'], ['apellidos', 'Apellidos', 'text'], ['cedula', 'Cédula', 'text'],
@@ -41,17 +49,21 @@ export default function Registro() {
 
   if (username) {
     return (
-      <main className="publico auth">
+      <AuthLayout {...LADO}>
+      <main className="publico auth auth-exito">
+        <span className="auth-check" aria-hidden="true">✓</span>
         <h1>¡Registro exitoso!</h1>
         <p>Tu usuario es <strong>{username}</strong>. Guárdalo, solo se muestra una vez.</p>
         <Link to="/login" className="btn btn-sun">Ingresar</Link>
       </main>
+      </AuthLayout>
     );
   }
 
   return (
-    <main className="publico auth">
-      <Link to="/" className="marca">Banco Digital</Link>
+    <AuthLayout {...LADO}>
+    <main className="publico auth auth-registro">
+      <p className="auth-saludo">Abre tu cuenta gratis</p>
       <h1>Crea tu cuenta</h1>
       <form onSubmit={enviar} className="panel form">
         {CAMPOS.map(([k, label, type]) => (
@@ -59,7 +71,7 @@ export default function Registro() {
             <input type={type} required value={form[k] ?? ''} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
           </label>
         ))}
-        <label>Contraseña
+        <label className="campo-ancho">Contraseña
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
         <ul className="reglas">
@@ -73,5 +85,6 @@ export default function Registro() {
         <button type="submit" className="btn-sun">Registrarse</button>
       </form>
     </main>
+    </AuthLayout>
   );
 }

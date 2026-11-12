@@ -113,7 +113,6 @@ export function EscenaHero() {
                 </li>
               ))}
             </ul>
-            <div className="tel-barra-inf"><span className="activo">Inicio</span><span>Movimientos</span><span>Perfil</span></div>
           </div>
         </div>
       </div>

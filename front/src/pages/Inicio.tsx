@@ -6,7 +6,8 @@ import Contador from '../components/landing/Contador';
 import { EscenaHero, TarjetaVirtual, useInclinacion } from '../components/landing/Escena';
 import { FragBolsillos, FragCdt, FragCreditos, FragReferidos } from '../components/landing/Fragmentos';
 import { prefiereMenosMovimiento, useReveal } from '../hooks/useReveal';
-import { IMAGENES, imagen, rutaImagen, type Zona } from '../imagenes';
+import Foto from '../components/Foto';
+import { IMAGENES, type Zona } from '../imagenes';
 
 interface Producto { nombre: string; descripcion?: string }
 
@@ -21,22 +22,6 @@ const MARQUESINA = [
   'Sin cuota de manejo', 'Transferencias inmediatas', '12% E.A. en bolsillos',
   'CDT sin sorpresas', 'Créditos con desembolso inmediato', 'Atención todos los días',
 ];
-
-/** Foto de una zona, siempre desde el registro. El hero se carga con prioridad; el resto en diferido. */
-export function Foto({ zona, className, prioridad = false, decorativa = false }: { zona: Zona; className?: string; prioridad?: boolean; decorativa?: boolean }) {
-  const img = imagen(zona);
-  return (
-    <img
-      className={className}
-      src={rutaImagen(img)}
-      alt={decorativa ? '' : img.alt}
-      width={img.ancho}
-      height={img.alto}
-      {...(prioridad ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })}
-      decoding="async"
-    />
-  );
-}
 
 /** Envoltorio que se revela al entrar en pantalla (un solo efecto: opacidad + 24px). */
 function Revela({ as: Tag = 'div', className = '', children, retraso }: { as?: 'div' | 'li' | 'section'; className?: string; children: ReactNode; retraso?: number }) {
