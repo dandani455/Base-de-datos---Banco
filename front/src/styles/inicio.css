@@ -304,8 +304,9 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
 
 /* ---------- Cierre ---------- */
 .cierre .rejilla { align-items: center; row-gap: var(--s-6); }
-.cierre-foto { grid-column: 1 / span 5; }
-.cierre-texto { grid-column: 7 / -1; }
+/* el titular de cierre vuelve al borde izquierdo común; la foto ocupa las col. 8–12 */
+.cierre-texto { grid-column: 1 / span 6; grid-row: 1; }
+.cierre-foto { grid-column: 8 / -1; grid-row: 1; }
 .cierre-texto .titulo { margin-bottom: var(--s-4); }
 .cierre-texto p { color: #3A4D5A; font-size: 1.1875rem; max-width: 34ch; margin-bottom: var(--s-5); }
 
@@ -366,7 +367,7 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
   .panel-texto > p { max-width: 48ch; }
   .cifra-grande, .cifras-pequenas { grid-column: 1 / -1; }
   .cifras-pequenas { grid-template-columns: 1fr 1fr; }
-  .escudo-wrap, .seg-texto, .cierre-foto, .cierre-texto { grid-column: 1 / -1; }
+  .escudo-wrap, .seg-texto, .cierre-foto, .cierre-texto { grid-column: 1 / -1; grid-row: auto; }
   .cierre-foto { max-width: 480px; }
   .pie-marca { grid-column: 1 / -1; }
   .pie-cols > nav:nth-of-type(1) { grid-column: 1 / span 4; }

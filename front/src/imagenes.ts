@@ -25,12 +25,12 @@ export const ZONAS: Zona[] = ['cierre', 'login', 'registro'];
 
 export const IMAGENES: Imagen[] = [
   {
-    id: 'UYK_9CFHCBI', archivo: 'cierre-candelaria.jpg', zona: 'cierre', ancho: 1000, alto: 1500, posicion: '50% 70%',
+    id: 'UYK_9CFHCBI', archivo: 'cierre-candelaria.jpg', zona: 'cierre', ancho: 1000, alto: 1500, posicion: '60% 88%',
     alt: 'Gente caminando por una calle colorida de La Candelaria, en Bogotá, con los cerros al fondo',
     fotografo: 'Reza Madani', urlUnsplash: 'https://unsplash.com/photos/UYK_9CFHCBI',
   },
   {
-    id: 'g2VWPFnWp6E', archivo: 'login-candelaria.jpg', zona: 'login', ancho: 1000, alto: 1500, posicion: '50% 72%',
+    id: 'g2VWPFnWp6E', archivo: 'login-candelaria.jpg', zona: 'login', ancho: 1000, alto: 1500, posicion: '50% 62%',
     alt: 'Calle concurrida del centro de Bogotá con sombrillas de mercado y las montañas detrás',
     fotografo: 'Reza Madani', urlUnsplash: 'https://unsplash.com/photos/g2VWPFnWp6E',
   },

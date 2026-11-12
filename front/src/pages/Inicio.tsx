@@ -247,7 +247,6 @@ export default function Inicio() {
 
         <section className="banda papel cierre" aria-labelledby="cta-t">
           <div className="contenedor rejilla">
-            <Revela className="cierre-foto"><Foto zona="cierre" forma="vertical" /></Revela>
             <div className="cierre-texto">
               <h2 id="cta-t" className="titulo">Abre tu cuenta hoy.</h2>
               <p>Solo necesitas tu cédula. Tu plata empieza a rendir desde el primer día.</p>
@@ -256,6 +255,7 @@ export default function Inicio() {
                 <Link to="/login" className="btn btn-linea-tinta btn-l">Ingresar</Link>
               </div>
             </div>
+            <Revela className="cierre-foto"><Foto zona="cierre" forma="vertical" /></Revela>
           </div>
         </section>
       </main>
