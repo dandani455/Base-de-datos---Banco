@@ -1,18 +1,12 @@
 /**
  * Registro interno de fotos. Una foto = una zona. Antes de añadir una, revisa
- * public/img/REGISTRO.md. Los componentes obtienen las imágenes SOLO con imagen(zona).
+ * public/img/REGISTRO.md. Los componentes obtienen las imágenes SOLO con imagen(zona)
+ * (a través de <Foto>), que las pinta siempre con el mismo marco.
+ *
+ * Las tres fotos son de una misma serie (Reza Madani, La Candelaria, Bogotá): misma luz,
+ * mismo color y mismo lugar. Si cambias una, busca otra de la misma serie.
  */
-export type Zona =
-  | 'hero'
-  | 'tab-bolsillos'
-  | 'tab-cdt'
-  | 'tab-creditos'
-  | 'tab-referidos'
-  | 'pasos'
-  | 'seguridad'
-  | 'cta'
-  | 'login'
-  | 'registro';
+export type Zona = 'cierre' | 'login' | 'registro';
 
 export interface Imagen {
   id: string;
@@ -23,62 +17,27 @@ export interface Imagen {
   zona: Zona;
   ancho: number;
   alto: number;
+  /** object-position explícito para el recorte dentro del marco. */
+  posicion: string;
 }
 
-export const ZONAS: Zona[] = [
-  'hero', 'tab-bolsillos', 'tab-cdt', 'tab-creditos', 'tab-referidos', 'pasos', 'seguridad', 'cta', 'login', 'registro',
-];
+export const ZONAS: Zona[] = ['cierre', 'login', 'registro'];
 
 export const IMAGENES: Imagen[] = [
   {
-    id: '_zXn5wWkQig', archivo: 'hero-medellin.jpg', zona: 'hero', ancho: 1600, alto: 1067,
-    alt: 'Vista de Medellín con sus barrios en la ladera de las montañas bajo un cielo nublado',
-    fotografo: 'Jose Figueroa', urlUnsplash: 'https://unsplash.com/photos/_zXn5wWkQig',
-  },
-  {
-    id: 'Bzl-cftbnTc', archivo: 'tab-bolsillos.jpg', zona: 'tab-bolsillos', ancho: 1100, alto: 733,
-    alt: 'Mujer sonriente hablando por celular en una calle de Cartagena, junto a un camión amarillo',
-    fotografo: 'Jorge Gardner', urlUnsplash: 'https://unsplash.com/photos/Bzl-cftbnTc',
-  },
-  {
-    id: 'rPNek8KyCXU', archivo: 'tab-cdt.jpg', zona: 'tab-cdt', ancho: 900, alto: 1260,
-    alt: 'Mujer joven revisando su celular bajo un arco en una calle peatonal de la ciudad',
-    fotografo: 'Kris Tian', urlUnsplash: 'https://unsplash.com/photos/rPNek8KyCXU',
-  },
-  {
-    id: '6l1JgmIIL28', archivo: 'tab-creditos.jpg', zona: 'tab-creditos', ancho: 1100, alto: 733,
-    alt: 'Calle de Bogotá cubierta de sombrillas de colores, con gente caminando de día',
-    fotografo: 'Reza Madani', urlUnsplash: 'https://unsplash.com/photos/6l1JgmIIL28',
-  },
-  {
-    id: 'UYK_9CFHCBI', archivo: 'tab-referidos.jpg', zona: 'tab-referidos', ancho: 900, alto: 1350,
-    alt: 'Grupo de personas caminando juntas por una calle concurrida de Bogotá con los cerros al fondo',
+    id: 'UYK_9CFHCBI', archivo: 'cierre-candelaria.jpg', zona: 'cierre', ancho: 1000, alto: 1500, posicion: '50% 70%',
+    alt: 'Gente caminando por una calle colorida de La Candelaria, en Bogotá, con los cerros al fondo',
     fotografo: 'Reza Madani', urlUnsplash: 'https://unsplash.com/photos/UYK_9CFHCBI',
   },
   {
-    id: 'Qg0ci7cH7e4', archivo: 'pasos-cartagena.jpg', zona: 'pasos', ancho: 900, alto: 1260,
-    alt: 'Calle del centro histórico de Cartagena con balcones coloniales y la cúpula de la catedral al fondo',
-    fotografo: 'Zane Bolen', urlUnsplash: 'https://unsplash.com/photos/Qg0ci7cH7e4',
+    id: 'g2VWPFnWp6E', archivo: 'login-candelaria.jpg', zona: 'login', ancho: 1000, alto: 1500, posicion: '50% 72%',
+    alt: 'Calle concurrida del centro de Bogotá con sombrillas de mercado y las montañas detrás',
+    fotografo: 'Reza Madani', urlUnsplash: 'https://unsplash.com/photos/g2VWPFnWp6E',
   },
   {
-    id: 'yfBzdMIbJCY', archivo: 'seguridad-bogota.jpg', zona: 'seguridad', ancho: 900, alto: 1350,
-    alt: 'Hombre caminando por una calle de Bogotá junto a edificios altos y los cerros orientales',
-    fotografo: 'Jimmy Hu', urlUnsplash: 'https://unsplash.com/photos/yfBzdMIbJCY',
-  },
-  {
-    id: 'izPZjLPrc8s', archivo: 'cta-guatape.jpg', zona: 'cta', ancho: 900, alto: 1350,
-    alt: 'Mujer con vestido amarillo caminando por una calle empedrada y colorida de Guatapé',
-    fotografo: 'Robbie', urlUnsplash: 'https://unsplash.com/photos/izPZjLPrc8s',
-  },
-  {
-    id: '4zUKECo8q94', archivo: 'login-cafe.jpg', zona: 'login', ancho: 1400, alto: 788,
-    alt: 'Mujer joven sonriendo mientras usa su celular en la terraza de un café',
-    fotografo: 'Vitaly Gariev', urlUnsplash: 'https://unsplash.com/photos/4zUKECo8q94',
-  },
-  {
-    id: 'FqMpoMF7sPY', archivo: 'registro-amigas.jpg', zona: 'registro', ancho: 1400, alto: 788,
-    alt: 'Tres amigas riendo mientras miran juntas un celular en la mesa de un café',
-    fotografo: 'Vitaly Gariev', urlUnsplash: 'https://unsplash.com/photos/FqMpoMF7sPY',
+    id: '6l1JgmIIL28', archivo: 'registro-sombrillas.jpg', zona: 'registro', ancho: 1400, alto: 933, posicion: '72% 50%',
+    alt: 'Calle de Bogotá cubierta de sombrillas de colores, con gente caminando de día',
+    fotografo: 'Reza Madani', urlUnsplash: 'https://unsplash.com/photos/6l1JgmIIL28',
   },
 ];
 

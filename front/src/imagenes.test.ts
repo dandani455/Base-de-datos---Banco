@@ -36,8 +36,13 @@ describe('registro de imagenes', () => {
     }
     expect(total).toBeLessThan(2 * 1024 * 1024);
   });
+  it('las fotos son una sola serie coherente: mismo fotografo, como mucho 3, con recorte explicito', () => {
+    expect(IMAGENES.length).toBeLessThanOrEqual(3);
+    expect(new Set(IMAGENES.map((i) => i.fotografo)).size).toBe(1);
+    for (const i of IMAGENES) expect(i.posicion, i.archivo).toMatch(/^\d+% \d+%$/);
+  });
   it('imagen(zona) devuelve la foto o falla con mensaje claro', () => {
-    expect(imagen('hero').zona).toBe('hero');
+    expect(imagen('cierre').zona).toBe('cierre');
     // @ts-expect-error zona inexistente a proposito
     expect(() => imagen('nada')).toThrow(/zona "nada"/);
   });
