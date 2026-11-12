@@ -24,9 +24,9 @@ export default function Login() {
   return (
     <AuthLayout
       zona="login"
-      promesa={<>Qué bueno <span className="grad">verte de nuevo.</span></>}
+      promesa="Qué bueno verte de nuevo."
       detalle="Revisa tu saldo, mueve tu dinero y mira crecer tus bolsillos, desde cualquier lugar."
-      puntos={['Transferencias inmediatas', '12% E.A. en tus bolsillos', 'Tu sesión se cierra cuando sales']}
+      puntos={['Transferencias inmediatas', '12% E.A. en tus bolsillos', 'Tu sesión se cierra cuando sales']}
     >
     <main className="publico auth">
       <p className="auth-saludo">Bienvenido a Banco Digital</p>

@@ -11,8 +11,8 @@ const REGLAS = [
 
 const LADO = {
   zona: 'registro' as const,
-  promesa: <>Tu cuenta, <span className="grad">en minutos.</span></>,
-  detalle: 'Solo necesitas tu cédula. Sin cuota de manejo y con 12% E.A. en tus bolsillos desde el primer día.',
+  promesa: 'Tu cuenta, en minutos.',
+  detalle: 'Solo necesitas tu cédula. Sin cuota de manejo y con 12% E.A. en tus bolsillos desde el primer día.',
   puntos: ['Sin cuota de manejo', 'Transferencias inmediatas', '$50.000 por cada amigo que invites'],
 };
 
