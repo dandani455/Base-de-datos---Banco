@@ -1,70 +1,91 @@
-/** Fragmentos de interfaz para cada pestaña de productos. Solo ilustrativos (aria-hidden en quien los usa). */
+/**
+ * Piezas de interfaz para cada pestaña de productos. Todas con el mismo trazo: una tarjeta
+ * blanca con borde de 1px dentro del marco de ilustración. Solo ilustrativas (datos de ejemplo,
+ * aria-hidden en quien las usa).
+ */
 
-function Anillo({ pct, color }: { pct: number; color: string }) {
-  const r = 22;
+function Anillo({ pct }: { pct: number }) {
+  const r = 20;
   const c = 2 * Math.PI * r;
   return (
-    <svg className="anillo" viewBox="0 0 56 56" width="56" height="56" style={{ ['--c' as string]: c, ['--off' as string]: c * (1 - pct / 100) }}>
-      <circle cx="28" cy="28" r={r} fill="none" stroke="currentColor" strokeOpacity=".14" strokeWidth="6" />
-      <circle className="anillo-valor" cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
-        strokeDasharray={c} transform="rotate(-90 28 28)" />
-      <text x="28" y="32.5" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor">{pct}%</text>
+    <svg className="anillo" viewBox="0 0 48 48" width="48" height="48" style={{ ['--c' as string]: c, ['--off' as string]: c * (1 - pct / 100) }}>
+      <circle cx="24" cy="24" r={r} fill="none" className="anillo-pista" strokeWidth="5" />
+      <circle className="anillo-valor" cx="24" cy="24" r={r} fill="none" strokeWidth="5" strokeDasharray={c} transform="rotate(-90 24 24)" />
     </svg>
+  );
+}
+
+/** Fila de celdas cuadradas que se llenan una a una (el "libro contable"). */
+function Celdas({ total, llenas }: { total: number; llenas: number }) {
+  return (
+    <span className="celdas">
+      {Array.from({ length: total }, (_, i) => (
+        <i key={i} className={i < llenas ? 'llena' : undefined} style={{ ['--i' as string]: i }} />
+      ))}
+    </span>
   );
 }
 
 export function FragBolsillos() {
   return (
-    <div className="frag frag-bolsillos">
-      <div className="mini-card">
-        <Anillo pct={68} color="#22D3C5" />
-        <span><small>Bolsillo</small><b>Viajes</b><em>$1.360.000 de $2.000.000</em></span>
+    <div className="ui">
+      <p className="ui-cabeza"><b>Tus bolsillos</b><span className="ui-dato">12% E.A.</span></p>
+      <div className="ui-fila">
+        <Anillo pct={68} />
+        <span className="ui-txt"><b>Viajes</b><small>$1.360.000 de $2.000.000</small></span>
+        <span className="ui-num">68%</span>
       </div>
-      <div className="mini-card">
-        <Anillo pct={40} color="#F4B400" />
-        <span><small>Bolsillo</small><b>Emergencias</b><em>$800.000 de $2.000.000</em></span>
+      <div className="ui-fila">
+        <Anillo pct={40} />
+        <span className="ui-txt"><b>Emergencias</b><small>$800.000 de $2.000.000</small></span>
+        <span className="ui-num">40%</span>
       </div>
-      <span className="frag-pill">Rinde 12% E.A. · cada día</span>
+      <p className="ui-pie"><span>Rendimiento de hoy</span><b className="ui-pos">+$1.284</b></p>
     </div>
   );
 }
 
 export function FragCdt() {
   return (
-    <div className="frag frag-cdt">
-      <div className="mini-card mini-col">
-        <span className="mini-fila"><b>CDT a 6 meses</b><span className="frag-tag">Activo</span></span>
-        <svg className="frag-linea" viewBox="0 0 220 70" preserveAspectRatio="none">
-          <path className="frag-linea-area" d="M0 66 C 50 62, 90 52, 130 38 S 200 10, 220 6 L220 70 L0 70 Z" />
-          <path className="frag-linea-trazo" pathLength={1} d="M0 66 C 50 62, 90 52, 130 38 S 200 10, 220 6" />
-        </svg>
-        <span className="mini-fila"><small>Vence en 6 meses</small><small>Sin retiro anticipado</small></span>
-      </div>
+    <div className="ui">
+      <p className="ui-cabeza"><b>CDT a 6 meses</b><span className="ui-dato">Activo</span></p>
+      <svg className="ui-linea" viewBox="0 0 352 112">
+        {[16, 48, 80].map((y) => <line key={y} x1="0" x2="352" y1={y} y2={y} className="ui-guia" />)}
+        <path className="ui-linea-trazo" pathLength={1} d="M0 104 L58 96 L117 86 L176 72 L234 56 L293 36 L346 16" />
+        <rect x="340" y="10" width="12" height="12" className="ui-linea-punto" />
+      </svg>
+      <p className="ui-meses"><span>Mes 1</span><span>Mes 6</span></p>
+      <p className="ui-pie"><span>Sin retiro anticipado</span><b>Crece cada día</b></p>
     </div>
   );
 }
 
 export function FragCreditos() {
+  const filas = [['1', '$412.300', 'Pagada'], ['2', '$412.300', 'Pagada'], ['3', '$398.900', 'Con abono'], ['4', '$398.900', 'Pendiente']];
   return (
-    <div className="frag frag-creditos">
-      <div className="mini-card mini-col">
-        <span className="mini-fila"><b>Crédito de libre inversión</b><span className="frag-tag ok">Desembolsado</span></span>
-        <span className="frag-barras">
-          {[100, 100, 100, 80, 80, 62, 62, 44].map((h, i) => <i key={i} style={{ height: `${h * 0.5}px`, animationDelay: `${i * 60}ms` }} />)}
-        </span>
-        <span className="mini-fila"><small>Abonas a capital</small><small>la cuota baja</small></span>
-      </div>
+    <div className="ui">
+      <p className="ui-cabeza"><b>Libre inversión</b><span className="ui-dato">Desembolsado</span></p>
+      <table className="ui-tabla">
+        <thead><tr><th>Cuota</th><th>Valor</th><th>Estado</th></tr></thead>
+        <tbody>
+          {filas.map(([n, v, e]) => <tr key={n}><td>{n}</td><td>{v}</td><td>{e}</td></tr>)}
+        </tbody>
+      </table>
+      <p className="ui-pie"><span>Cuotas pagadas</span><Celdas total={12} llenas={3} /></p>
     </div>
   );
 }
 
 export function FragReferidos() {
   return (
-    <div className="frag frag-referidos">
-      <div className="mini-card">
-        <span className="avatares"><i>AM</i><i>JC</i><i>SR</i></span>
-        <span><small>Tus amigos se unieron</small><b className="frag-monto">+$50.000</b><em>por cada uno</em></span>
+    <div className="ui">
+      <p className="ui-cabeza"><b>Invita a tus amigos</b><span className="ui-dato">3 se unieron</span></p>
+      <p className="ui-codigo"><span>bancodigital.co/registro?ref=…</span><b>Copiar</b></p>
+      <div className="ui-amigos">
+        {['AM', 'JC', 'SR'].map((a) => <span key={a} className="ui-avatar">{a}</span>)}
+        <span className="ui-avatar ui-avatar-vacio">+</span>
       </div>
+      <p className="ui-pie"><span>Por cada amigo</span><b className="ui-pos">+$50.000</b></p>
     </div>
   );
 }

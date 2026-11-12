@@ -68,16 +68,37 @@ describe('Inicio', () => {
     expect(await screen.findAllByTestId('producto')).toHaveLength(4);
   });
 
-  it('las piezas decorativas (telefono, tarjeta, marquesina) quedan fuera del arbol accesible', async () => {
+  it('las piezas decorativas (telefono, tarjeta, ilustraciones) quedan fuera del arbol accesible', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('down'))));
     const { container } = render(<MemoryRouter><Inicio /></MemoryRouter>);
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-    for (const sel of ['.escena', '.marquesina', '.panel-frag']) {
+    for (const sel of ['.escena', '.tarjeta', '.panel-frag']) {
       const els = container.querySelectorAll(sel);
       expect(els.length, sel).toBeGreaterThan(0);
       els.forEach((el) => expect(el.closest('[aria-hidden="true"]'), sel).not.toBeNull());
     }
     expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(4);
+    expect(await screen.findAllByTestId('producto')).toHaveLength(4);
+  });
+
+  it('las reglas de la landing no chocan con los paneles: ninguna seccion usa la clase sec', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('down'))));
+    const { container } = render(<MemoryRouter><Inicio /></MemoryRouter>);
+    expect(container.querySelector('.sec')).toBeNull();
+    expect(container.querySelector('.cifras')).toBeNull();
+    expect(await screen.findAllByTestId('producto')).toHaveLength(4);
+  });
+
+  it('la unica foto de la landing va en el marco comun, con su recorte y sin nada encima', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('down'))));
+    const { container } = render(<MemoryRouter><Inicio /></MemoryRouter>);
+    const fotos = container.querySelectorAll('img');
+    expect(fotos).toHaveLength(1);
+    const marco = fotos[0].parentElement!;
+    expect(marco).toHaveClass('foto', 'foto-vertical');
+    expect(marco.children).toHaveLength(1);
+    expect(fotos[0].style.objectPosition).not.toBe('');
+    expect(fotos[0]).toHaveAttribute('alt', expect.stringMatching(/Bogotá/));
     expect(await screen.findAllByTestId('producto')).toHaveLength(4);
   });
 });

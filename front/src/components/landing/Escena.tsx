@@ -65,17 +65,21 @@ export function useInclinacion<T extends HTMLElement>(fuerza = 14) {
 }
 
 const MOVS = [
-  { nombre: 'Nómina', detalle: 'Recibido · hoy', monto: '+$3.200.000', tipo: 'entra' },
-  { nombre: 'Bolsillo Viajes', detalle: 'Rendimiento diario', monto: '+$1.284', tipo: 'entra' },
-  { nombre: 'Arriendo', detalle: 'Transferencia · ayer', monto: '-$1.150.000', tipo: 'sale' },
+  { nombre: 'Nómina', detalle: 'Hoy', monto: '+$3.200.000', tipo: 'entra' },
+  { nombre: 'Bolsillo Viajes', detalle: 'Rendimiento', monto: '+$1.284', tipo: 'entra' },
+  { nombre: 'Arriendo', detalle: 'Ayer', monto: '-$1.150.000', tipo: 'sale' },
 ];
 
-/** Escena del hero: teléfono con la app, tarjeta 3D y chips flotantes. Decorativa. */
+/** Escena del hero: el teléfono con la app y, a su lado (sin taparlo), la tarjeta 3D. Decorativa. */
 export function EscenaHero() {
   const tilt = useInclinacion<HTMLDivElement>(16);
   return (
     <div className="escena" aria-hidden="true">
-      <div className="escena-halo" />
+      <div className="escena-tarjeta">
+        <div className="tarjeta-tilt" ref={tilt}>
+          <TarjetaVirtual />
+        </div>
+      </div>
       <div className="telefono">
         <div className="tel-marco">
           <div className="tel-pantalla">
@@ -88,21 +92,15 @@ export function EscenaHero() {
             <div className="tel-saldo">
               <small>Saldo disponible</small>
               <Contador hasta={4826350} formato={pesos} retraso={700} duracion={1800} className="tel-monto" />
-              <span className="tel-subida">▲ 2,4% este mes</span>
+              <span className="tel-subida">+2,4% este mes</span>
               <svg className="tel-chispa" viewBox="0 0 240 64" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chispa-relleno" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0" stopColor="#22D3C5" stopOpacity=".45" />
-                    <stop offset="1" stopColor="#22D3C5" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path className="chispa-area" d="M0 52 L20 48 L40 50 L60 40 L80 43 L100 34 L120 37 L140 26 L160 29 L180 18 L200 21 L220 10 L240 6 L240 64 L0 64 Z" fill="url(#chispa-relleno)" />
-                <path className="chispa-linea" pathLength={1} d="M0 52 L20 48 L40 50 L60 40 L80 43 L100 34 L120 37 L140 26 L160 29 L180 18 L200 21 L220 10 L240 6" fill="none" stroke="#22D3C5" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-                <circle cx="240" cy="6" r="4" fill="#22D3C5" className="chispa-punto" />
+                <path className="chispa-area" d="M0 52 L20 48 L40 50 L60 40 L80 43 L100 34 L120 37 L140 26 L160 29 L180 18 L200 21 L220 10 L240 6 L240 64 L0 64 Z" />
+                <path className="chispa-linea" pathLength={1} d="M0 52 L20 48 L40 50 L60 40 L80 43 L100 34 L120 37 L140 26 L160 29 L180 18 L200 21 L220 10 L240 6" fill="none" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                <rect x="235" y="1" width="10" height="10" className="chispa-punto" />
               </svg>
             </div>
             <div className="tel-acciones">
-              <span><i>↗</i>Enviar</span><span><i>◔</i>Bolsillos</span><span><i>▤</i>CDT</span>
+              <span><i>↗</i>Enviar</span><span><i>▦</i>Bolsillos</span><span><i>▤</i>CDT</span>
             </div>
             <ul className="tel-movs">
               {MOVS.map((m) => (
@@ -116,14 +114,6 @@ export function EscenaHero() {
           </div>
         </div>
       </div>
-      <div className="tarjeta-flota">
-        <div className="tarjeta-tilt" ref={tilt}>
-          <TarjetaVirtual />
-        </div>
-      </div>
-      <span className="chip chip-1"><i className="chip-ico sun">$</i>+$50.000 bono de referido</span>
-      <span className="chip chip-2"><i className="chip-ico teal">%</i>12% E.A. en tus bolsillos</span>
-      <span className="chip chip-3"><i className="chip-ico coral">⚡</i>Desembolso inmediato</span>
     </div>
   );
 }
