@@ -66,7 +66,7 @@ export function useInclinacion<T extends HTMLElement>(fuerza = 14) {
 
 const MOVS = [
   { nombre: 'Nómina', detalle: 'Hoy', monto: '+$3.200.000', tipo: 'entra' },
-  { nombre: 'Bolsillo Viajes', detalle: 'Rendimiento', monto: '+$1.284', tipo: 'entra' },
+  { nombre: 'Viajes', detalle: 'Rendimiento', monto: '+$1.284', tipo: 'entra' },
   { nombre: 'Arriendo', detalle: 'Ayer', monto: '-$1.150.000', tipo: 'sale' },
 ];
 

@@ -186,18 +186,17 @@ html.js .landing .reveal.is-visible { opacity: 1; transform: none; }
 .tabs .tabs-tab[aria-selected=true], .tabs .tabs-tab[aria-selected=true]:hover:not(:disabled) { color: #fff; }
 .tabs .tabs-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .tabs-panel:focus-visible { outline-offset: 8px; }
-.panel-tab { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); row-gap: var(--s-5); align-items: stretch; }
-/* El texto arranca en el borde superior del marco y el botón cierra en su borde inferior: misma altura, sin vacíos */
-.panel-texto { grid-column: 1 / span 5; display: flex; flex-direction: column; align-items: flex-start; }
-.panel-texto .btn { margin-top: auto; }
-.panel-texto h3 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.15; font-weight: 700; margin-bottom: var(--s-3); margin-top: -.2em; }
+.panel-tab { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); row-gap: var(--s-5); align-items: center; }
+/* Bloque de texto compacto (título, línea, botón) centrado contra el marco de altura fija */
+.panel-texto { grid-column: 1 / span 5; }
+.panel-texto h3 { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.15; font-weight: 700; margin-bottom: var(--s-3); }
 .panel-texto > p { color: #3A4D5A; margin-bottom: var(--s-5); max-width: 36ch; text-wrap: pretty; }
 .tabs-panel:not([hidden]) .panel-texto { animation: aparecer .45s cubic-bezier(.16, 1, .3, 1) both; }
 .tabs-panel:not([hidden]) .ui { animation: aparecer .55s .08s cubic-bezier(.16, 1, .3, 1) both; }
 
 /* Marco de ilustración: el mismo para las 4 pestañas */
 .marco-ilustracion {
-  grid-column: 7 / -1; align-self: start; height: 336px; display: grid; place-items: center; padding: var(--s-4);
+  grid-column: 7 / -1; height: 336px; display: grid; place-items: center; padding: var(--s-4);
   border-radius: var(--r-marco);
   /* el mismo papel cuadriculado, en claro: las piezas se apoyan sobre la cuadrícula */
   background:
