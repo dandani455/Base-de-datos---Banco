@@ -3,7 +3,7 @@ import { api } from '../../api/client';
 import { mensaje, useAccion, useCarga } from '../../api/useApi';
 import type { MiCredito, ProductoCredito } from '../../api/types';
 import Simulador from '../../components/Simulador';
-import { moneda } from '../../format';
+import { moneda, tasaEA } from '../../format';
 
 function MiCreditoItem({ c, onCambio }: { c: MiCredito; onCambio: () => void }) {
   const [monto, setMonto] = useState('');
@@ -42,7 +42,7 @@ export default function Creditos() {
       <ul className="lista">
         {lista.map((p) => (
           <li key={p.id} data-testid="producto-credito" className="item">
-            <strong>{p.nombre}</strong> · Tasa {p.tasa} · Monto {moneda(p.monto_min)} a {moneda(p.monto_max)} · Plazo {p.plazo_min} a {p.plazo_max} meses
+            <strong>{p.nombre}</strong> · Tasa {tasaEA(p.tasa)} · Monto {moneda(p.monto_min)} a {moneda(p.monto_max)} · Plazo {p.plazo_min} a {p.plazo_max} meses
           </li>
         ))}
       </ul>

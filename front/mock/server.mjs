@@ -46,12 +46,12 @@ const usuarios = [
     principal: 3250000,
     bolsillos: [{ id: 11, nombre: 'Viaje a San Andrés', saldo: 900000 }, { id: 12, nombre: 'Fondo de emergencia', saldo: 1500000 }],
     cdts: [
-      { id: 21, definicion_id: 1, monto: 2000000, tasa: 0.0925, plazo_dias: 90, abierto: -30, activo: true },
-      { id: 22, definicion_id: 2, monto: 1000000, tasa: 0.10, plazo_dias: 60, abierto: -90, activo: false },
+      { id: 21, definicion_id: 1, monto: 2000000, tasa: 9.25, plazo_dias: 90, abierto: -30, activo: true },
+      { id: 22, definicion_id: 2, monto: 1000000, tasa: 10, plazo_dias: 60, abierto: -90, activo: false },
     ],
     creditos: [
-      { id: 31, producto_id: 1, producto: 'Libre inversión', monto: 6000000, plazo: 24, tasa: 0.018, cuotas_pagadas: 5, saldo: 4900000 },
-      { id: 32, producto_id: 3, producto: 'Vehículo', monto: 12000000, plazo: 48, tasa: 0.0145, cuotas_pagadas: 11, saldo: 9400000 },
+      { id: 31, producto_id: 1, producto: 'Libre inversión', monto: 6000000, plazo: 24, tasa: 23.9, cuotas_pagadas: 5, saldo: 4900000 },
+      { id: 32, producto_id: 3, producto: 'Vehículo', monto: 12000000, plazo: 48, tasa: 18.9, cuotas_pagadas: 11, saldo: 9400000 },
     ],
     tx: jperezTx,
   },
@@ -80,17 +80,17 @@ const extraDestinatarios = {
 };
 
 const productosCredito = [
-  { id: 1, nombre: 'Libre inversión', descripcion: 'Dinero para lo que necesites, con cuotas fijas.', tasa: 0.018, monto_min: 1000000, monto_max: 30000000, plazo_min: 6, plazo_max: 60 },
-  { id: 2, nombre: 'Vivienda', descripcion: 'Financia tu casa o apartamento a largo plazo.', tasa: 0.011, monto_min: 20000000, monto_max: 300000000, plazo_min: 60, plazo_max: 240 },
-  { id: 3, nombre: 'Vehículo', descripcion: 'Estrena carro o moto con tasas competitivas.', tasa: 0.0145, monto_min: 5000000, monto_max: 90000000, plazo_min: 12, plazo_max: 72 },
-  { id: 4, nombre: 'Educativo', descripcion: 'Invierte en tu formación y la de tu familia.', tasa: 0.012, monto_min: 500000, monto_max: 40000000, plazo_min: 6, plazo_max: 84 },
+  { id: 1, nombre: 'Libre inversión', descripcion: 'Dinero para lo que necesites, con cuotas fijas.', tasa: 23.9, monto_min: 1000000, monto_max: 30000000, plazo_min: 6, plazo_max: 60 },
+  { id: 2, nombre: 'Vivienda', descripcion: 'Financia tu casa o apartamento a largo plazo.', tasa: 14.1, monto_min: 20000000, monto_max: 300000000, plazo_min: 60, plazo_max: 240 },
+  { id: 3, nombre: 'Vehículo', descripcion: 'Estrena carro o moto con tasas competitivas.', tasa: 18.9, monto_min: 5000000, monto_max: 90000000, plazo_min: 12, plazo_max: 72 },
+  { id: 4, nombre: 'Educativo', descripcion: 'Invierte en tu formación y la de tu familia.', tasa: 15.4, monto_min: 500000, monto_max: 40000000, plazo_min: 6, plazo_max: 84 },
 ];
 const definicionesCdt = [
-  { id: 1, nombre: 'CDT 90 días', tasa: 0.0925, plazo_dias: 90, monto_min: 500000 },
-  { id: 2, nombre: 'CDT 180 días', tasa: 0.10, plazo_dias: 180, monto_min: 1000000 },
-  { id: 3, nombre: 'CDT 360 días', tasa: 0.1075, plazo_dias: 360, monto_min: 2000000 },
+  { id: 1, nombre: 'CDT 90 días', tasa: 9.25, plazo_dias: 90, monto_min: 500000 },
+  { id: 2, nombre: 'CDT 180 días', tasa: 10, plazo_dias: 180, monto_min: 1000000 },
+  { id: 3, nombre: 'CDT 360 días', tasa: 10.75, plazo_dias: 360, monto_min: 2000000 },
 ];
-let mora = 0.025;
+let mora = 30; // % E.A.
 const reloj = { usar_fecha_real: true, fecha_sistema: hoy() };
 const fechaActual = () => (reloj.usar_fecha_real ? hoy() : reloj.fecha_sistema);
 
@@ -136,14 +136,17 @@ function filasTabla(nombre) {
 const fechaDesde = (dias) => new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
 
 // ---------- cálculos (el mock hace de backend) ----------
+// Las tasas viajan como porcentaje efectivo anual (12 = 12% E.A.); aquí se convierten para calcular.
+const mensual = (ea) => Math.pow(1 + ea / 100, 1 / 12) - 1;
 function cuotaMensual(monto, tasa, plazo) {
-  return redondea((monto * tasa) / (1 - Math.pow(1 + tasa, -plazo)));
+  const i = mensual(tasa);
+  return redondea((monto * i) / (1 - Math.pow(1 + i, -plazo)));
 }
 const totalDe = (u) => u.principal + u.bolsillos.reduce((s, b) => s + b.saldo, 0);
 const diasTrans = (c) => Math.max(0, Math.round((new Date(fechaActual()) - new Date(fechaDesde(c.abierto))) / 86400000));
-const generadoCdt = (monto, tasa, dias) => redondea(monto * tasa * (dias / 365));
+const generadoCdt = (monto, tasa, dias) => redondea(monto * (tasa / 100) * (dias / 365));
 const cdtActivos = (u) => u.cdts.filter((c) => c.activo);
-const interesMes = (c) => redondea(c.saldo * c.tasa);
+const interesMes = (c) => redondea(c.saldo * mensual(c.tasa));
 
 function registrarTx(u, tipo, monto, contraparte, nota) {
   u.tx.unshift({ id: nuevoId(), tipo, monto, fecha: new Date().toISOString(), contraparte, ...(nota ? { nota } : {}) });
@@ -381,7 +384,7 @@ async function ruta(req, res, url, metodo, p, body) {
       return { cdts: definicionesCdt.map(({ id, nombre, tasa }) => ({ id, nombre, tasa })), creditos: productosCredito.map(({ id, nombre, tasa }) => ({ id, nombre, tasa })), mora };
     }
     if (metodo === 'PUT' && p === '/admin/tasas') {
-      const t = (v) => { const n = Number(v); if (!Number.isFinite(n) || n < 0) throw neg('Tasa inválida'); return n; };
+      const t = (v) => { const n = Number(v); if (!Number.isFinite(n) || n <= 0 || n > 100) throw neg('Tasa inválida'); return n; };
       for (const [id, v] of Object.entries(body.cdts ?? {})) { const d = porId(definicionesCdt, id); if (d) d.tasa = t(v); }
       for (const [id, v] of Object.entries(body.creditos ?? {})) { const d = porId(productosCredito, id); if (d) d.tasa = t(v); }
       if (body.mora !== undefined) mora = t(body.mora);

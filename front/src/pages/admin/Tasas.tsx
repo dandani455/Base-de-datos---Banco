@@ -29,7 +29,7 @@ export default function Tasas() {
   return (
     <>
       <h1>Tasas</h1>
-      <p className="nota">Los productos ya creados no cambian; las nuevas tasas aplican a los futuros.</p>
+      <p className="nota">Los productos ya creados no cambian; las nuevas tasas aplican a los futuros. Todas las tasas van en % efectivo anual (12 = 12% E.A.).</p>
       {(error || err) && <p role="alert">{error || err}</p>}
       {ok && <p role="status">{ok}</p>}
       {data && (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useCarga } from '../../api/useApi';
 import type { DefinicionCdt, MiCdt } from '../../api/types';
 import Simulador from '../../components/Simulador';
-import { fechaHora, moneda } from '../../format';
+import { fechaHora, moneda, tasaEA } from '../../format';
 
 export default function Cdts() {
   const defs = useCarga<DefinicionCdt[]>('/cdts/definiciones');
@@ -18,7 +18,7 @@ export default function Cdts() {
       <ul className="lista">
         {lista.map((d) => (
           <li key={d.id} data-testid="definicion-cdt" className="item">
-            <strong>{d.nombre}</strong> · Tasa {d.tasa} · {d.plazo_dias} días · Mínimo {moneda(d.monto_min)}
+            <strong>{d.nombre}</strong> · Tasa {tasaEA(d.tasa)} · {d.plazo_dias} días · Mínimo {moneda(d.monto_min)}
           </li>
         ))}
       </ul>
