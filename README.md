@@ -1,2 +1,2 @@
-# Base-de-datos---Banco
+# Base-de-datos-Banco
 Banco
