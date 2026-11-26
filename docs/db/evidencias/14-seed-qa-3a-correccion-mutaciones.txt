@@ -1,0 +1,25 @@
+# Mutaciones dirigidas de la 3a revision correctiva de E14 (2026-11-26)
+# Parte 1 (M502, M514-M518) y parte 2 (M519, M520: la primera ejecucion de M519 fallo por un patron mal citado en el arnes, corregido y repetido)
+
+## Parte 1
+M502  DETECTADA  restore no se auto-recupera de un intercambio interrumpido antes de empezar
+      -> reales/58_respaldo: FAIL: G6 tras un corte duro, repetir el restore se AUTO-RECUPERA y termina bien: banco_rs = respaldo, el _previo es ahora el estado B (la BD retirada)
+M514  DETECTADA  recuperar devuelve EXITO aunque la BD principal no exista
+      -> reales/58_respaldo: FAIL: J1 'recuperar' NO devuelve exito si la BD principal no existe (no hay nada que recuperar): codigo != 0 y mensaje explicito (esperado=[t|t] actua
+M515  DETECTADA  sanear ignora los estados AMBIGUOS (actua aunque existan la retirada y el apartado a la vez)
+      -> reales/58_respaldo: FAIL: J3 AMBIGUO: sin banco, con retirada y apartado a la vez: error 'AMBIGUO' y NO se renombra ni se elimina nada (esperado=[t|t|-|-|a247d876649d7bdb
+M516  DETECTADA  los ganchos de fallo funcionan SIN el indicador RESPALDO_ENTORNO_PRUEBAS (producto real expuesto)
+      -> reales/58_respaldo: FAIL: K1 SIN el indicador, RESPALDO_FALLA=kill_entre (kill -9 entre los renombrados) se IGNORA con aviso: la restauracion termina bien (codigo 0) y ba
+M517  DETECTADA  los ganchos de fallo tambien actuan sobre la BD REAL 'banco' (sin la exclusion de la base real)
+      -> reales/58_respaldo: FAIL: K4 CON el indicador pero sobre la BD REAL 'banco', los ganchos se rechazan igualmente (el backup de banco, de solo lectura, no se pausa): codigo
+M518  DETECTADA  backup, restore, recuperar y descartar NO toman el candado (se pisan entre procesos)
+      -> reales/58_respaldo: FAIL: L1 con una restauracion A en curso (candado tomado, BD de paso ya creada), una SEGUNDA restauracion sobre la misma base se rechaza de inmediato:
+
+## Parte 2
+M519  DETECTADA  el candado es GLOBAL en vez de por base (una operacion bloquea a las de otras bases)
+      -> reales/58_respaldo: FAIL: L3 el candado es POR BASE: mientras A restaura banco_rs, un backup de OTRA base (banco_rsx) se hace sin esperar (esperado=[0] actual=[75])
+M520  DETECTADA  sin vigilante: tras un kill -9 el candado queda retenido y la segunda operacion no puede empezar
+      -> reales/58_respaldo: FAIL: B2 con --yes restaura: codigo 0, la huella vuelve a la del respaldo y no queda BD de paso (esperado=[0|f0f2d4231cbb26183a57102758281f09|0] actua
+RESUMEN: 2 de 2 mutaciones detectadas
+
+RESUMEN TOTAL: 8 de 8 mutaciones dirigidas detectadas (M502, M514, M515, M516, M517, M518, M519, M520)

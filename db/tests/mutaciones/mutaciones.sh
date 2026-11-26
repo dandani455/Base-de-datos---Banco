@@ -792,12 +792,19 @@ detectar_seed() { # detectar_seed REAL... : exige que alguna prueba real falle c
   [ "${SALTAR:-0}" = 1 ] && return 0
   QUIEN=""
   for r in "$@"; do
-    if ! SEED_DIR=/tmp/seed_mut DB=banco_mut sh -c "tr -d '\r' < /work/tests/reales/$r.sh | sh -s" >/tmp/mut_out 2>&1; then
+    if ! FAIL_RAPIDO=1 SEED_DIR=/tmp/seed_mut DB=banco_mut sh -c "tr -d '\r' < /work/tests/reales/$r.sh | sh -s" >/tmp/mut_out 2>&1; then
       QUIEN="reales/$r"; MSG=$(grep -m1 -E '^FAIL' /tmp/mut_out | cut -c1-150); break
     fi
   done
+  # un candado de respaldo que una mutacion deje retenido NO debe contaminar las siguientes: se cierran las sesiones que lo sostienen (desde el servidor, nunca con senales)
+  $PGU -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype = 'advisory' AND classid = 7314 AND pid <> pg_backend_pid()" >/dev/null 2>&1
   if [ -n "$QUIEN" ]; then echo "$ID  DETECTADA  $DESC"; echo "      -> $QUIEN: $MSG"
   else echo "$ID  *** NO DETECTADA ***  $DESC"; FALLAS=$((FALLAS+1)); fi
+}
+equivalente_seed() { # equivalente_seed RAZON REAL... : como detectar_seed, pero una mutacion que NINGUNA prueba real detecta se declara EQUIVALENTE con su razon
+  [ "${SALTAR:-0}" = 1 ] && return 0
+  _razon="$1"; shift; _f=$FALLAS; detectar_seed "$@"
+  if [ "$FALLAS" -gt "$_f" ]; then FALLAS=$_f; echo "      -> EQUIVALENTE (no observable, no es un hueco de pruebas): $_razon"; fi
 }
 # ---- catalogo ----
 nueva_seed M468 "la tasa del CDT de 90 dias cambia (9,25 -> 9,5)";                                      cambia 00_catalogo.sql "('CDT 90 días',   90, 9.25," "('CDT 90 días',   90, 9.5,";            detectar_seed 57_seed
@@ -825,26 +832,38 @@ nueva_seed M485 "el seed deja de negarse sobre un banco con datos";             
 nueva_seed M487 "restore se ejecuta sin --yes";                                                          cambia respaldo.sh '[ "$SI" = "--yes" ] || die' 'true || die'; detectar_seed 58_respaldo
 nueva_seed M488 "restore no compara la BD de paso con el manifiesto antes de intercambiar";              cambia respaldo.sh 'if ! cmp -s /tmp/respaldo_h.$$ /tmp/respaldo_m.$$; then' 'if false; then'; detectar_seed 58_respaldo
 nueva_seed M489 "restore no exige manifiesto";                                                           cambia respaldo.sh '[ -s "$F.huella" ] || die' 'true || die'; detectar_seed 58_respaldo
-nueva_seed M490 "restore no cierra las conexiones abiertas antes del intercambio";                       cambia respaldo.sh 'SELECT pg_terminate_backend(pid) FROM' 'SELECT 1 AS x FROM' 3; detectar_seed 58_respaldo
+nueva_seed M490 "los renombrados no cierran las conexiones abiertas (backend, pgAdmin) antes de renombrar";   cambia respaldo.sh 'SELECT pg_terminate_backend(pid) FROM' 'SELECT 1 AS x FROM'; detectar_seed 58_respaldo
 nueva_seed M491 "restore no comprueba que el volcado sea de este banco";                                 cambia respaldo.sh 'grep -q "TABLE $t " /tmp/respaldo_toc.$$ ||' 'true ||'; detectar_seed 58_respaldo
-nueva_seed M492 "backup guarda un manifiesto vacio (sin huella)";                                        cambia respaldo.sh 'manifiesto "$B" > "$F.huella.tmp" ||' ': > "$F.huella.tmp" ||'; detectar_seed 58_respaldo
-nueva_seed M493 "la restauracion no conserva la BD anterior como _previo (la elimina)";                   cambia respaldo.sh 'ALTER DATABASE \"$R\" RENAME TO \"$V\"" >/dev/null 2>&1 || die' 'DROP DATABASE \"$R\" WITH (FORCE)" >/dev/null 2>&1 || die'; detectar_seed 58_respaldo
+nueva_seed M492 "backup guarda un manifiesto sin la huella global";                                              cambia respaldo.sh '"$(md5sum < "$F.lineas.tmp" | cut -d'"'"' '"'"' -f1)"' '""'; detectar_seed 58_respaldo
+nueva_seed M493 "la restauracion no conserva la BD anterior como _previo (la elimina en vez de renombrarla)";    cambia respaldo.sh 'if ! renombrar cerrar "$_R" "$_V"; then' 'if ! Q postgres "DROP DATABASE \"$_R\" WITH (FORCE)" >/dev/null 2>&1; then'; detectar_seed 58_respaldo
 # ---- correccion de la auditoria de E14: integridad del respaldo, huella ampliada, intercambio seguro y limpieza ante HUP ----
-nueva_seed M494 "backup deja de rechazar una BD con v_integridad_global.ok = false";                    cambia respaldo.sh '[ "$(integridad "$B")" = "t" ] || die' 'true || die'; detectar_seed 58_respaldo
+nueva_seed M494 "backup deja de rechazar una BD con v_integridad_global.ok = false (ni en el chequeo previo ni en el snapshot)"; cambia respaldo.sh '[ "$(integridad "$B")" = "t" ] || die' 'true || die'; cambia respaldo.sh '[ "$(mval "$F.extra.tmp" integridad_ok)" = "t" ] || {' 'true || {'; detectar_seed 58_respaldo
 nueva_seed M495 "restore no exige integridad verdadera en la BD restaurada (acepta lo que diga el manifiesto)"; cambia respaldo.sh '[ "$OK" = "t" ] || die' 'true || die'; detectar_seed 58_respaldo
 nueva_seed M496 "restore acepta un manifiesto que declara integridad_ok = f";                            cambia respaldo.sh '[ "$(mval "$F.huella" integridad_ok)" = "t" ] || die' 'true || die'; detectar_seed 58_respaldo
 nueva_seed M497 "la huella solo cuenta filas (no incluye el contenido de las columnas)";               cambia respaldo.sh "string_agg(x::text, E'" "string_agg('x', E'"; detectar_seed 58_respaldo
-nueva_seed M498 "la huella no incluye el esquema (permisos de funciones y estado de triggers)";        cambia respaldo.sh "printf 'esquema=%s" ": printf 'esquema=%s"; detectar_seed 58_respaldo
+nueva_seed M498 "la huella del esquema ignora los permisos (ACL) y el dueño de las funciones";                  cambia respaldo.sh "|| ':' || coalesce(p.proacl::text, '') || ':' || pg_get_userbyid(p.proowner)" ""; detectar_seed 58_respaldo
 nueva_seed M499 "la huella no incluye audit.evento";                                                    cambia respaldo.sh 'public.parametro audit.evento"' 'public.parametro"'; detectar_seed 58_respaldo
-nueva_seed M500 "restore elimina el _previo ANTERIOR antes de completar el intercambio";               cambia respaldo.sh '  eB=$(existe "$B")' '  eB=$(existe "$B"); Q postgres "DROP DATABASE IF EXISTS \"$V\" WITH (FORCE)" >/dev/null'; detectar_seed 58_respaldo
+nueva_seed M500 "restore elimina el _previo ANTERIOR antes de completar el intercambio";               cambia respaldo.sh '  eB=$(existe "$B")' '  eB=$(existe "$B"); Q postgres "DROP DATABASE IF EXISTS \"${B}_previo\" WITH (FORCE)" >/dev/null'; detectar_seed 58_respaldo
 nueva_seed M501 "recuperar no devuelve la BD anterior cuando el corte fue entre los dos renombrados"; cambia respaldo.sh 'if [ "$_eB" = "0" ] && [ "$_eR" = "1" ]; then' 'if false; then'; detectar_seed 58_respaldo
-nueva_seed M502 "restore no se auto-recupera de un intercambio interrumpido antes de empezar";          cambia respaldo.sh '  recuperar "$B"  ' '  : "$B"  '; detectar_seed 58_respaldo
+nueva_seed M502 "restore no se auto-recupera de un intercambio interrumpido antes de empezar";                   cambia respaldo.sh 'sanear "$B" || die "hay un intercambio anterior' 'true || die "hay un intercambio anterior'; detectar_seed 58_respaldo
 nueva_seed M503 "restore no atiende la senal TERM (sin trap: queda entre los dos renombrados)";         cambia respaldo.sh "exit 143' TERM" "exit 143' TERM; trap - TERM"; detectar_seed 58_respaldo
 nueva_seed M504 "recuperar no cierra un intercambio ya hecho pero sin terminar";                        cambia respaldo.sh 'elif [ "$_eB" = "1" ] && [ "$_eR" = "1" ]; then' 'elif false; then'; detectar_seed 58_respaldo
-nueva_seed M505 "backup no detecta una BD que cambia mientras se respalda";                             cambia respaldo.sh 'if [ "$(grep ' 'if false && [ "$(grep '; detectar_seed 58_respaldo
+nueva_seed M505 "backup NO comparte el snapshot con pg_dump (el volcado ve los cambios posteriores al manifiesto)"; cambia respaldo.sh ' --snapshot="\$SNAP"' ''; detectar_seed 58_respaldo
 nueva_seed M506 "sembrar.sh no atiende HUP (el esquema seed queda tras la interrupcion)";               cambia sembrar.sh "trap 'salir 129' HUP" "trap - HUP"; detectar_seed 57_seed
 nueva_seed M507 "la limpieza de sembrar.sh no cierra la sesion del seed";                               cambia sembrar.sh "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name" "SELECT 1 FROM pg_stat_activity WHERE application_name"; detectar_seed 57_seed
 nueva_seed M508 "sembrar.sh ejecuta psql en primer plano (la senal espera a que termine la historia)";  cambia sembrar.sh 'EJEC() { P "$@" & CH=$!; wait "$CH"; _rc=$?; CH=""; return $_rc; }' 'EJEC() { P "$@"; return $?; }'; detectar_seed 57_seed
+nueva_seed M509 "recuperar devuelve EXITO aunque no pudo devolver la retirada a su nombre";                      cambia respaldo.sh 'Repite: respaldo.sh recuperar" >&2; return 1; fi' 'Repite: respaldo.sh recuperar" >&2; return 0; fi'; detectar_seed 58_respaldo
+nueva_seed M510 "cerrar ELIMINA el previo anterior antes de apartarlo (el defecto de la auditoria)";               cambia respaldo.sh 'renombrar apartar "$_V" "$_O" ||' 'Q postgres "DROP DATABASE IF EXISTS \"$_V\" WITH (FORCE)" >/dev/null 2>&1; renombrar apartar "$_V" "$_O" ||'; detectar_seed 58_respaldo
+nueva_seed M511 "si falla el renombrado de la retirada, el previo apartado NO vuelve a su nombre";                  cambia respaldo.sh 'renombrar deshacer_apartar "$_O" "$_V" || {' 'true || {'; detectar_seed 58_respaldo
+nueva_seed M512 "cerrar no elimina el previo apartado una vez terminado el renombrado";                           cambia respaldo.sh 'Q postgres "DROP DATABASE IF EXISTS \"$_O\" WITH (FORCE)" >/dev/null 2>&1' ':'; detectar_seed 58_respaldo
+nueva_seed M513 "el chequeo previo de integridad del backup sobra: el del snapshot tambien rechaza (defensa redundante)"; cambia respaldo.sh '[ "$(integridad "$B")" = "t" ] || die' 'true || die'; equivalente_seed "defensa redundante: el chequeo DENTRO del snapshot (integridad_ok del manifiesto) rechaza igual una BD danada con el mismo mensaje; el previo solo evita armar el volcado" 58_respaldo
+nueva_seed M514 "recuperar devuelve EXITO aunque la BD principal no exista";                                      cambia respaldo.sh 'if [ "${2:-1}" = "1" ] && [ "$(existe "$1")" != "1" ]; then' 'if false; then'; detectar_seed 58_respaldo
+nueva_seed M515 "sanear ignora los estados AMBIGUOS (actua aunque existan la retirada y el apartado a la vez)";      cambia respaldo.sh 'if [ "$_eB" = "0" ] && [ "$_eR" = "1" ] && [ "$_eO" = "1" ]; then' 'if false; then'; detectar_seed 58_respaldo
+nueva_seed M516 "los ganchos de fallo funcionan SIN el indicador RESPALDO_ENTORNO_PRUEBAS (producto real expuesto)"; cambia respaldo.sh 'if [ "${RESPALDO_ENTORNO_PRUEBAS:-}" != "1" ]; then' 'if false; then'; cambia respaldo.sh 'hook() { [ "${RESPALDO_ENTORNO_PRUEBAS:-}" = "1" ] && [ "${B:-banco}" != "banco" ] && [' 'hook() { [ "${B:-banco}" != "banco" ] && ['; detectar_seed 58_respaldo
+nueva_seed M517 "los ganchos de fallo tambien actuan sobre la BD REAL 'banco' (sin la exclusion de la base real)";   cambia respaldo.sh '[ "${B:-banco}" != "banco" ] && [ "${RESPALDO_FALLA:-}" = "$1" ]; }' '[ "${RESPALDO_FALLA:-}" = "$1" ]; }'; detectar_seed 58_respaldo
+nueva_seed M518 "backup, restore, recuperar y descartar NO toman el candado (se pisan entre procesos)";                cambia respaldo.sh '  adquirir "$B"' '  :'; detectar_seed 58_respaldo
+nueva_seed M519 "el candado es GLOBAL en vez de por base (una operacion bloquea a las de otras bases)";               cambia respaldo.sh 'hashtext('"'"'respaldo:$_base'"'"')' 'hashtext('"'"'respaldo'"'"')'; detectar_seed 58_respaldo
+nueva_seed M520 "sin vigilante: tras un kill -9 el candado queda retenido y la segunda operacion no puede empezar";   cambia respaldo.sh 'while kill -0 $$ 2>/dev/null && kill -0 $HOLDER 2>/dev/null; do sleep 0.2; done' 'while false; do sleep 0.2; done'; detectar_seed 58_respaldo
 
 
 

@@ -1,0 +1,110 @@
+﻿# Verificacion de ctl.ps1 (regresion de E14, 3a revision) - 2026-11-26 03:32
+
+### 0. bases antes
+banco banco_test
+[codigo=0]
+
+### 1. backup regresion
+Respaldo de 'banco' guardado en /tmp/banco_regresion.dump (501644 bytes). Huella: cea604ad4f6e46b1c458a354b131cf26
+Respaldo copiado a db\backups\banco_regresion.dump (+ .huella). Restaurar: db\ctl.cmd restore regresion -Yes
+[codigo=0]
+
+### 1b. archivos en db\backups
+
+.gitignore                        76
+banco_consistente.dump        502088
+banco_consistente.dump.huella    827
+banco_inicial.dump            531744
+banco_inicial.dump.huella        107
+banco_regresion.dump          501644
+banco_regresion.dump.huella      827
+
+
+
+[codigo=0]
+
+### 1c. manifiesto
+tabla.public.usuario=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cuenta=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.bolsillo=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cdt_definicion=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cdt=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.credito_producto=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.credito=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cuota=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.transaccion=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.reloj=6571e17dc3d3f81a983c6fbacb6ffc3e
+tabla.public.parametro=3f463427f0c8ba8cd7e2ed1ca7535b45
+tabla.audit.evento=7206702522ba6fb4055e0f0d772816d6
+esquema=bf6b3653c308b9f7be9b838d1378eb6a
+huella=cea604ad4f6e46b1c458a354b131cf26
+usuarios=0
+patas=0
+eventos=16
+integridad_ok=t
+base_origen=banco
+consistencia=snapshot
+[codigo=0]
+
+### 1d. backup con nombre invalido (../x) debe rechazarse
+ERROR: Nombre de respaldo invalido (solo letras, digitos, punto, guion y guion bajo): ../x
+[codigo=1]
+
+### 2. restore SIN -Yes debe negarse y no tocar nada
+ERROR: La restauracion REEMPLAZA la BD 'banco' (la actual queda como banco_previo). Repite con -Yes.
+[codigo=1]
+
+### 2b. bases tras restore sin -Yes
+banco banco_test
+[codigo=0]
+
+### 2c. restore de un respaldo inexistente
+ERROR: No existe C:\Users\user\Desktop\Banco bases de datos\db\backups\banco_noexiste.dump
+[codigo=1]
+
+### 3. restore CON -Yes
+NOTICE:  database "banco_restaurando" does not exist, skipping
+Restaurado: 'banco' = respaldo /tmp/banco_regresion.dump (huella cea604ad4f6e46b1c458a354b131cf26). La BD anterior 
+quedo como 'banco_previo' (respaldo.sh descartar banco la elimina).
+[codigo=0]
+
+### 3b. bases tras restore (banco + banco_previo)
+banco banco_previo banco_test
+[codigo=0]
+
+### 3c. integridad de banco
+ERROR:  missing FROM-clause entry for table "public"
+LINE 1: SELECT (public.v_integridad_global).ok
+                ^
+[codigo=1]
+
+### 4. recuperar sobre estado sano (idempotente, exito)
+Recuperacion terminada para 'banco'.
+[codigo=0]
+
+### 5. descartar-previo
+Eliminada 'banco_previo' (si existia).
+[codigo=0]
+
+### 5b. bases tras descartar-previo
+banco banco_test
+[codigo=0]
+
+### 6. recuperar tras descartar (sigue sano)
+Recuperacion terminada para 'banco'.
+[codigo=0]
+
+### 7. descartar-previo sin previo (idempotente)
+NOTICE:  database "banco_previo" does not exist, skipping
+Eliminada 'banco_previo' (si existia).
+[codigo=0]
+
+### 8. (correccion de la consulta 3c) integridad y huella de 'banco' tras la restauracion
+integridad global ok = t
+huella actual de banco (respaldo.sh huella) = cea604ad4f6e46b1c458a354b131cf26
+huella del manifiesto regresion       = cea604ad4f6e46b1c458a354b131cf26
+
+### 9. estado final de las bases (banco, temporales) y candados
+banco
+banco_test
+candados de respaldo retenidos = 0

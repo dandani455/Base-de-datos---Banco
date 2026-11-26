@@ -31,10 +31,11 @@ Cubre solo la **BD** (Docker `db` + pgAdmin). El backend, el front y el banner �
 3. Verificar de nuevo el punto 5 del apartado 1 y reconectar pgAdmin (clic derecho → *Refresh*).
 
 **Protecciones del respaldo/restauración:**
-* `backup` **rechaza** una BD con `v_integridad_global.ok = false` (no se respalda un estado dañado) y una BD que cambie mientras se respalda; el manifiesto trae una **huella por tabla** (todas las columnas de las 11 tablas y de `audit.evento`) y la del esquema (permisos de funciones y triggers).
+* `backup` **rechaza** una BD con `v_integridad_global.ok = false` (no se respalda un estado dañado). El manifiesto y el volcado salen de **un mismo snapshot** (una transacción `REPEATABLE READ` exporta su snapshot, calcula la huella y lanza `pg_dump --snapshot` sin cerrarse): el manifiesto describe **exactamente** lo respaldado aunque la BD cambie, o cambie y se revierta, mientras tanto (se puede respaldar con el backend en marcha). El manifiesto trae una **huella por tabla** (todas las columnas de las 11 tablas y de `audit.evento`) y la del esquema (permisos de funciones y triggers).
 * `restore` exige `-Yes`; valida el archivo, que sea de este banco y que el manifiesto declare integridad ok; restaura en una BD de paso y **exige integridad verdadera** en ella y que **cada tabla coincida** con el manifiesto (si no, nombra la tabla y no toca `banco`); nunca actúa sobre `banco_test`; restaura solo en el **mismo clúster** (los roles `banco_*` son globales y no viajan en el volcado).
-* **Intercambio seguro:** `banco` → `banco_retirada`, paso → `banco`, y solo al final la retirada pasa a `banco_previo` (el `_previo` anterior se conserva hasta ese último paso). Ante un error o una señal (HUP, INT, TERM) se recupera sola.
-* **Si el proceso se corta de golpe** (cierre de la ventana, `kill -9`) y `banco` no existe o queda `banco_retirada`: `dbctl.cmd recuperar` (idempotente) devuelve la BD anterior o termina el intercambio; repetir el `restore` también lo hace al empezar.
+* **Intercambio seguro:** `banco` → `banco_retirada`, paso → `banco` y, al final, la retirada pasa a `banco_previo` **sin eliminar el `_previo` anterior antes de que ese renombrado termine** (se aparta como `banco_previo_antiguo` y solo se elimina cuando el nuevo `_previo` ya existe; si falla, vuelve a su nombre). Ante un error o una señal (HUP, INT, TERM) intenta recuperarse sola; **si no lo consigue lo dice con `ERROR: RECUPERACION INCOMPLETA`**, termina con código distinto de 0 y deja las bases intactas y recuperables.
+* **Si el proceso se corta de golpe** (cierre de la ventana, `kill -9`) y `banco` no existe, o quedan `banco_retirada` o `banco_previo_antiguo`: `db\ctl.cmd recuperar` (idempotente) devuelve la BD anterior o termina el intercambio. **Solo devuelve éxito si la BD principal existe y no queda ningún estado intermedio**; si no (o si el estado es ambiguo, p. ej. retirada y apartado sin `banco`) responde `ERROR: RECUPERACION INCOMPLETA`/`AMBIGUO`, **no toca nada** y hay que revisar a mano. Repetir el `restore` también sanea al empezar y se niega a continuar si no puede.
+* **Una sola operación a la vez por base:** `backup`, `restore`, `recuperar` y `descartar` sobre la misma base se **serializan** con un candado de PostgreSQL (entre procesos y conexiones distintas). Si hay otra en curso, esperan hasta 60 s y terminan con `ERROR: ocupado` (código 75); `RESPALDO_ESPERA=0` rechaza de inmediato. El candado se libera solo al terminar, ante una señal o tras un `kill -9`. Operaciones sobre **otras bases** no esperan. Las operaciones manuales fuera de `ctl` (`pg_dump`, `ALTER DATABASE`) **no** toman el candado.
 
 ## 4. Apagón de la BD (lo que la BD debe cumplir)
 
@@ -48,6 +49,6 @@ Cubre solo la **BD** (Docker `db` + pgAdmin). El backend, el front y el banner �
 
 * **El seed falló a mitad:** la historia es **una sola transacción** (no queda nada) y el esquema temporal `seed` se elimina siempre; basta reintentar (`ctl seed`). Si el banco ya tenía datos: `ctl reset -Yes`, `ctl apply`, `ctl seed`.
 * **La restauración dice que hay conexiones:** detener el backend/pgAdmin y repetir.
-* * **`restore` se interrumpió y `banco` no aparece:** `dbctl.cmd recuperar`.
+* * **`restore` se interrumpió y `banco` no aparece:** `db\ctl.cmd recuperar`.
 * **Una prueba de tiempo falla cerca de medianoche (hora de Bogotá):** repetirla.
 * **Contraseñas del sistema:** `db\.env` (no versionado); los roles de aplicación de desarrollo están en `docs\db\00-entorno.md`.

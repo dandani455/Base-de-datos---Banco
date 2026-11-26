@@ -1,0 +1,55 @@
+# Mutaciones de respaldo.sh reejecutadas sobre la version actual (regresion de E14, 2026-11-26)
+
+## Tanda 1: M487-M501, M503-M505, M509-M513 (23)
+M487  DETECTADA  restore se ejecuta sin --yes
+      -> reales/58_respaldo: FAIL: B1 SIN --yes no hace nada: error, la BD queda como estaba y no existe BD de paso (esperado=[t|0f6635c8ba75b7df2d256510746eca88|0] actual=[f|e0da
+M488  DETECTADA  restore no compara la BD de paso con el manifiesto antes de intercambiar
+      -> reales/58_respaldo: FAIL: C3 un manifiesto que NO coincide con el contenido (una tabla distinta) se rechaza DESPUES de restaurar en la BD de paso, NOMBRANDO la tabla: la 
+M489  DETECTADA  restore no exige manifiesto
+      -> reales/58_respaldo: FAIL: C2 un respaldo SIN manifiesto se rechaza (no se puede verificar) y la BD no cambia (esperado=[t|t|2f3df42a40b87eb875da0c4cd5d44866] actual=[t|f|
+M490  DETECTADA  los renombrados no cierran las conexiones abiertas (backend, pgAdmin) antes de renombrar
+      -> reales/58_respaldo: FAIL: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo (esperado=[0|4ad4431cb49a85
+M491  DETECTADA  restore no comprueba que el volcado sea de este banco
+      -> reales/58_respaldo: FAIL: C4 el volcado de OTRA base (sin las tablas del banco) se rechaza y la BD no cambia (esperado=[t|t|97e4be9bbdf44fdbf757d1d98a3ead18] actual=[t|f|
+M492  DETECTADA  backup guarda un manifiesto sin la huella global
+      -> reales/58_respaldo: FAIL: A2 el manifiesto trae la huella actual, 12 usuarios, integridad ok y la base de origen (esperado=[bfef46f235196b35d4dc045ffe999c01|12|t|banco_rs
+M493  DETECTADA  la restauracion no conserva la BD anterior como _previo (la elimina en vez de renombrarla)
+      -> reales/58_respaldo: FAIL: B4 la BD anterior (con el adelanto) quedo como banco_rs_previo: es la vuelta atras (esperado=[1|9bad85a4fdeb701aafdd97f04098c283] actual=[0|])
+M494  DETECTADA  backup deja de rechazar una BD con v_integridad_global.ok = false (ni en el chequeo previo ni en el snapshot)
+      -> reales/58_respaldo: FAIL: E1 backup RECHAZA una BD con integridad en false, con un mensaje que lo dice, y no deja archivos ni temporales (esperado=[t|t|f|f|f] actual=[t|f
+M495  DETECTADA  restore no exige integridad verdadera en la BD restaurada (acepta lo que diga el manifiesto)
+      -> reales/58_respaldo: FAIL: E3 restore EXIGE integridad verdadera en la BD restaurada aunque el manifiesto (falsificado con integridad_ok = t y las huellas correctas) coinc
+M496  DETECTADA  restore acepta un manifiesto que declara integridad_ok = f
+      -> reales/58_respaldo: FAIL: E2 restore RECHAZA un manifiesto que declara integridad_ok = f (antes de restaurar nada) y la BD no cambia (esperado=[t|t|861a2ad432a32ddded44b7
+M497  DETECTADA  la huella solo cuenta filas (no incluye el contenido de las columnas)
+      -> reales/58_respaldo: FAIL: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas,
+M498  DETECTADA  la huella del esquema ignora los permisos (ACL) y el dueño de las funciones
+      -> reales/58_respaldo: FAIL: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas,
+M499  DETECTADA  la huella no incluye audit.evento
+      -> reales/58_respaldo: FAIL: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas,
+M500  *** NO DETECTADA ***  restore elimina el _previo ANTERIOR antes de completar el intercambio
+M501  DETECTADA  recuperar no devuelve la BD anterior cuando el corte fue entre los dos renombrados
+      -> reales/58_respaldo: FAIL: G1 un FALLO entre los dos renombrados: el restore termina con error, banco_rs VUELVE a existir con su estado B, el _previo ANTERIOR sigue intact
+M503  DETECTADA  restore no atiende la senal TERM (sin trap: queda entre los dos renombrados)
+      -> reales/58_respaldo: FAIL: G2 una senal TERM entre los dos renombrados (interrupcion controlable): codigo 143, banco_rs recuperada con su estado B, _previo intacto y sin r
+M504  DETECTADA  recuperar no cierra un intercambio ya hecho pero sin terminar
+      -> reales/58_respaldo: FAIL: G8 'recuperar' CIERRA el intercambio: banco_rs sigue siendo el respaldo, el _previo es la BD anterior (estado C) y no sobra la retirada (esperad
+M505  DETECTADA  backup NO comparte el snapshot con pg_dump (el volcado ve los cambios posteriores al manifiesto)
+      -> reales/58_respaldo: FAIL: I1 backup con la BD CAMBIANDO entre el snapshot y pg_dump: termina bien (codigo 0) y el volcado contiene EXACTAMENTE lo que describe el manifies
+M509  *** NO DETECTADA ***  recuperar devuelve EXITO aunque no pudo devolver la retirada a su nombre
+M510  DETECTADA  cerrar ELIMINA el previo anterior antes de apartarlo (el defecto de la auditoria)
+      -> reales/58_respaldo: FAIL: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo (esperado=[0|0e2c5b2873a55e
+M511  DETECTADA  si falla el renombrado de la retirada, el previo apartado NO vuelve a su nombre
+      -> reales/58_respaldo: FAIL: H8 FALLA 'cerrar' (retirada -> previo) tras apartar: el previo anterior VUELVE a su nombre (Y), la retirada sigue (X) y ningun dato se pierde; E
+M512  DETECTADA  cerrar no elimina el previo apartado una vez terminado el renombrado
+      -> reales/58_respaldo: FAIL: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo (esperado=[0|d8ad0e030e4573
+M513  *** NO DETECTADA ***  el chequeo previo de integridad del backup sobra: el del snapshot tambien rechaza (defensa redundante)
+      -> EQUIVALENTE (no observable, no es un hueco de pruebas): defensa redundante: el chequeo DENTRO del snapshot (integridad_ok del manifiesto) rechaza igual una BD danada con el mismo mensaje; el previo solo evita armar el volcado
+RESUMEN: 21 de 23 mutaciones detectadas
+
+## Tanda 2 (tras corregir M500, que era un no-op, y anadir la prueba J11 para M509)
+M500  DETECTADA  restore elimina el _previo ANTERIOR antes de completar el intercambio
+      -> reales/58_respaldo: FAIL: G1 un FALLO entre los dos renombrados: el restore termina con error, banco_rs VUELVE a existir con su estado B, el _previo ANTERIOR sigue intact
+M509  DETECTADA  recuperar devuelve EXITO aunque no pudo devolver la retirada a su nombre
+      -> reales/58_respaldo: FAIL: J11 un restore que NO puede sanear un intercambio previo (falla el renombrado de la retirada a banco) se NIEGA a continuar: codigo != 0, no crea
+RESUMEN: 2 de 2 mutaciones detectadas

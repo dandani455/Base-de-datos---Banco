@@ -1,0 +1,182 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-26 00:20:21 -0500
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+Filtro    : pruebas que empiezan por '58'
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   aplicado 13_auth_utilidades.sql
+   aplicado 14_auth_funciones.sql
+   aplicado 15_transferencias.sql
+   aplicado 16_bolsillos.sql
+   aplicado 17_motor_devengo.sql
+   aplicado 18_cdt.sql
+   aplicado 19_creditos_calculo.sql
+   aplicado 20_creditos.sql
+   aplicado 21_pagos_calculo.sql
+   aplicado 22_pagos.sql
+   aplicado 23_vistas.sql
+   aplicado 24_admin.sql
+   aplicado 25_control.sql
+   aplicado 26_mantenimiento.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 58_creditos.test.sql
+   ok    sin catalogo: productos_disponibles y productos_publicos devuelven []
+   ok    sin creditos: vista_creditos devuelve []
+   ok    productos_disponibles: 4 productos ordenados por nombre; id string; tasa, monto_min, monto_max, plazo_min y plazo_max numericos
+   ok    productos_publicos: {id, nombre, descripcion, tasa, monto_min, monto_max, plazo_min, plazo_max}
+   ok    productos_publicos: topes BASE (sin multiplicador ni edad): Inmuebles 1 a 2.000M y 12 a 360 meses; Libre inversion 1M a 30M
+   ok    cuenta en 0: Inmuebles monto_max = 0 (100 x 0), el producto SE LISTA igual; los demas con sus topes; plazo_max de Inmuebles 360 (edad 36: (70-36)*12 = 408 > 360)
+   ok    con $5.000.000 en la cuenta: Inmuebles monto_max = 500.000.000 (100 x patrimonio)
+   ok    mover a un bolsillo o invertir en un CDT NO cambia el patrimonio (balance_total = 5.000.000): el tope de Inmuebles sigue en 500.000.000
+   ok    Libre inversion $10.000.000 a 12 meses: se acepta
+   ok    tras el credito: cuenta +10M, deuda 10M, patrimonio neto = 5.000.000 y el tope de Inmuebles NO se infla (500.000.000)
+   ok    D-E8-5 PROVISIONAL (D6): balance_total NO resta la deuda (15.000.000 = 5M + 10M del credito); solo el TOPE usa el patrimonio neto
+   ok    gastada la cuenta (13.500.000 enviados): activos 1.500.000 (bolsillo + CDT) - deuda 10.000.000 = patrimonio -8.500.000; el tope de Inmuebles queda en 0 (piso) y el producto se lista
+   ok    edad 43: plazo_max de Inmuebles = (70-43)*12 = 324 meses (el ejemplo del spec); edad 69: 12; edad 70 y 80: 0 (el producto se lista)
+   ok    cumpleaños: quien cumple 43 HOY ya tiene 43 (324 meses); quien los cumple MAÑANA aun tiene 42 (336 meses)
+   ok    la regla de edad solo aplica a Inmuebles: los otros productos de una persona de 80 años mantienen su plazo maximo
+   ok    Libre inversion 30.000.001 -> Monto fuera de rango; 999.999 (bajo el minimo) tambien; los limites exactos (1.000.000 y 30.000.000) se aceptan en simulacion
+   ok    plazo fuera de rango: 5 (< minimo 6), 25 (> 24), 0, 12.5 y NULL-> todos "Plazo fuera de rango"
+   ok    Inmuebles (edad 43): plazo 325 -> "Plazo excede el límite de edad"; plazo 361 (> maximo del producto) -> "Plazo fuera de rango" (NO el de edad); 11 (< minimo) -> "Plazo fuera de rango"
+   ok    orden: monto invalido ANTES que plazo invalido ANTES que producto; producto mal formado / inexistente / NULL = Recurso no encontrado
+   ok    monto con mas de 2 decimales, negativo y NaN -> Monto inválido (el mismo validador de E5)
+   ok    las 4 funciones de cliente exigen sesion viva ANTES de todo (inexistente = Sesión inválida, ADMIN = Acceso denegado, BLOQUEADO = mensaje de bloqueo)
+   ok    segundo Vehiculo vivo: "Ya tienes un crédito vigente de este producto" (aun con un monto fuera de rango: la validacion del vigente va ANTES); Educacion SI se permite
+   ok    SIMULAR no valida el vigente (se puede simular un producto que ya tienes)
+   ok    solicitar_credito devuelve {id, fecha}
+   ok    el credito COPIA tasa y plazo del producto; monto; fecha_desembolso = hoy; fecha_interes = hoy (inicio del periodo); capital_pendiente = monto; ACTIVO; sin mora ni descuento automatico
+   ok    el plan: 12 cuotas numeradas 1..12, vencimientos = desembolso + k meses, valor_cuota = valor_cuota_original = capital + interes, nada pagado
+   ok    Σ capital_programado = monto = capital_pendiente (la regla de ct_credito_plan, comprobada a mano)
+   ok    el asiento CREDITO_DESEMBOLSO: 2 patas (CUENTA E + CREDITO E) por el monto, UNA fecha = la devuelta, contraparte = producto, CREDITO 0 -> 10M, CUENTA saldo +10M
+   ok    la cuenta recibe el monto exacto: saldo0 + 10.000.000
+   ok    el desembolso aparece en el historial como recibo (la pata visible es la de la CUENTA)
+   ok    LA SIMULACION ES LO QUE SE COBRA: cuota_mensual, total_a_pagar e intereses_totales de simular_credito = cuota 1, Σ cuotas y Σ intereses del plan persistido
+   ok    simular_credito devuelve {cuota_mensual, total_a_pagar, intereses_totales} numericos
+   ok    la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente)
+   ok    Inmuebles $100.000.000 a 360 meses: 360 cuotas, Σ capital = monto, en menos de 5 s (contrato §8)
+   ok    producto mal cargado con plazo_max_meses = 480: el plazo efectivo se topa en el tecnico 360 (en la lista y al solicitar 361)
+   ok    un 361 de plazo en Inmuebles se rechaza con Plazo fuera de rango (tecnico 360 = maximo del producto)
+   ok    falla inyectada en la pata 1, la pata 2, el INSERT del credito y la ultima cuota: ni credito, ni cuotas, ni asiento, ni saldos (huella intacta)
+   ok    plan con 11 de 12 cuotas: solicitar_credito lo rechaza ANTES de asentar y no queda nada
+   ok    plan que no cuadra con el capital pendiente: ct_credito_plan falla DENTRO de solicitar_credito y se revierte todo
+   ok    sin fallas: el mismo pedido se aprueba y queda UN credito con 12 cuotas y el diferido en orden
+   ok    un rechazo de negocio (Monto fuera de rango) tampoco deja rastro: huella de saldos y patas intactas
+   ok    vista_creditos: {id, producto, cuotas_pagadas, cuotas_faltantes, interes_mes, saldo}
+   ok    credito recien desembolsado (dia 0): 0 pagadas, 12 faltantes, interes_mes 0 y saldo = 10.000.000
+   ok    a los 15 dias: interes corriendo = round(interes de la cuota 1 * 15 / dias del periodo, 2) (prorrata lineal), calculado de forma independiente
+   ok    el dia del vencimiento: el interes completo de la cuota 1
+   ok    20 dias DESPUES del vencimiento sin pagar: sigue el interes completo de la cuota 1 (no crece, no hay mora en E8) y no se escribe nada
+   ok    la lectura no escribe asientos de credito: sigue habiendo solo 2 patas de credito en toda la cuenta 3
+   ok    con la cuota 1 pagada (fixture): 1 pagada, 11 faltantes, saldo = 10M - capital de la cuota 1, y el plan sigue cuadrando con el libro
+   ok    v_integridad_creditos / global en orden tras el pago de la fixture (capital_pendiente = Σ capital de las impagas)
+   ok    el interes corriendo pasa a la cuota 2: hoy = vencimiento 1 + 20 dias dentro de un periodo de ~30 -> mayor que 0 y menor que el interes de la cuota 2
+   ok    de vuelta al reloj real (hoy < fecha_interes de la cuota 2): el interes corriendo se queda en 0.00 (nunca negativo)
+   ok    un credito PAGADO no aparece en vista_creditos y deja de bloquear el producto (se puede pedir otro Libre inversion)
+   ok    solicitar con el reloj +30 dias: el motor devengo ANTES (1 grupo INTERES_BOLSO del bolsillo de 3.000.000) y el credito se acepto
+   ok    el patrimonio neto = patrimonio antes + interes devengado (el credito suma y resta lo mismo); el tope de Inmuebles = 100 x ese valor, calculado de forma independiente
+   ok    un segundo Inmuebles queda rechazado por el vigente (u9 y u2)
+   ok    tope exacto: cuenta con patrimonio 1.000.000 -> pedir 100.000.000,01 = Monto fuera de rango; 100.000.000,00 = se acepta
+   ok    el primer productos_disponibles tras el salto escribe 1 grupo de interes; las 3 lecturas siguientes (disponibles, vista, simular) NO escriben mas
+   ok    banco_app ejecuta las 5 publicas de E8 y NINGUNA interna; banco_lector no ejecuta ninguna; PUBLIC tampoco
+   ok    las 5 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner; ct_credito_plan tambien (el diferido corre con el usuario de la sesion)
+   ok    los 2 triggers ct_credito_plan existen, estan habilitados y son DIFERIDOS
+   ok    las 4 que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez y _reloj_instantanea EXACTAMENTE 1 vez, con la instantanea ANTES del devengo; productos_publicos ninguna
+   ok    solicitar_credito bloquea la cuenta (_bloquear_cuentas) EXACTAMENTE 1 vez y DESPUES del devengo; ninguna otra funcion de E8 la bloquea por su cuenta
+   ok    ninguna funcion de E8 lee el reloj ni el tiempo por su cuenta (now, current_date, current_timestamp, clock_timestamp, hoy_banco, ahora_banco, _ahora_real): solo la instantanea
+   ok    solicitar_credito escribe el libro SOLO por _asentar_grupo (ningun INSERT INTO transaccion) y los creditos/cuotas SOLO ahi
+   ok    estado final: libro y planes de TODA la prueba en orden (partida doble, I5u por cuenta, plan = capital pendiente en cada credito)
+   ok    solicitar_credito con interes pendiente: 1 lectura (instantanea) + 4 patas (2 del devengo + 2 del desembolso) = 5, y las 4 patas con UN solo ahora
+   ok    simular_credito sin nada pendiente: 1 lectura (solo la instantanea)
+   ok    vista_creditos sin nada pendiente: 1 lectura
+   ok    productos_disponibles con interes pendiente: 1 + 2 patas = 3 lecturas y UN solo ahora
+   ok    productos_publicos NO lee el reloj (0 lecturas)
+   ok    un rechazo de validacion (monto) no lee el reloj ni devenga
+   ok    tras el ROLLBACK _ahora_real() es otra vez el reloj de pared (la sustitucion no sobrevive)
+== reales/58_respaldo.sh
+   ok    0 base de pruebas sembrada: 12 usuarios, integridad en orden
+   ok    A1 backup termina bien y deja el archivo y su manifiesto (.huella)
+   ok    A2 el manifiesto trae la huella actual, 12 usuarios, integridad ok y la base de origen
+   ok    A3 el archivo es un volcado valido (pg_restore -l lo lee) y trae las tablas del banco
+   ok    A4 la huella es REPRODUCIBLE (dos lecturas seguidas iguales) y cambia cuando cambia el estado
+   ok    A5 no se respalda una base no permitida (banco_test) ni se crea archivo
+   ok    A6 una base inexistente o con nombre ajeno al banco se rechaza sin dejar archivos temporales
+   ok    B0 el estado se alejo del respaldo (otra huella, reloj en manual +10)
+   ok    B1 SIN --yes no hace nada: error, la BD queda como estaba y no existe BD de paso
+   ok    B2 con --yes restaura: codigo 0, la huella vuelve a la del respaldo y no queda BD de paso
+   ok    B3 la BD restaurada esta en orden: integridad ok, 0 defensas caidas, reloj en modo REAL, 12 usuarios, jperez483 con su cuenta fija
+   ok    B4 la BD anterior (con el adelanto) quedo como banco_rs_previo: es la vuelta atras
+   ok    B5 el rol de acceso sigue funcionando sobre la BD restaurada (banco_app por TCP: validar_sesion de jperez483)
+   ok    B6 la zona horaria de la BD restaurada es America/Bogota y los permisos de las funciones siguen (banco_app ejecuta 40)
+   ok    B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo
+   ok    B8 descartar elimina la BD _previo y no toca la actual
+   ok    C1 un archivo CORRUPTO (truncado) se rechaza antes de tocar la BD; no queda BD de paso ni _previo
+   ok    C2 un respaldo SIN manifiesto se rechaza (no se puede verificar) y la BD no cambia
+   ok    C3 un manifiesto que NO coincide con el contenido (una tabla distinta) se rechaza DESPUES de restaurar en la BD de paso, NOMBRANDO la tabla: la BD no cambia, la de paso se elimina y no se crea _previo
+   ok    C4 el volcado de OTRA base (sin las tablas del banco) se rechaza y la BD no cambia
+   ok    C5 las bases NO permitidas (banco_test, *_previo, *_restaurando, ajenas, con caracteres raros) se rechazan en restore
+   ok    C6 un archivo que no existe se rechaza con mensaje claro
+   ok    C7 tras todas las pruebas de proteccion la BD sigue intacta (huella e integridad) y no sobran bases de paso ni _previo
+   ok    E0 el sabotaje (saldo alterado a mano con el guardia apagado) deja v_integridad_global.ok = false en la BD de prueba
+   ok    E1 backup RECHAZA una BD con integridad en false, con un mensaje que lo dice, y no deja archivos ni temporales
+   ok    E2 restore RECHAZA un manifiesto que declara integridad_ok = f (antes de restaurar nada) y la BD no cambia
+   ok    E3 restore EXIGE integridad verdadera en la BD restaurada aunque el manifiesto (falsificado con integridad_ok = t y las huellas correctas) coincida: se rechaza, la BD no cambia y no sobra la BD de paso
+   ok    F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas, productos, parametros, auditoria, permisos y triggers): ninguna queda sin detectar
+   ok    F2 control: una copia SIN alteraciones tiene exactamente la misma huella (la huella es estable)
+   ok    F3 el manifiesto trae una huella por tabla (12) y la del esquema
+   ok    G0 preparacion: banco_rs en el estado B, banco_rs_previo en el estado A (distintos entre si y del respaldo)
+   ok    G1 un FALLO entre los dos renombrados: el restore termina con error, banco_rs VUELVE a existir con su estado B, el _previo ANTERIOR sigue intacto y no sobran _retirada ni _restaurando
+   ok    G2 una senal TERM entre los dos renombrados (interrupcion controlable): codigo 143, banco_rs recuperada con su estado B, _previo intacto y sin restos
+   ok    G3 un corte DURO (kill -9) entre los dos renombrados: banco_rs NO existe pero la BD anterior sigue entera como banco_rs_retirada y el _previo anterior esta intacto
+   ok    G4 'recuperar' devuelve la BD anterior a banco_rs (estado B), elimina la retirada y la de paso, y el _previo sigue intacto
+   ok    G5 'recuperar' es IDEMPOTENTE: repetirla no cambia nada
+   ok    G6 tras un corte duro, repetir el restore se AUTO-RECUPERA y termina bien: banco_rs = respaldo, el _previo es ahora el estado B (la BD retirada) y no sobra nada
+   ok    G7 un corte duro justo DESPUES del segundo renombrado: banco_rs ya es el respaldo y la BD anterior sigue como banco_rs_retirada (el intercambio solo falta cerrarlo)
+   ok    G8 'recuperar' CIERRA el intercambio: banco_rs sigue siendo el respaldo, el _previo es la BD anterior (estado C) y no sobra la retirada
+   ok    G9 y la restauracion normal sigue funcionando despues de todas las interrupciones (huella del respaldo, integridad ok)
+   ok    H0 preparacion: banco_rs = estado X, banco_rs_previo = estado Y (distintos), sin retirada, apartado ni BD de paso
+   ok    H1 FALLA 'retirar' (banco -> retirada): el restore termina con ERROR y NO cambia nada (banco = X, previo = Y, sin restos)
+   ok    H2 FALLA 'poner' (paso -> banco, con la BD ya retirada): ERROR y se RECUPERA solo: banco vuelve a ser X, el previo Y sigue intacto y no sobra nada
+   ok    H3 FALLA 'poner' Y la recuperacion automatica ('recuperar_retirada'): ERROR EXPLICITO 'RECUPERACION INCOMPLETA', codigo != 0, banco_rs no existe pero la BD anterior sigue INTACTA como banco_rs_retirada y el previo Y esta intacto
+   ok    H4 'recuperar' NO devuelve exito si no consigue recuperar: codigo != 0 y mensaje 'RECUPERACION INCOMPLETA'; las bases siguen como estaban
+   ok    H5 sin el fallo, 'recuperar' devuelve la BD anterior: codigo 0, banco = X, sin retirada y el previo Y intacto
+   ok    H6 FALLA 'apartar' (al cerrar): el _previo anterior NO se elimina (sigue Y), la BD nueva ya es banco y la anterior sigue como retirada; ERROR explicito
+   ok    H7 'recuperar' CIERRA el intercambio: banco = respaldo, previo = la BD anterior X, sin retirada ni apartado
+   ok    H8 FALLA 'cerrar' (retirada -> previo) tras apartar: el previo anterior VUELVE a su nombre (Y), la retirada sigue (X) y ningun dato se pierde; ERROR explicito
+   ok    H9 'recuperar' termina el cierre: previo = X, sin retirada ni apartado
+   ok    H10 FALLA 'cerrar' Y 'deshacer_apartar': ERROR explicito 'RECUPERACION INCOMPLETA'; el previo anterior (Y) esta INTACTO como banco_rs_previo_antiguo, la BD anterior (X) como retirada y banco ya es el respaldo; NADA se elimino
+   ok    H11 'recuperar' retoma ese estado: la retirada (X) pasa a ser el previo, se elimina SOLO ENTONCES el apartado (Y) y no queda nada pendiente
+   ok    H12 CORTE DURO (kill -9) justo despues de apartar el previo: banco = respaldo, retirada = X, el previo anterior (Y) esta INTACTO como apartado y no existe banco_rs_previo
+   ok    H13 'recuperar' tras ese corte: previo = X, apartado eliminado solo despues, y es IDEMPOTENTE (segunda llamada sin cambios)
+   ok    H14 resto 'banco_rs_previo_antiguo' con previo presente y sin retirada: 'recuperar' elimina SOLO el apartado y conserva banco y previo
+   ok    H15 con todo en orden 'recuperar' no cambia nada y devuelve exito
+   ok    I1 backup con la BD CAMBIANDO entre el snapshot y pg_dump: termina bien (codigo 0) y el volcado contiene EXACTAMENTE lo que describe el manifiesto (no los cambios posteriores)
+   ok    I2 ...el manifiesto es la huella del estado ANTERIOR al cambio (la BD viva ya es otra: la diferencia ocurrio durante el respaldo)
+   ok    I3 cambio y REVERSION (A-B-A) durante el respaldo: codigo 0, volcado == manifiesto y la huella final de la BD viva es la del manifiesto (una comparacion antes/despues no habria visto nada)
+   ok    I4 un modificador CONTINUO (cientos de cambios y reversiones) durante 3 respaldos seguidos: los 3 terminan bien y en los 3 el volcado coincide EXACTAMENTE con su manifiesto
+   ok    D1 restaurar y repetir el MISMO adelanto da el mismo resultado (mismos grupos escritos y mismos totales del libro): la demostracion se repite
+   ok    D2 y se puede volver al estado inicial las veces que haga falta (huella del respaldo)
+   ok    D3 la alternativa de PLANTILLA (CREATE DATABASE ... TEMPLATE) da la misma huella que el respaldo
+   ok    D4 y el estado final tras todo sigue en orden (integridad ok, 0 defensas caidas)
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+138 passed, 0 failed

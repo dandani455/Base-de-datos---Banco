@@ -7,15 +7,27 @@
 #      NO se modifica ni queda una BD de paso.
 #   D. REPETIR LA DEMOSTRACION: restaurar y repetir el mismo adelanto da el mismo resultado (reproducibilidad funcional de la demostracion).
 . /work/tests/reales/lib.sh
+# FAIL_RAPIDO=1 (lo usa el arnes de mutaciones): la primera aserción fallida termina la prueba (la limpieza por trap se ejecuta)
+if [ "${FAIL_RAPIDO:-}" = "1" ]; then fail() { echo "FAIL: $1"; exit 1; }; fi
 SEED=${SEED_DIR:-/work/seed}
 RS=banco_rs; TPL=banco_rs_tpl; RSB=banco_rs_base
 RESP=$SEED/respaldo.sh
-limpiar() { for d in $RS ${RS}_previo ${RS}_restaurando ${RS}_retirada $TPL $RSB banco_rs_otra banco_rsx banco_rsy; do psql -X -q -U postgres -d postgres -c "DROP DATABASE IF EXISTS $d WITH (FORCE)" >/dev/null 2>&1 </dev/null; done; rm -rf /tmp/c58_*; }
+limpiar() { for d in $RS ${RS}_previo ${RS}_restaurando ${RS}_retirada ${RS}_previo_antiguo $TPL $RSB banco_rs_otra banco_rsx banco_rsy banco_rsz banco_rsj banco_rsj_retirada banco_rsj_previo banco_rsj_previo_antiguo banco_rsj_restaurando banco_rsn banco_rsm; do psql -X -q -U postgres -d postgres -c "DROP DATABASE IF EXISTS $d WITH (FORCE)" >/dev/null 2>&1 </dev/null; done; rm -rf /tmp/c58_*; }
 trap limpiar EXIT
 limpiar
 PG() { psql -X -q -v ON_ERROR_STOP=1 -U postgres -d postgres -c "$1" >/dev/null 2>&1 </dev/null; }
 R() { sh $RESP "$@" 2>&1 </dev/null; }                       # respaldo.sh
-RF() { _f=$1; shift; RESPALDO_FALLA=$_f sh $RESP "$@" 2>&1 </dev/null; }                 # respaldo.sh con un gancho de falla
+RF() { _f=$1; shift; RESPALDO_ENTORNO_PRUEBAS=1 RESPALDO_FALLA=$_f sh $RESP "$@" 2>&1 </dev/null; }                 # respaldo.sh con un gancho de falla
+RX() { _a=$1; _b=$2; shift 2; RESPALDO_ENTORNO_PRUEBAS=1 RESPALDO_FALLA=$_a RESPALDO_FALLA_RENAME=$_b sh $RESP "$@" 2>&1 </dev/null; }      # respaldo.sh con un gancho de falla Y/O transiciones de renombrado que fallan
+huo() { if [ "$(existe $1)" = "1" ]; then hu $1; else echo -; fi; }                                                # huella de una BD, o "-" si no existe
+verif_volcado() { # verif_volcado ARCHIVO -> "igual" si el CONTENIDO del volcado coincide linea a linea con el manifiesto
+  PG "DROP DATABASE IF EXISTS banco_rsz WITH (FORCE)"; PG "CREATE DATABASE banco_rsz"
+  pg_restore -U postgres --exit-on-error -d banco_rsz "$1" >/dev/null 2>&1 </dev/null || { echo error-restore; return; }
+  sh $RESP tablas banco_rsz > /tmp/c58_z.txt 2>/dev/null </dev/null
+  grep '^tabla\.\|^esquema=' "$1.huella" > /tmp/c58_zm.txt
+  if cmp -s /tmp/c58_z.txt /tmp/c58_zm.txt; then echo igual; else echo distinto; fi
+  PG "DROP DATABASE IF EXISTS banco_rsz WITH (FORCE)"
+}
 hu() { sh $RESP huella "$1" 2>/dev/null </dev/null; }
 existe() { psql -X -q -At -U postgres -d postgres -c "SELECT count(*) FROM pg_database WHERE datname = '$1'" </dev/null; }
 
@@ -107,10 +119,6 @@ eq "E2 restore RECHAZA un manifiesto que declara integridad_ok = f (antes de res
 pg_dump -U postgres -Fc -d banco_rsx -f /tmp/c58_dan2.dump 2>/dev/null; sh $RESP manifiesto banco_rsx 2>/dev/null </dev/null | sed 's/^integridad_ok=.*/integridad_ok=t/' > /tmp/c58_dan2.dump.huella
 OUT=$(R restore /tmp/c58_dan2.dump $RS --yes); RC=$?
 eq "E3 restore EXIGE integridad verdadera en la BD restaurada aunque el manifiesto (falsificado con integridad_ok = t y las huellas correctas) coincida: se rechaza, la BD no cambia y no sobra la BD de paso" "t|t|$H1|0|0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -qi 'integridad' && echo t || echo f)|$(hu $RS)|$(existe ${RS}_restaurando)|$(existe ${RS}_previo)"
-OUT=$(RF cambio_durante backup /tmp/c58_cd.dump $RS); RC=$?
-eq "E4 backup RECHAZA una BD que CAMBIA mientras se respalda (el manifiesto ya no describiria el volcado): error claro y sin archivos ni temporales" "t|t|f|f|f" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -qi 'cambio mientras' && echo t || echo f)|$([ -e /tmp/c58_cd.dump ] && echo t || echo f)|$([ -e /tmp/c58_cd.dump.huella ] && echo t || echo f)|$([ -e /tmp/c58_cd.dump.tmp ] && echo t || echo f)"
-root "UPDATE public.parametro SET bono_referido = bono_referido - 1" >/dev/null
-H1=$(hu $RS); HB=$(grep '^huella=' /tmp/c58_b.dump.huella | cut -d= -f2)
 PG "DROP DATABASE IF EXISTS banco_rsx WITH (FORCE)"
 
 # ============================================================================
@@ -188,6 +196,205 @@ eq "G8 'recuperar' CIERRA el intercambio: banco_rs sigue siendo el respaldo, el 
 OUT=$(R restore /tmp/c58_b.dump $RS --yes); RC=$?
 eq "G9 y la restauracion normal sigue funcionando despues de todas las interrupciones (huella del respaldo, integridad ok)" "0|$HB|t" "$RC|$(hu $RS)|$(psql -X -q -At -U postgres -d $RS -c "SELECT ok FROM public.v_integridad_global" </dev/null)"
 R descartar $RS >/dev/null
+
+# ============================================================================
+# H. Fallos en CADA transicion del intercambio: nunca se pierde banco ni el _previo anterior, y un error es EXPLICITO (correccion de la 2.a auditoria, punto 1)
+#    Transiciones: retirar (banco->retirada), poner (paso->banco), apartar (previo->previo_antiguo), cerrar (retirada->previo), deshacer_apartar, recuperar_retirada
+# ============================================================================
+prep() { # RS = estado X (HCUR), banco_rs_previo = estado Y (HPREV), sin retirada ni apartado
+  R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 21; R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 22
+  HCUR=$(hu $RS); HPREV=$(huo ${RS}_previo)
+}
+estado() { echo "$(huo $RS)|$(huo ${RS}_previo)|$(huo ${RS}_retirada)|$(huo ${RS}_previo_antiguo)|$(existe ${RS}_restaurando)"; }   # banco|previo|retirada|apartado|paso
+prep
+eq "H0 preparacion: banco_rs = estado X, banco_rs_previo = estado Y (distintos), sin retirada, apartado ni BD de paso" "$HCUR|$HPREV|-|-|0" "$(estado)"
+OUT=$(RX '' retirar restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H1 FALLA 'retirar' (banco -> retirada): el restore termina con ERROR y NO cambia nada (banco = X, previo = Y, sin restos)" "t|$HCUR|$HPREV|-|-|0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(estado)"
+OUT=$(RX '' poner restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H2 FALLA 'poner' (paso -> banco, con la BD ya retirada): ERROR y se RECUPERA solo: banco vuelve a ser X, el previo Y sigue intacto y no sobra nada" "t|t|$HCUR|$HPREV|-|-|0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'Recuperada' && echo t || echo f)|$(estado)"
+OUT=$(RX '' poner,recuperar_retirada restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H3 FALLA 'poner' Y la recuperacion automatica ('recuperar_retirada'): ERROR EXPLICITO 'RECUPERACION INCOMPLETA', codigo != 0, banco_rs no existe pero la BD anterior sigue INTACTA como banco_rs_retirada y el previo Y esta intacto" "t|t|-|$HPREV|$HCUR|-" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'RECUPERACION INCOMPLETA' && echo t || echo f)|$(huo $RS)|$(huo ${RS}_previo)|$(huo ${RS}_retirada)|$(huo ${RS}_previo_antiguo)"
+OUT=$(RX '' recuperar_retirada recuperar $RS); RC=$?
+eq "H4 'recuperar' NO devuelve exito si no consigue recuperar: codigo != 0 y mensaje 'RECUPERACION INCOMPLETA'; las bases siguen como estaban" "t|t|-|$HCUR" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'RECUPERACION INCOMPLETA' && echo t || echo f)|$(huo $RS)|$(huo ${RS}_retirada)"
+OUT=$(R recuperar $RS); RC=$?
+eq "H5 sin el fallo, 'recuperar' devuelve la BD anterior: codigo 0, banco = X, sin retirada y el previo Y intacto" "0|$HCUR|$HPREV|-|-|0" "$RC|$(estado)"
+prep
+OUT=$(RX '' apartar restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H6 FALLA 'apartar' (al cerrar): el _previo anterior NO se elimina (sigue Y), la BD nueva ya es banco y la anterior sigue como retirada; ERROR explicito" "t|t|$HB|$HPREV|$HCUR|-" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'RECUPERACION INCOMPLETA' && echo t || echo f)|$(huo $RS)|$(huo ${RS}_previo)|$(huo ${RS}_retirada)|$(huo ${RS}_previo_antiguo)"
+OUT=$(R recuperar $RS); RC=$?
+eq "H7 'recuperar' CIERRA el intercambio: banco = respaldo, previo = la BD anterior X, sin retirada ni apartado" "0|$HB|$HCUR|-|-|0" "$RC|$(estado)"
+prep
+OUT=$(RX '' cerrar restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H8 FALLA 'cerrar' (retirada -> previo) tras apartar: el previo anterior VUELVE a su nombre (Y), la retirada sigue (X) y ningun dato se pierde; ERROR explicito" "t|$HB|$HPREV|$HCUR|-|0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(estado)"
+OUT=$(R recuperar $RS); RC=$?
+eq "H9 'recuperar' termina el cierre: previo = X, sin retirada ni apartado" "0|$HB|$HCUR|-|-|0" "$RC|$(estado)"
+prep
+OUT=$(RX '' cerrar,deshacer_apartar restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H10 FALLA 'cerrar' Y 'deshacer_apartar': ERROR explicito 'RECUPERACION INCOMPLETA'; el previo anterior (Y) esta INTACTO como banco_rs_previo_antiguo, la BD anterior (X) como retirada y banco ya es el respaldo; NADA se elimino" "t|t|$HB|-|$HCUR|$HPREV" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'RECUPERACION INCOMPLETA' && echo t || echo f)|$(huo $RS)|$(huo ${RS}_previo)|$(huo ${RS}_retirada)|$(huo ${RS}_previo_antiguo)"
+OUT=$(R recuperar $RS); RC=$?
+eq "H11 'recuperar' retoma ese estado: la retirada (X) pasa a ser el previo, se elimina SOLO ENTONCES el apartado (Y) y no queda nada pendiente" "0|$HB|$HCUR|-|-|0" "$RC|$(estado)"
+prep
+OUT=$(RX kill_apartado '' restore /tmp/c58_b.dump $RS --yes); RC=$?
+eq "H12 CORTE DURO (kill -9) justo despues de apartar el previo: banco = respaldo, retirada = X, el previo anterior (Y) esta INTACTO como apartado y no existe banco_rs_previo" "137|$HB|-|$HCUR|$HPREV" "$RC|$(huo $RS)|$(huo ${RS}_previo)|$(huo ${RS}_retirada)|$(huo ${RS}_previo_antiguo)"
+OUT=$(R recuperar $RS); RC=$?
+eq "H13 'recuperar' tras ese corte: previo = X, apartado eliminado solo despues, y es IDEMPOTENTE (segunda llamada sin cambios)" "0|$HB|$HCUR|-|-|0|0|$HB|$HCUR" "$RC|$(estado)|$(R recuperar $RS >/dev/null; echo $?)|$(huo $RS)|$(huo ${RS}_previo)"
+# resto de un cierre casi terminado: previo y apartado presentes, sin retirada
+PG "CREATE DATABASE ${RS}_previo_antiguo"
+OUT=$(R recuperar $RS); RC=$?
+eq "H14 resto 'banco_rs_previo_antiguo' con previo presente y sin retirada: 'recuperar' elimina SOLO el apartado y conserva banco y previo" "0|$HB|$HCUR|-|-|0" "$RC|$(estado)"
+OUT=$(R recuperar $RS); RC=$?
+eq "H15 con todo en orden 'recuperar' no cambia nada y devuelve exito" "0|$HB|$HCUR" "$RC|$(huo $RS)|$(huo ${RS}_previo)"
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; R descartar $RS >/dev/null
+
+# ============================================================================
+# I. Consistencia del backup: el manifiesto corresponde EXACTAMENTE al contenido del volcado (UN snapshot compartido), aunque la BD cambie (o cambie y se revierta)
+#    alrededor de la captura (correccion de la 2.a auditoria, punto 2). La prueba restaura el VOLCADO en una BD aparte y compara su contenido con el manifiesto.
+# ============================================================================
+esperar_snapshot() { _i=0; while [ "$_i" -lt 40 ] && [ ! -s "$1.lineas.tmp" ]; do _i=$((_i+1)); sleep 1; done; }
+# I1: cambio PERMANENTE despues del snapshot y ANTES de que arranque pg_dump (el gancho pausa_dump mantiene el snapshot 4 s)
+HSNAP=$(hu $RS)
+( RF pausa_dump backup /tmp/c58_i1.dump $RS >/tmp/c58_i1.out 2>&1; echo $? > /tmp/c58_i1.rc ) &
+esperar_snapshot /tmp/c58_i1.dump
+root "UPDATE public.parametro SET bono_referido = bono_referido + 1" >/dev/null; tr1 7
+wait
+eq "I1 backup con la BD CAMBIANDO entre el snapshot y pg_dump: termina bien (codigo 0) y el volcado contiene EXACTAMENTE lo que describe el manifiesto (no los cambios posteriores)" "0|igual" "$(cat /tmp/c58_i1.rc)|$(verif_volcado /tmp/c58_i1.dump)"
+eq "I2 ...el manifiesto es la huella del estado ANTERIOR al cambio (la BD viva ya es otra: la diferencia ocurrio durante el respaldo)" "$HSNAP|t" "$(grep '^huella=' /tmp/c58_i1.dump.huella | cut -d= -f2)|$([ "$(hu $RS)" != "$HSNAP" ] && echo t || echo f)"
+# I3: cambio y REVERSION (A-B-A) dentro de la ventana, y despues otro cambio-reversion con el backup ya terminado
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; R descartar $RS >/dev/null
+HSNAP=$(hu $RS)
+( RF pausa_dump backup /tmp/c58_i3.dump $RS >/tmp/c58_i3.out 2>&1; echo $? > /tmp/c58_i3.rc ) &
+esperar_snapshot /tmp/c58_i3.dump
+root "UPDATE public.parametro SET bono_referido = bono_referido + 1" >/dev/null; root "UPDATE public.parametro SET bono_referido = bono_referido - 1" >/dev/null
+wait
+eq "I3 cambio y REVERSION (A-B-A) durante el respaldo: codigo 0, volcado == manifiesto y la huella final de la BD viva es la del manifiesto (una comparacion antes/despues no habria visto nada)" "0|igual|$HSNAP" "$(cat /tmp/c58_i3.rc)|$(verif_volcado /tmp/c58_i3.dump)|$(grep '^huella=' /tmp/c58_i3.dump.huella | cut -d= -f2)"
+# I4: un modificador CONTINUO (mas de 150 pares +1/-1 y una transferencia por ciclo) mientras se hacen 3 respaldos seguidos
+( n=0; while [ $n -lt 120 ]; do psql -X -q -U postgres -d $RS -c "UPDATE public.parametro SET bono_referido = bono_referido + 1" -c "UPDATE public.parametro SET bono_referido = bono_referido - 1" >/dev/null 2>&1 </dev/null; n=$((n+1)); done ) &
+MOD=$!
+OKS=""
+for k in 1 2 3; do
+  RF x backup /tmp/c58_i4_$k.dump $RS >/dev/null 2>&1; rc=$?
+  OKS="$OKS $rc:$(verif_volcado /tmp/c58_i4_$k.dump)"
+done
+wait $MOD
+eq "I4 un modificador CONTINUO (cientos de cambios y reversiones) durante 3 respaldos seguidos: los 3 terminan bien y en los 3 el volcado coincide EXACTAMENTE con su manifiesto" " 0:igual 0:igual 0:igual" "$OKS"
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; R descartar $RS >/dev/null
+
+# ============================================================================
+# J. Estado final de 'recuperar': exige la base principal y ningun estado intermedio; los estados ambiguos se rechazan SIN tocar nada (2.a auditoria, punto 1)
+# ============================================================================
+mkdb() { PG "DROP DATABASE IF EXISTS $1 WITH (FORCE)"; PG "CREATE DATABASE $1 TEMPLATE $RSB"; psql -X -q -U postgres -d $1 -c "UPDATE public.parametro SET bono_referido = $2" >/dev/null 2>&1 </dev/null; }
+limpiaj() { for d in banco_rsj banco_rsj_retirada banco_rsj_previo banco_rsj_previo_antiguo banco_rsj_restaurando; do PG "DROP DATABASE IF EXISTS $d WITH (FORCE)"; done; }
+ej() { echo "$(huo banco_rsj)|$(huo banco_rsj_previo)|$(huo banco_rsj_retirada)|$(huo banco_rsj_previo_antiguo)|$(existe banco_rsj_restaurando)"; }   # banco|previo|retirada|apartado|paso
+limpiaj
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J1 'recuperar' NO devuelve exito si la BD principal no existe (no hay nada que recuperar): codigo != 0 y mensaje explicito" "t|t" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'NO existe' && echo t || echo f)"
+mkdb banco_rsj_previo 222; E0=$(ej)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J2 solo existe el previo (sin banco ni retirada): error explicito y el previo queda intacto" "t|$E0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(ej)"
+limpiaj; mkdb banco_rsj_retirada 111; mkdb banco_rsj_previo_antiguo 333; E0=$(ej)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J3 AMBIGUO: sin banco, con retirada y apartado a la vez: error 'AMBIGUO' y NO se renombra ni se elimina nada" "t|t|$E0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'AMBIGUO' && echo t || echo f)|$(ej)"
+limpiaj; mkdb banco_rsj 100; mkdb banco_rsj_retirada 111; mkdb banco_rsj_previo 222; mkdb banco_rsj_previo_antiguo 333; E0=$(ej)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J4 AMBIGUO: banco, retirada, previo y apartado a la vez: error 'AMBIGUO' y NO se elimina ninguna" "t|t|$E0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'AMBIGUO' && echo t || echo f)|$(ej)"
+limpiaj; mkdb banco_rsj 100; mkdb banco_rsj_restaurando 999; H100=$(huo banco_rsj)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J5 una BD de paso suelta con banco presente: 'recuperar' la elimina, devuelve exito y banco queda intacto" "0|$H100|0" "$RC|$(huo banco_rsj)|$(existe banco_rsj_restaurando)"
+limpiaj; mkdb banco_rsj 100; mkdb banco_rsj_previo_antiguo 333; H333=$(huo banco_rsj_previo_antiguo)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J6 resto 'previo_antiguo' sin previo ni retirada: vuelve a ser el previo (exito); no queda apartado" "0|$H333|-" "$RC|$(huo banco_rsj_previo)|$(huo banco_rsj_previo_antiguo)"
+limpiaj; mkdb banco_rsj 100; mkdb banco_rsj_retirada 111; H111=$(huo banco_rsj_retirada)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J7 intercambio hecho sin previo anterior: 'recuperar' CIERRA (la retirada pasa a previo) y no deja retirada" "0|$H111|-" "$RC|$(huo banco_rsj_previo)|$(huo banco_rsj_retirada)"
+limpiaj; mkdb banco_rsj_retirada 111; H111=$(huo banco_rsj_retirada)
+OUT=$(R recuperar banco_rsj); RC=$?
+eq "J8 corte entre los dos renombrados (solo la retirada): 'recuperar' la devuelve a banco (exito) y exige que banco exista al final" "0|$H111|-" "$RC|$(huo banco_rsj)|$(huo banco_rsj_retirada)"
+limpiaj; mkdb banco_rsj_retirada 111; E0=$(ej)
+OUT=$(RX "" recuperar_retirada restore /tmp/c58_b.dump banco_rsj --yes); RC=$?
+eq "J11 un restore que NO puede sanear un intercambio previo (falla el renombrado de la retirada a banco) se NIEGA a continuar: codigo != 0, no crea banco, la retirada queda intacta y no queda BD de paso" "t|t|$E0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'sin terminar' && echo t || echo f)|$(ej)"
+limpiaj
+OUT=$(R restore /tmp/c58_b.dump banco_rsn --yes); RC=$?
+eq "J9 una PRIMERA restauracion sobre una base que no existe sigue funcionando (recuperar exige la base solo cuando existia): codigo 0, la base queda con la huella del respaldo y sin previo" "0|$HB|-" "$RC|$(huo banco_rsn)|$(huo banco_rsn_previo)"
+OUT=$(R restore /tmp/c58_mal.dump banco_rsm --yes); RC=$?
+eq "J10 una primera restauracion que FALLA (manifiesto que no coincide) sobre una base inexistente: error normal, SIN falso 'RECUPERACION INCOMPLETA', la base no se crea y no queda BD de paso" "t|f|t|0|0" "$([ "$RC" -ne 0 ] && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'RECUPERACION INCOMPLETA' && echo t || echo f)|$(printf '%s' "$OUT" | grep -q 'NO coincide' && echo t || echo f)|$(existe banco_rsm)|$(existe banco_rsm_restaurando)"
+PG "DROP DATABASE IF EXISTS banco_rsn WITH (FORCE)"; limpiaj
+
+# ============================================================================
+# K. Ganchos de pruebas protegidos: sin RESPALDO_ENTORNO_PRUEBAS=1 NO pueden provocar terminaciones ni alterar operaciones reales (2.a auditoria, punto 2)
+# ============================================================================
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; R descartar $RS >/dev/null
+OUT=$(RESPALDO_FALLA=kill_entre sh $RESP restore /tmp/c58_b.dump $RS --yes 2>&1 </dev/null); RC=$?
+eq "K1 SIN el indicador, RESPALDO_FALLA=kill_entre (kill -9 entre los renombrados) se IGNORA con aviso: la restauracion termina bien (codigo 0) y banco_rs = respaldo" "0|t|$HB" "$RC|$(printf '%s' "$OUT" | grep -q 'se IGNORAN' && echo t || echo f)|$(hu $RS)"
+OUT=$(RESPALDO_FALLA=error_entre RESPALDO_FALLA_RENAME=retirar,poner,apartar,cerrar,recuperar_retirada sh $RESP restore /tmp/c58_b.dump $RS --yes 2>&1 </dev/null); RC=$?
+eq "K2 SIN el indicador, ni el fallo simulado ni los renombrados que 'fallan' tienen efecto: codigo 0, banco_rs = respaldo, el previo existe y no quedan restos" "0|$HB|1|0|0" "$RC|$(hu $RS)|$(existe ${RS}_previo)|$(existe ${RS}_retirada)|$(existe ${RS}_previo_antiguo)"
+T0=$(date +%s); OUT=$(RESPALDO_FALLA=pausa_dump sh $RESP backup /tmp/c58_k3.dump $RS 2>&1 </dev/null); RC=$?; T1=$(date +%s)
+eq "K3 SIN el indicador, el gancho 'pausa_dump' (4 s) NO retrasa un backup real: codigo 0 y menos de 4 s" "0|t" "$RC|$([ $((T1 - T0)) -lt 4 ] && echo t || echo f)"
+T0=$(date +%s); OUT=$(RESPALDO_ENTORNO_PRUEBAS=1 RESPALDO_FALLA=pausa_dump sh $RESP backup /tmp/c58_k4.dump banco 2>&1 </dev/null); RC=$?; T1=$(date +%s)
+eq "K4 CON el indicador pero sobre la BD REAL 'banco', los ganchos se rechazan igualmente (el backup de banco, de solo lectura, no se pausa): codigo 0 y menos de 4 s" "0|t" "$RC|$([ $((T1 - T0)) -lt 4 ] && echo t || echo f)"
+R descartar $RS >/dev/null
+
+# ============================================================================
+# L. Concurrencia REAL entre procesos: una segunda operacion sobre la misma base no interfiere con la BD intermedia ni con la recuperacion de la primera
+#    (candado consultivo de PostgreSQL por base; 2.a auditoria, punto 3)
+# ============================================================================
+A_inicia() { # A_inicia GANCHO : restauracion A (tarda en el gancho) con el candado tomado; $APID = su PID
+  RESPALDO_ENTORNO_PRUEBAS=1 RESPALDO_FALLA=$1 sh $RESP restore /tmp/c58_b.dump $RS --yes >/tmp/c58_la.out 2>&1 </dev/null &
+  APID=$!
+}
+matar() { # matar SENAL PID : solo si ese PID sigue siendo respaldo.sh (nunca se envia una senal a un PID reutilizado por otro proceso, p. ej. un backend de PostgreSQL)
+  if ps -o pid,args | grep -v grep | grep -q "^ *$2 .*respaldo.sh"; then kill -$1 $2; else echo "matar: el PID $2 ya no es respaldo.sh" >&2; return 1; fi
+}
+espera_bd() { _i=0; while [ "$_i" -lt 60 ] && [ "$(existe $1)" != "$2" ]; do _i=$((_i+1)); sleep 1; done; }
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 41; R descartar $RS >/dev/null
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 42
+HCUR=$(hu $RS); HPREV=$(huo ${RS}_previo)
+PG "DROP DATABASE IF EXISTS banco_rsx WITH (FORCE)"; PG "CREATE DATABASE banco_rsx TEMPLATE $RSB"
+A_inicia pausa_restore
+espera_bd ${RS}_restaurando 1
+RCB=$(RESPALDO_ESPERA=0 sh $RESP restore /tmp/c58_b.dump $RS --yes >/tmp/c58_lb1.out 2>&1 </dev/null; echo $?)
+eq "L1 con una restauracion A en curso (candado tomado, BD de paso ya creada), una SEGUNDA restauracion sobre la misma base se rechaza de inmediato: codigo 75 'ocupado' y NO toca la BD de paso de A" "75|t|1" "$RCB|$(grep -q 'ocupado' /tmp/c58_lb1.out && echo t || echo f)|$(existe ${RS}_restaurando)"
+RC1=$(RESPALDO_ESPERA=0 sh $RESP backup /tmp/c58_lb2.dump $RS >/tmp/c58_lb2.out 2>&1 </dev/null; echo $?)
+RC2=$(RESPALDO_ESPERA=0 sh $RESP recuperar $RS >/tmp/c58_lb3.out 2>&1 </dev/null; echo $?)
+RC3=$(RESPALDO_ESPERA=0 sh $RESP descartar $RS >/tmp/c58_lb4.out 2>&1 </dev/null; echo $?)
+eq "L2 durante la restauracion de A tambien se rechazan (75) un backup, un 'recuperar' y un 'descartar' sobre la misma base; el backup rechazado no deja archivos y el previo de A no se elimino" "75|75|75|f|$HPREV" "$RC1|$RC2|$RC3|$([ -e /tmp/c58_lb2.dump ] && echo t || echo f)|$(huo ${RS}_previo)"
+RC4=$(RESPALDO_ESPERA=0 sh $RESP backup /tmp/c58_lb5.dump banco_rsx >/dev/null 2>&1 </dev/null; echo $?)
+eq "L3 el candado es POR BASE: mientras A restaura banco_rs, un backup de OTRA base (banco_rsx) se hace sin esperar" "0" "$RC4"
+wait $APID; RCA=$?
+eq "L4 la restauracion A termina bien pese a los intentos rechazados: codigo 0, banco_rs = respaldo, el previo es el estado anterior de A y no sobran retirada, apartado ni BD de paso" "0|$HB|$HCUR|0|0|0" "$RCA|$(hu $RS)|$(huo ${RS}_previo)|$(existe ${RS}_retirada)|$(existe ${RS}_previo_antiguo)|$(existe ${RS}_restaurando)"
+RC5=$(RESPALDO_ESPERA=0 sh $RESP recuperar $RS >/dev/null 2>&1 </dev/null; echo $?)
+eq "L5 el candado se LIBERA al terminar A: una operacion inmediata despues (recuperar con espera 0) obtiene el candado y termina bien" "0" "$RC5"
+# serializacion: B espera a que A termine y despues restaura
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 43; HCUR=$(hu $RS)
+A_inicia pausa_restore
+espera_bd ${RS}_restaurando 1
+( RESPALDO_ESPERA=90 sh $RESP restore /tmp/c58_b.dump $RS --yes >/tmp/c58_lb.out 2>&1 </dev/null; echo $? > /tmp/c58_lb.rc; date +%s > /tmp/c58_lb.t ) &
+BWRAP=$!
+wait $APID; RCA=$?; date +%s > /tmp/c58_la.t
+wait $BWRAP
+eq "L6 SERIALIZACION: una segunda restauracion B que espera (espera 90 s) se ejecuta DESPUES de que A termina: las dos terminan bien (0 y 0), B acaba despues que A y el resultado es consistente (banco_rs = respaldo, previo = respaldo, sin restos)" "0|0|t|$HB|$HB|0|0|0" "$RCA|$(cat /tmp/c58_lb.rc)|$([ "$(cat /tmp/c58_lb.t)" -ge "$(cat /tmp/c58_la.t)" ] && echo t || echo f)|$(hu $RS)|$(huo ${RS}_previo)|$(existe ${RS}_retirada)|$(existe ${RS}_previo_antiguo)|$(existe ${RS}_restaurando)"
+# interrupcion de A (TERM) en la ventana entre renombrados MIENTRAS B espera para comenzar
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 45; HCUR=$(hu $RS)
+A_inicia pausa_entre
+espera_bd ${RS}_retirada 1
+( RESPALDO_ESPERA=90 sh $RESP restore /tmp/c58_b.dump $RS --yes >/tmp/c58_lb.out 2>&1 </dev/null; echo $? > /tmp/c58_lb.rc ) &
+BWRAP=$!
+sleep 3
+EXIST_MIENTRAS=$(existe $RS)
+matar TERM $APID; wait $APID; RCA=$?
+wait $BWRAP
+eq "L7 INTERRUPCION (TERM) de A entre los dos renombrados mientras B espera para empezar: A termina con 143 y se recupera sola; B (que NO vio la BD intermedia: banco_rs no existia mientras esperaba) se ejecuta despues, sin mensajes de recuperacion, y deja banco_rs = respaldo con el estado anterior como previo" "143|0|0|f|$HB|$HCUR|0|0|0" "$RCA|$(cat /tmp/c58_lb.rc)|$EXIST_MIENTRAS|$(grep -q 'Recuperada\|Cerrado el intercambio' /tmp/c58_lb.out && echo t || echo f)|$(hu $RS)|$(huo ${RS}_previo)|$(existe ${RS}_retirada)|$(existe ${RS}_previo_antiguo)|$(existe ${RS}_restaurando)"
+# corte duro (kill -9) de A entre los dos renombrados mientras B espera: el candado se libera solo y B recupera antes de restaurar
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; tr1 47; HCUR=$(hu $RS)
+A_inicia pausa_entre
+espera_bd ${RS}_retirada 1
+( RESPALDO_ESPERA=90 sh $RESP restore /tmp/c58_b.dump $RS --yes >/tmp/c58_lb.out 2>&1 </dev/null; echo $? > /tmp/c58_lb.rc ) &
+BWRAP=$!
+sleep 2
+matar KILL $APID; wait $APID 2>/dev/null; RCA=$?
+wait $BWRAP
+eq "L8 CORTE DURO (kill -9) de A entre los dos renombrados mientras B espera: el candado se libera solo (vigilante), B obtiene el candado, RECUPERA primero la BD intermedia ('Recuperada') y luego restaura: codigo 0, banco_rs = respaldo, el estado anterior es el previo y no quedan restos" "137|0|t|$HB|$HCUR|0|0|0" "$RCA|$(cat /tmp/c58_lb.rc)|$(grep -q 'Recuperada' /tmp/c58_lb.out && echo t || echo f)|$(hu $RS)|$(huo ${RS}_previo)|$(existe ${RS}_retirada)|$(existe ${RS}_previo_antiguo)|$(existe ${RS}_restaurando)"
+R restore /tmp/c58_b.dump $RS --yes >/dev/null; R descartar $RS >/dev/null
+PG "DROP DATABASE IF EXISTS banco_rsx WITH (FORCE)"
 
 # ============================================================================
 # D. Repetir la demostracion

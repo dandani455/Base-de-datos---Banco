@@ -1,0 +1,61 @@
+﻿
+== E14 (2.a correccion): camino canonico de Windows (ctl.ps1) con el respaldo.sh corregido, sobre la BD banco (vacia, recien aplicada)
+== backup nuevo (snapshot compartido); el manifiesto declara consistencia=snapshot
+Respaldo de 'banco' guardado en /tmp/banco_consistente.dump (502088 bytes). Huella: cea604ad4f6e46b1c458a354b131cf26
+Respaldo copiado a db\backups\banco_consistente.dump (+ .huella). Restaurar: db\ctl.cmd restore consistente -Yes
+codigo de salida: 0
+tabla.public.usuario=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cuenta=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.bolsillo=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cdt_definicion=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cdt=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.credito_producto=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.credito=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.cuota=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.transaccion=d41d8cd98f00b204e9800998ecf8427e
+tabla.public.reloj=6571e17dc3d3f81a983c6fbacb6ffc3e
+tabla.public.parametro=3f463427f0c8ba8cd7e2ed1ca7535b45
+tabla.audit.evento=7206702522ba6fb4055e0f0d772816d6
+esquema=bf6b3653c308b9f7be9b838d1378eb6a
+huella=cea604ad4f6e46b1c458a354b131cf26
+usuarios=0
+patas=0
+eventos=16
+integridad_ok=t
+base_origen=banco
+consistencia=snapshot
+
+== restore sin -Yes: debe negarse
+ERROR: La restauracion REEMPLAZA la BD 'banco' (la actual queda como banco_previo). Repite con -Yes.
+codigo de salida (esperado distinto de 0): 1
+== restore consistente -Yes
+NOTICE:  database "banco_restaurando" does not exist, skipping
+Restaurado: 'banco' = respaldo /tmp/banco_consistente.dump (huella cea604ad4f6e46b1c458a354b131cf26). La BD anterior quedo como 'banco_previo' (respaldo.sh descartar banco la elimina).
+codigo de salida: 0
+   datname    
+--------------
+ banco
+ banco_previo
+(2 rows)
+
+== descartar-previo
+Eliminada 'banco_previo' (si existia).
+codigo de salida: 0
+== restore de un respaldo VIEJO (hecho con la huella anterior, sin snapshot): debe rechazarse por NO coincidir y banco no cambia
+NOTICE:  database "banco_restaurando" does not exist, skipping
+ERROR: la BD restaurada NO coincide con el manifiesto (difieren: tabla.public.usuario tabla.public.cuenta tabla.public.bolsillo tabla.public.cdt_definicion tabla.public.cdt tabla.public.credito_producto tabla.public.credito tabla.public.cuota tabla.public.transaccion tabla.public.reloj tabla.public.parametro tabla.audit.evento esquema ); la BD 'banco' NO se modifico
+ERROR: restore fallo (codigo 1); la BD 'banco' no se modifico.
+codigo de salida (esperado distinto de 0): 1
+ datname 
+---------
+ banco
+(1 row)
+
+ usuarios | integridad_ok 
+----------+---------------
+        0 | t
+(1 row)
+
+== recuperar (nada pendiente)
+Recuperacion terminada para 'banco'.
+codigo de salida: 0

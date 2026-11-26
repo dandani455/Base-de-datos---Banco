@@ -1,0 +1,53 @@
+﻿=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+
+=== Mutaciones de E13 (mantenimiento: COMMIT por cuenta, search_path en cada transaccion, 55P03, motor, resumen, evento, informe de integridad y permisos) ===
+
+=== Mutaciones de E14 (seed y QA: catalogo, identidades fijas, clave, historia, estado final, limpieza del esquema seed, reproducibilidad y respaldo/restauracion protegidos) ===
+M490  DETECTADA  los renombrados no cierran las conexiones abiertas (backend, pgAdmin) antes de renombrar
+      -> reales/58_respaldo: FAIL: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo (esperado=[0|ca79ac47db5874
+M492  DETECTADA  backup guarda un manifiesto sin la huella global
+      -> reales/58_respaldo: FAIL: A2 el manifiesto trae la huella actual, 12 usuarios, integridad ok y la base de origen (esperado=[e6f1a528d5a538b630c694552e185672|12|t|banco_rs
+M493  DETECTADA  la restauracion no conserva la BD anterior como _previo (la elimina en vez de renombrarla)
+      -> reales/58_respaldo: FAIL: B4 la BD anterior (con el adelanto) quedo como banco_rs_previo: es la vuelta atras (esperado=[1|9d7378905c53866d6e84ff71106bb1a2] actual=[0|])
+M494  DETECTADA  backup deja de rechazar una BD con v_integridad_global.ok = false (ni en el chequeo previo ni en el snapshot)
+      -> reales/58_respaldo: FAIL: E1 backup RECHAZA una BD con integridad en false, con un mensaje que lo dice, y no deja archivos ni temporales (esperado=[t|t|f|f|f] actual=[t|f
+M498  DETECTADA  la huella del esquema ignora los permisos (ACL) y el dueño de las funciones
+      -> reales/58_respaldo: FAIL: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas,
+M502  DETECTADA  restore no se auto-recupera de un intercambio interrumpido antes de empezar
+      -> reales/58_respaldo: FAIL: G6 tras un corte duro, repetir el restore se AUTO-RECUPERA y termina bien: banco_rs = respaldo, el _previo es ahora el estado B (la BD retirada)
+M505  DETECTADA  backup NO comparte el snapshot con pg_dump (el volcado ve los cambios posteriores al manifiesto)
+      -> reales/58_respaldo: FAIL: I1 backup con la BD CAMBIANDO entre el snapshot y pg_dump: termina bien (codigo 0) y el volcado contiene EXACTAMENTE lo que describe el manifies
+M509  DETECTADA  recuperar devuelve EXITO aunque no pudo devolver la retirada a su nombre
+      -> reales/58_respaldo: FAIL: H4 'recuperar' NO devuelve exito si no consigue recuperar: codigo != 0 y mensaje 'RECUPERACION INCOMPLETA'; las bases siguen como estaban (esper
+M510  DETECTADA  cerrar ELIMINA el previo anterior antes de apartarlo (el defecto de la auditoria)
+      -> reales/58_respaldo: FAIL: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo (esperado=[0|f6e7dd61c60845
+M511  DETECTADA  si falla el renombrado de la retirada, el previo apartado NO vuelve a su nombre
+      -> reales/58_respaldo: FAIL: H8 FALLA 'cerrar' (retirada -> previo) tras apartar: el previo anterior VUELVE a su nombre (Y), la retirada sigue (X) y ningun dato se pierde; E
+M512  DETECTADA  cerrar no elimina el previo apartado una vez terminado el renombrado
+      -> reales/58_respaldo: FAIL: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo (esperado=[0|2d57e1b528491a
+M513  DETECTADA  el chequeo previo de integridad del backup sobra: el del snapshot tambien rechaza (defensa redundante)
+      -> 72_mantenimiento: 
+
+RESUMEN: 12 de 12 mutaciones detectadas

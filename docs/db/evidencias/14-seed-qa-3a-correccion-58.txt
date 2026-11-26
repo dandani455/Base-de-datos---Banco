@@ -1,0 +1,87 @@
+﻿PASS: 0 base de pruebas sembrada: 12 usuarios, integridad en orden
+PASS: A1 backup termina bien y deja el archivo y su manifiesto (.huella)
+PASS: A2 el manifiesto trae la huella actual, 12 usuarios, integridad ok y la base de origen
+PASS: A3 el archivo es un volcado valido (pg_restore -l lo lee) y trae las tablas del banco
+PASS: A4 la huella es REPRODUCIBLE (dos lecturas seguidas iguales) y cambia cuando cambia el estado
+PASS: A5 no se respalda una base no permitida (banco_test) ni se crea archivo
+PASS: A6 una base inexistente o con nombre ajeno al banco se rechaza sin dejar archivos temporales
+PASS: B0 el estado se alejo del respaldo (otra huella, reloj en manual +10)
+PASS: B1 SIN --yes no hace nada: error, la BD queda como estaba y no existe BD de paso
+PASS: B2 con --yes restaura: codigo 0, la huella vuelve a la del respaldo y no queda BD de paso
+PASS: B3 la BD restaurada esta en orden: integridad ok, 0 defensas caidas, reloj en modo REAL, 12 usuarios, jperez483 con su cuenta fija
+PASS: B4 la BD anterior (con el adelanto) quedo como banco_rs_previo: es la vuelta atras
+PASS: B5 el rol de acceso sigue funcionando sobre la BD restaurada (banco_app por TCP: validar_sesion de jperez483)
+PASS: B6 la zona horaria de la BD restaurada es America/Bogota y los permisos de las funciones siguen (banco_app ejecuta 40)
+PASS: B7 restaurar con una conexion ABIERTA en la BD (backend, pgAdmin) funciona: la cierra y la huella es la del respaldo
+PASS: B8 descartar elimina la BD _previo y no toca la actual
+PASS: C1 un archivo CORRUPTO (truncado) se rechaza antes de tocar la BD; no queda BD de paso ni _previo
+PASS: C2 un respaldo SIN manifiesto se rechaza (no se puede verificar) y la BD no cambia
+PASS: C3 un manifiesto que NO coincide con el contenido (una tabla distinta) se rechaza DESPUES de restaurar en la BD de paso, NOMBRANDO la tabla: la BD no cambia, la de paso se elimina y no se crea _previo
+PASS: C4 el volcado de OTRA base (sin las tablas del banco) se rechaza y la BD no cambia
+PASS: C5 las bases NO permitidas (banco_test, *_previo, *_restaurando, ajenas, con caracteres raros) se rechazan en restore
+PASS: C6 un archivo que no existe se rechaza con mensaje claro
+PASS: C7 tras todas las pruebas de proteccion la BD sigue intacta (huella e integridad) y no sobran bases de paso ni _previo
+PASS: E0 el sabotaje (saldo alterado a mano con el guardia apagado) deja v_integridad_global.ok = false en la BD de prueba
+PASS: E1 backup RECHAZA una BD con integridad en false, con un mensaje que lo dice, y no deja archivos ni temporales
+PASS: E2 restore RECHAZA un manifiesto que declara integridad_ok = f (antes de restaurar nada) y la BD no cambia
+PASS: E3 restore EXIGE integridad verdadera en la BD restaurada aunque el manifiesto (falsificado con integridad_ok = t y las huellas correctas) coincida: se rechaza, la BD no cambia y no sobra la BD de paso
+PASS: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas, productos, parametros, auditoria, permisos y triggers): ninguna queda sin detectar
+PASS: F2 control: una copia SIN alteraciones tiene exactamente la misma huella (la huella es estable)
+PASS: F3 el manifiesto trae una huella por tabla (12) y la del esquema
+PASS: G0 preparacion: banco_rs en el estado B, banco_rs_previo en el estado A (distintos entre si y del respaldo)
+PASS: G1 un FALLO entre los dos renombrados: el restore termina con error, banco_rs VUELVE a existir con su estado B, el _previo ANTERIOR sigue intacto y no sobran _retirada ni _restaurando
+PASS: G2 una senal TERM entre los dos renombrados (interrupcion controlable): codigo 143, banco_rs recuperada con su estado B, _previo intacto y sin restos
+PASS: G3 un corte DURO (kill -9) entre los dos renombrados: banco_rs NO existe pero la BD anterior sigue entera como banco_rs_retirada y el _previo anterior esta intacto
+PASS: G4 'recuperar' devuelve la BD anterior a banco_rs (estado B), elimina la retirada y la de paso, y el _previo sigue intacto
+PASS: G5 'recuperar' es IDEMPOTENTE: repetirla no cambia nada
+PASS: G6 tras un corte duro, repetir el restore se AUTO-RECUPERA y termina bien: banco_rs = respaldo, el _previo es ahora el estado B (la BD retirada) y no sobra nada
+PASS: G7 un corte duro justo DESPUES del segundo renombrado: banco_rs ya es el respaldo y la BD anterior sigue como banco_rs_retirada (el intercambio solo falta cerrarlo)
+PASS: G8 'recuperar' CIERRA el intercambio: banco_rs sigue siendo el respaldo, el _previo es la BD anterior (estado C) y no sobra la retirada
+PASS: G9 y la restauracion normal sigue funcionando despues de todas las interrupciones (huella del respaldo, integridad ok)
+PASS: H0 preparacion: banco_rs = estado X, banco_rs_previo = estado Y (distintos), sin retirada, apartado ni BD de paso
+PASS: H1 FALLA 'retirar' (banco -> retirada): el restore termina con ERROR y NO cambia nada (banco = X, previo = Y, sin restos)
+PASS: H2 FALLA 'poner' (paso -> banco, con la BD ya retirada): ERROR y se RECUPERA solo: banco vuelve a ser X, el previo Y sigue intacto y no sobra nada
+PASS: H3 FALLA 'poner' Y la recuperacion automatica ('recuperar_retirada'): ERROR EXPLICITO 'RECUPERACION INCOMPLETA', codigo != 0, banco_rs no existe pero la BD anterior sigue INTACTA como banco_rs_retirada y el previo Y esta intacto
+PASS: H4 'recuperar' NO devuelve exito si no consigue recuperar: codigo != 0 y mensaje 'RECUPERACION INCOMPLETA'; las bases siguen como estaban
+PASS: H5 sin el fallo, 'recuperar' devuelve la BD anterior: codigo 0, banco = X, sin retirada y el previo Y intacto
+PASS: H6 FALLA 'apartar' (al cerrar): el _previo anterior NO se elimina (sigue Y), la BD nueva ya es banco y la anterior sigue como retirada; ERROR explicito
+PASS: H7 'recuperar' CIERRA el intercambio: banco = respaldo, previo = la BD anterior X, sin retirada ni apartado
+PASS: H8 FALLA 'cerrar' (retirada -> previo) tras apartar: el previo anterior VUELVE a su nombre (Y), la retirada sigue (X) y ningun dato se pierde; ERROR explicito
+PASS: H9 'recuperar' termina el cierre: previo = X, sin retirada ni apartado
+PASS: H10 FALLA 'cerrar' Y 'deshacer_apartar': ERROR explicito 'RECUPERACION INCOMPLETA'; el previo anterior (Y) esta INTACTO como banco_rs_previo_antiguo, la BD anterior (X) como retirada y banco ya es el respaldo; NADA se elimino
+PASS: H11 'recuperar' retoma ese estado: la retirada (X) pasa a ser el previo, se elimina SOLO ENTONCES el apartado (Y) y no queda nada pendiente
+PASS: H12 CORTE DURO (kill -9) justo despues de apartar el previo: banco = respaldo, retirada = X, el previo anterior (Y) esta INTACTO como apartado y no existe banco_rs_previo
+PASS: H13 'recuperar' tras ese corte: previo = X, apartado eliminado solo despues, y es IDEMPOTENTE (segunda llamada sin cambios)
+PASS: H14 resto 'banco_rs_previo_antiguo' con previo presente y sin retirada: 'recuperar' elimina SOLO el apartado y conserva banco y previo
+PASS: H15 con todo en orden 'recuperar' no cambia nada y devuelve exito
+PASS: I1 backup con la BD CAMBIANDO entre el snapshot y pg_dump: termina bien (codigo 0) y el volcado contiene EXACTAMENTE lo que describe el manifiesto (no los cambios posteriores)
+PASS: I2 ...el manifiesto es la huella del estado ANTERIOR al cambio (la BD viva ya es otra: la diferencia ocurrio durante el respaldo)
+PASS: I3 cambio y REVERSION (A-B-A) durante el respaldo: codigo 0, volcado == manifiesto y la huella final de la BD viva es la del manifiesto (una comparacion antes/despues no habria visto nada)
+PASS: I4 un modificador CONTINUO (cientos de cambios y reversiones) durante 3 respaldos seguidos: los 3 terminan bien y en los 3 el volcado coincide EXACTAMENTE con su manifiesto
+PASS: J1 'recuperar' NO devuelve exito si la BD principal no existe (no hay nada que recuperar): codigo != 0 y mensaje explicito
+PASS: J2 solo existe el previo (sin banco ni retirada): error explicito y el previo queda intacto
+PASS: J3 AMBIGUO: sin banco, con retirada y apartado a la vez: error 'AMBIGUO' y NO se renombra ni se elimina nada
+PASS: J4 AMBIGUO: banco, retirada, previo y apartado a la vez: error 'AMBIGUO' y NO se elimina ninguna
+PASS: J5 una BD de paso suelta con banco presente: 'recuperar' la elimina, devuelve exito y banco queda intacto
+PASS: J6 resto 'previo_antiguo' sin previo ni retirada: vuelve a ser el previo (exito); no queda apartado
+PASS: J7 intercambio hecho sin previo anterior: 'recuperar' CIERRA (la retirada pasa a previo) y no deja retirada
+PASS: J8 corte entre los dos renombrados (solo la retirada): 'recuperar' la devuelve a banco (exito) y exige que banco exista al final
+PASS: J9 una PRIMERA restauracion sobre una base que no existe sigue funcionando (recuperar exige la base solo cuando existia): codigo 0, la base queda con la huella del respaldo y sin previo
+PASS: J10 una primera restauracion que FALLA (manifiesto que no coincide) sobre una base inexistente: error normal, SIN falso 'RECUPERACION INCOMPLETA', la base no se crea y no queda BD de paso
+PASS: K1 SIN el indicador, RESPALDO_FALLA=kill_entre (kill -9 entre los renombrados) se IGNORA con aviso: la restauracion termina bien (codigo 0) y banco_rs = respaldo
+PASS: K2 SIN el indicador, ni el fallo simulado ni los renombrados que 'fallan' tienen efecto: codigo 0, banco_rs = respaldo, el previo existe y no quedan restos
+PASS: K3 SIN el indicador, el gancho 'pausa_dump' (4 s) NO retrasa un backup real: codigo 0 y menos de 4 s
+PASS: K4 CON el indicador pero sobre la BD REAL 'banco', los ganchos se rechazan igualmente (el backup de banco, de solo lectura, no se pausa): codigo 0 y menos de 4 s
+PASS: L1 con una restauracion A en curso (candado tomado, BD de paso ya creada), una SEGUNDA restauracion sobre la misma base se rechaza de inmediato: codigo 75 'ocupado' y NO toca la BD de paso de A
+PASS: L2 durante la restauracion de A tambien se rechazan (75) un backup, un 'recuperar' y un 'descartar' sobre la misma base; el backup rechazado no deja archivos y el previo de A no se elimino
+PASS: L3 el candado es POR BASE: mientras A restaura banco_rs, un backup de OTRA base (banco_rsx) se hace sin esperar
+PASS: L4 la restauracion A termina bien pese a los intentos rechazados: codigo 0, banco_rs = respaldo, el previo es el estado anterior de A y no sobran retirada, apartado ni BD de paso
+PASS: L5 el candado se LIBERA al terminar A: una operacion inmediata despues (recuperar con espera 0) obtiene el candado y termina bien
+PASS: L6 SERIALIZACION: una segunda restauracion B que espera (espera 90 s) se ejecuta DESPUES de que A termina: las dos terminan bien (0 y 0), B acaba despues que A y el resultado es consistente (banco_rs = respaldo, previo = respaldo, sin restos)
+PASS: L7 INTERRUPCION (TERM) de A entre los dos renombrados mientras B espera para empezar: A termina con 143 y se recupera sola; B (que NO vio la BD intermedia: banco_rs no existia mientras esperaba) se ejecuta despues, sin mensajes de recuperacion, y deja banco_rs = respaldo con el estado anterior como previo
+PASS: L8 CORTE DURO (kill -9) de A entre los dos renombrados mientras B espera: el candado se libera solo (vigilante), B obtiene el candado, RECUPERA primero la BD intermedia ('Recuperada') y luego restaura: codigo 0, banco_rs = respaldo, el estado anterior es el previo y no quedan restos
+PASS: D1 restaurar y repetir el MISMO adelanto da el mismo resultado (mismos grupos escritos y mismos totales del libro): la demostracion se repite
+PASS: D2 y se puede volver al estado inicial las veces que haga falta (huella del respaldo)
+PASS: D3 la alternativa de PLANTILLA (CREATE DATABASE ... TEMPLATE) da la misma huella que el respaldo
+PASS: D4 y el estado final tras todo sigue en orden (integridad ok, 0 defensas caidas)
+RESUMEN: 86 pass, 0 fail
