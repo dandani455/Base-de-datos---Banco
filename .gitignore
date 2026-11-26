@@ -2,3 +2,6 @@
 node_modules/
 dist/
 .env
+
+# Contrato BD-front (documento del equipo, solo copia local; no se versiona)
+2026-11-18-contrato-bd-front.pdf
