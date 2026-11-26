@@ -51,7 +51,7 @@ describe('login', () => {
 describe('registro', () => {
   const body = { nombres: 'Juan', apellidos: 'Pérez', cedula: '1', correo: 'a@b.co', telefono: '3', fecha_nacimiento: '2000-01-01', password: 'Banco2026', acepta_politica: true };
   it('hashea la clave (la BD nunca la ve en claro) y devuelve username', async () => {
-    const { db } = dbConUsuarios({ registrar_usuario: () => [{ usuario_id: UID, username: 'jperez483' }] });
+    const { db } = dbConUsuarios({ registrar_usuario: () => [{ registrar_usuario: { usuario_id: UID, username: 'jperez483' } }] });
     const r = await request(hacerApp(db)).post('/api/auth/registro').send({ ...body, codigo_referido: 'abc' });
     expect(r.body).toEqual({ username: 'jperez483' });
     const args = (db as any).calls.find((c: any) => c[0] === 'registrar_usuario')[1];

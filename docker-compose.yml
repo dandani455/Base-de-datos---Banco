@@ -1,0 +1,101 @@
+# Banco Digital — stack completo (§11 del diseño): db + pgadmin + backend + front.
+#   cp .env.example .env   (y cambia JWT_SECRET)
+#   docker compose up -d --build
+#   App: http://localhost:8080 · pgAdmin: http://localhost:5050
+# Runbook de la demo y del apagón: docs/runbook-stack.md
+#
+# Distinto de db/compose.dev.yml (entorno del equipo de BD, proyecto "banco-db"): este es el proyecto "banco".
+# No los corras a la vez: comparten los puertos 5050 y 5433 del host.
+name: banco
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      # Usuario y base fijos: los scripts de db/sql, db/seed y el servers.json de pgAdmin asumen postgres/banco.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: banco
+      TZ: America/Bogota
+      PGTZ: America/Bogota
+      SEED: ${SEED:-demo}
+    command: ["postgres", "-c", "timezone=America/Bogota", "-c", "log_timezone=America/Bogota"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Solo corre con el volumen vacío: aplica db/sql/*.sql y la semilla.
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
+      - ./db/docker/postgres:/work/bootstrap:ro
+      - ./db/sql:/work/sql:ro
+      - ./db/seed:/work/seed:ro
+    ports:
+      # Solo en 127.0.0.1: para psql/pruebas desde el host. El backend usa la red interna (db:5432).
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    healthcheck:
+      # -h 127.0.0.1: durante el init postgres solo escucha por socket, así que no da "healthy" antes de tiempo.
+      # .banco_init_ok: la escribe 00_init.sh al terminar bien; un init cortado a mitad deja la BD unhealthy.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d banco && test -f /var/lib/postgresql/data/.banco_init_ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:9.19.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin_local}
+      # Modo escritorio: sin login ni contraseña maestra.
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Genera /tmp/pgpass dentro del contenedor para las 4 conexiones de servers.json (roles de db/sql/01_roles.sql).
+    entrypoint:
+      - /bin/sh
+      - -c
+      - printf '%s\n' "db:5432:*:postgres:$${POSTGRES_PASSWORD}" "db:5432:*:banco_dev:banco_dev_dev" "db:5432:*:banco_app:banco_app_dev" "db:5432:*:banco_lector:banco_lector_dev" > /tmp/pgpass && chmod 600 /tmp/pgpass && exec /entrypoint.sh
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./db/docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    environment:
+      # banco_app: solo EXECUTE sobre funciones (db/sql/01_roles.sql y 05_permisos.sql). Clave de desarrollo local.
+      DATABASE_URL: postgres://banco_app:banco_app_dev@db:5432/banco
+      PORT: 3000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en .env}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-10}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      RESEND_ENABLED: ${RESEND_ENABLED:-false}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-Banco Digital <onboarding@resend.dev>}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Sin "ports": solo nginx (front) habla con el backend.
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.front
+    depends_on:
+      - backend
+    ports:
+      - "${FRONT_PORT:-8080}:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  pgadmin-data:

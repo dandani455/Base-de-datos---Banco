@@ -14,7 +14,7 @@ describe('admin', () => {
   });
   it('admin: p_admin_id sale de la sesión; búsqueda y detalle', async () => {
     const { db } = dbConUsuarios({
-      admin_listar_usuarios: () => [{ id: UID }],
+      admin_listar_usuarios: () => [{ admin_listar_usuarios: [{ id: UID }] }],
       admin_detalle_usuario: () => [{ admin_detalle_usuario: { id: UID, balance: {} } }],
     });
     const app = hacerApp(db); const c = await login(app, request, 'admin1');

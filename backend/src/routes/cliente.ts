@@ -1,54 +1,59 @@
 import { Router } from 'express';
-import type { Db } from '../db';
-import { requireSession } from '../session';
+import { json, type Db } from '../db';
+import { COOKIE, leerToken, requireSession } from '../session';
 
 const wrap = (f: (req: any, res: any) => Promise<unknown>) => (req: any, res: any, next: any) => f(req, res).catch(next);
 
-/** Cada handler = UNA llamada a la BD con el usuario de la sesión. Cero lógica de negocio. */
+/**
+ * Cada handler = UNA llamada a la BD con el usuario de la sesión, y devuelve su jsonb tal cual. Cero lógica de negocio.
+ * Contrato: docs/db/etapas/10-resumen-para-juan.md (tabla maestra). Ids y montos pasan tal cual llegan: la BD valida.
+ */
 export function clienteRoutes(db: Db, secret: string) {
   const r = Router();
-  const json = async (fn: string, args: unknown[]) => (await db.call(fn, args))[0]?.[fn]; // funciones que devuelven jsonb
-  const hecho = (fn: string, args: (req: any) => unknown[]) =>
-    wrap(async (req, res) => { await db.call(fn, args(req)); res.json({}); });
+  /** Endpoint que llama a `fn` con los argumentos de `args(req)` y responde su jsonb. */
+  const ep = (fn: string, args: (req: any) => unknown[]) =>
+    wrap(async (req, res) => res.json((await json(db, fn, args(req))) ?? {}));
 
-  // público (landing)
-  r.get('/creditos/productos', wrap(async (_q, res) => res.json(await db.call('productos_publicos'))));
+  // Con sesión: topes efectivos del usuario (regla de edad incluida). Sin sesión (landing): topes base.
+  r.get('/creditos/productos', wrap(async (req, res) => {
+    const t = leerToken(secret, req.cookies?.[COOKIE]);
+    const lista = t?.sub && !t.p
+      ? await json(db, 'productos_disponibles', [t.sub])
+      : await json(db, 'productos_publicos');
+    res.json(lista ?? []);
+  }));
 
   r.use(requireSession(db, secret));
   const u = (req: any) => req.user.id;
   const b = (req: any) => req.body ?? {};
 
-  r.get('/dashboard', wrap(async (q, res) => res.json(await json('vista_dashboard', [u(q)]))));
-  r.get('/perfil', wrap(async (q, res) => res.json(await json('vista_perfil', [u(q)]))));
-  r.get('/transacciones', wrap(async (q, res) =>
-    res.json(await db.call('vista_historial', [u(q), q.query.limite === undefined ? 50 : q.query.limite]))));
-
-  r.get('/bolsillos', wrap(async (q, res) => res.json(await json('vista_balance', [u(q)]))));
-  r.post('/bolsillos', wrap(async (q, res) => { await db.call('crear_bolsillo', [u(q), b(q).nombre]); res.json({}); }));
-  r.patch('/bolsillos/:id', hecho('renombrar_bolsillo', (q) => [u(q), q.params.id, b(q).nombre]));
-  r.post('/bolsillos/:id/ingresar', hecho('mover_a_bolsillo', (q) => [u(q), q.params.id, b(q).monto]));
-  r.post('/bolsillos/:id/retirar', hecho('retirar_de_bolsillo', (q) => [u(q), q.params.id, b(q).monto]));
-  r.post('/bolsillos/:id/mover', hecho('mover_entre_bolsillos', (q) => [u(q), q.params.id, b(q).destino_id, b(q).monto]));
-
-  r.get('/destinatario/:numero', wrap(async (q, res) =>
-    res.json({ nombre: (await db.call('nombre_destinatario', [q.params.numero]))[0]?.nombre_destinatario })));
-  r.post('/envios', hecho('hacer_transferencia', (q) => [u(q), b(q).numero_destino, b(q).monto, b(q).nota ?? null, b(q).bolsillo_origen ?? null]));
-
-  r.get('/cdts/definiciones', wrap(async (_q, res) => res.json(await db.call('listar_cdt_definiciones'))));
-  r.get('/cdts', wrap(async (q, res) => res.json(await db.call('vista_cdts', [u(q)]))));
-  r.post('/cdts/simular', wrap(async (q, res) =>
-    res.json((await db.call('simular_cdt', [b(q).definicion_id, b(q).monto]))[0])));
-  r.post('/cdts', hecho('crear_cdt', (q) => [u(q), b(q).definicion_id, b(q).monto]));
-
-  r.get('/creditos/mis-creditos', wrap(async (q, res) => res.json(await db.call('vista_creditos', [u(q)]))));
-  r.post('/creditos/simular', wrap(async (q, res) => {
-    const s = (await db.call('simular_credito', [b(q).producto_id, b(q).monto, b(q).plazo]))[0];
-    // solo renombra campos al contrato del front; no calcula nada
-    res.json({ cuota_mensual: s?.cuota, total_a_pagar: s?.total_pagar, intereses_totales: s?.intereses_totales });
+  r.get('/dashboard', ep('vista_dashboard', (q) => [u(q)]));
+  r.get('/perfil', ep('vista_perfil', (q) => [u(q)]));
+  r.get('/transacciones', wrap(async (q, res) => {
+    const n = Number.parseInt(String(q.query.limite ?? ''), 10); // no numérico → NULL = 50 (la BD acota a [1, 50])
+    res.json((await json(db, 'vista_historial', [u(q), Number.isNaN(n) ? null : n])) ?? []);
   }));
-  r.post('/creditos', hecho('solicitar_credito', (q) => [u(q), b(q).producto_id, b(q).monto, b(q).plazo]));
-  r.post('/creditos/:id/abono', hecho('abonar_credito', (q) => [u(q), q.params.id, b(q).monto]));
-  r.post('/creditos/:id/descuento', hecho('activar_descuento_automatico', (q) => [u(q), q.params.id, b(q).activo]));
-  r.post('/creditos/:id/pagar-cuota', hecho('pagar_cuota', (q) => [u(q), q.params.id]));
+
+  r.get('/bolsillos', ep('vista_balance', (q) => [u(q)]));
+  r.post('/bolsillos', ep('crear_bolsillo', (q) => [u(q), b(q).nombre]));
+  r.post('/bolsillos/:id/ingresar', ep('mover_a_bolsillo', (q) => [u(q), q.params.id, b(q).monto]));
+  r.post('/bolsillos/:id/retirar', ep('retirar_de_bolsillo', (q) => [u(q), q.params.id, b(q).monto]));
+  r.post('/bolsillos/:id/mover', ep('mover_entre_bolsillos', (q) => [u(q), q.params.id, b(q).destino_id, b(q).monto]));
+
+  r.get('/destinatario/:numero', ep('nombre_destinatario', (q) => [u(q), q.params.numero]));
+  r.post('/envios', ep('hacer_transferencia', (q) => [u(q), b(q).numero_destino, b(q).monto, b(q).nota ?? null, b(q).bolsillo_origen ?? null]));
+
+  r.get('/cdts/definiciones', ep('listar_cdt_definiciones', (q) => [u(q)]));
+  r.get('/cdts', ep('vista_cdts', (q) => [u(q)]));
+  r.post('/cdts/simular', ep('simular_cdt', (q) => [u(q), b(q).definicion_id, b(q).monto]));
+  r.post('/cdts', ep('crear_cdt', (q) => [u(q), b(q).definicion_id, b(q).monto]));
+
+  r.get('/creditos/mis-creditos', ep('vista_creditos', (q) => [u(q)]));
+  r.post('/creditos/simular', ep('simular_credito', (q) => [u(q), b(q).producto_id, b(q).monto, b(q).plazo]));
+  r.post('/creditos', ep('solicitar_credito', (q) => [u(q), b(q).producto_id, b(q).monto, b(q).plazo]));
+  r.post('/creditos/:id/abono', ep('abonar_credito', (q) => [u(q), q.params.id, b(q).monto]));
+  r.post('/creditos/:id/descuento', ep('activar_descuento_automatico', (q) => [u(q), q.params.id, b(q).activo]));
+  // `numero` (cuotas_pagadas + 1) es opcional y evita cobrar dos cuotas por un doble clic.
+  r.post('/creditos/:id/pagar-cuota', ep('pagar_cuota', (q) => [u(q), q.params.id, b(q).numero ?? null]));
   return r;
 }

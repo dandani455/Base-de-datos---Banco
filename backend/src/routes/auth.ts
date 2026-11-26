@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
-import type { Db } from '../db';
+import { json, type Db } from '../db';
 import { AppError } from '../errors';
 import { COOKIE, firmar, leerToken, opcionesCookie, requireSession } from '../session';
 import { enviarVerificacion } from '../mail';
@@ -28,10 +28,10 @@ export function authRoutes(db: Db, cfg: AuthCfg) {
     if (!PASS_OK(b.password)) throw new AppError(400, 'La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número');
     const hash = await bcrypt.hash(b.password, cfg.rounds);
     const verif = process.env.RESEND_ENABLED === 'true';
-    const rows = await db.call('registrar_usuario', [b.nombres, b.apellidos, b.cedula, b.correo, b.telefono,
-      b.fecha_nacimiento, hash, b.acepta_politica, b.codigo_referido ?? null, verif]);
-    if (verif) await enviarVerificacion(b.correo, linkVerificar(rows[0].usuario_id));
-    res.json({ username: rows[0].username });
+    const u = await json<{ usuario_id: string; username: string }>(db, 'registrar_usuario', [b.nombres, b.apellidos,
+      b.cedula, b.correo, b.telefono, b.fecha_nacimiento, hash, b.acepta_politica, b.codigo_referido ?? null, verif]);
+    if (verif) await enviarVerificacion(b.correo, linkVerificar(u.usuario_id));
+    res.json({ username: u.username }); // el usuario_id no sale del backend
   }));
 
   r.post('/verificar', wrap(async (req, res) => {
@@ -42,7 +42,8 @@ export function authRoutes(db: Db, cfg: AuthCfg) {
   }));
 
   r.post('/reenviar', requireSession(db, cfg.secret), wrap(async (req, res) => {
-    const p = (await db.call('vista_perfil', [req.user.id]))[0]?.vista_perfil; // asume que incluye `correo` (ver README)
+    // OJO: vista_perfil hoy NO trae `correo` (ver README): este endpoint no envía nada hasta que la BD lo agregue.
+    const p = await json(db, 'vista_perfil', [req.user.id]);
     if (p?.correo) await enviarVerificacion(p.correo, linkVerificar(req.user.id));
     res.json({});
   }));
@@ -64,9 +65,9 @@ export function authRoutes(db: Db, cfg: AuthCfg) {
 
 export function yoRoute(db: Db, secret: string) {
   const r = Router();
-  r.get('/yo', requireSession(db, secret), wrap(async (req, res) => {
-    const p = (await db.call('vista_perfil', [req.user.id]))[0]?.vista_perfil;
-    res.json({ username: p?.username, rol: req.user.rol });
-  }));
+  // validar_sesion (en requireSession) ya trae username y rol; vista_perfil no sirve aquí: el ADMIN no tiene cuenta.
+  r.get('/yo', requireSession(db, secret), (req, res) => {
+    res.json({ username: req.user!.username, rol: req.user!.rol });
+  });
   return r;
 }

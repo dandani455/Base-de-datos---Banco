@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Request, Response } from 'express';
-import type { Db } from './db';
+import { json, type Db } from './db';
 import { AppError } from './errors';
 
 export const COOKIE = 'sid';
-declare global { namespace Express { interface Request { user?: { id: string; rol: string } } } }
+declare global { namespace Express { interface Request { user?: { id: string; rol: string; username: string } } } }
 
 export const firmar = (secret: string, payload: object, expiresIn: string) =>
   jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
@@ -23,9 +23,10 @@ export const requireSession = (db: Db, secret: string) =>
     try {
       const t = leerToken(secret, req.cookies?.[COOKIE]);
       if (!t?.sub || t.p) throw new AppError(401, 'No autenticado');
-      const rows = await db.call('validar_sesion', [t.sub]); // lanza P0001 con el mensaje de bloqueo
-      if (!rows[0]) throw new AppError(401, 'No autenticado');
-      req.user = { id: t.sub, rol: rows[0].rol };
+      // jsonb {username, rol, estado}; lanza P0001 con el mensaje de bloqueo o "Sesión inválida"
+      const s = await json<{ username: string; rol: string } | null>(db, 'validar_sesion', [t.sub]);
+      if (!s?.rol) throw new AppError(401, 'No autenticado');
+      req.user = { id: t.sub, rol: s.rol, username: s.username };
       next();
     } catch (e) { next(e); }
   };
