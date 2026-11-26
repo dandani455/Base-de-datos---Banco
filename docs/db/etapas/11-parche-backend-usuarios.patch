@@ -1,0 +1,31 @@
+NOTA (2026-11-25): REFERENCIA DESCARTABLE. NO esta integrado en ninguna rama ni se debe aplicar al borrador temporal de origin/main.
+Problema que resuelve: GET /admin/usuarios lee admin_listar_usuarios con db.call(...) (espera filas), pero la BD devuelve JSONB (D3) en una celda:
+sin el cambio la respuesta seria [{"admin_listar_usuarios":[...]}]. Cuando: solo al desarrollar el backend DEFINITIVO, donde TODAS las funciones se leen como jsonb;
+entonces se vuelve a contrastar todo contra el contrato y la BD terminada. Ver docs/db/etapas/11-admin.md, secciones 5 y 8.
+
+diff --git a/backend/src/routes/admin.ts b/backend/src/routes/admin.ts
+index 054122f..4186922 100644
+--- a/backend/src/routes/admin.ts
++++ b/backend/src/routes/admin.ts
+@@ -14,7 +14,7 @@ export function adminRoutes(db: Db, secret: string) {
+   const hecho = (fn: string, args: (req: any) => unknown[]) =>
+     wrap(async (req, res) => { await db.call(fn, args(req)); res.json({}); });
+ 
+-  r.get('/usuarios', wrap(async (q, res) => res.json(await db.call('admin_listar_usuarios', [a(q), q.query.busqueda ?? '']))));
++  r.get('/usuarios', wrap(async (q, res) => res.json(await json('admin_listar_usuarios', [a(q), q.query.busqueda ?? '']))));
+   r.get('/usuarios/:id', wrap(async (q, res) => res.json(await json('admin_detalle_usuario', [a(q), q.params.id]))));
+   r.post('/usuarios/:id/bloquear', hecho('admin_bloquear', (q) => [a(q), q.params.id]));
+   r.post('/usuarios/:id/desbloquear', hecho('admin_desbloquear', (q) => [a(q), q.params.id]));
+diff --git a/backend/test/admin.test.ts b/backend/test/admin.test.ts
+index 4ef709c..6ae4abb 100644
+--- a/backend/test/admin.test.ts
++++ b/backend/test/admin.test.ts
+@@ -14,7 +14,7 @@ describe('admin', () => {
+   });
+   it('admin: p_admin_id sale de la sesión; búsqueda y detalle', async () => {
+     const { db } = dbConUsuarios({
+-      admin_listar_usuarios: () => [{ id: UID }],
++      admin_listar_usuarios: () => [{ admin_listar_usuarios: [{ id: UID }] }],
+       admin_detalle_usuario: () => [{ admin_detalle_usuario: { id: UID, balance: {} } }],
+     });
+     const app = hacerApp(db); const c = await login(app, request, 'admin1');

@@ -1,0 +1,21 @@
+﻿# Cierre de auditoria de E11 (2026-11-25). Unico cambio de codigo: el COMMENT ON VIEW v_integridad_defensas de 09_integridad.sql (E4-E10 / 26 funciones -> E4-E11 / 38 funciones). No se repitio la suite completa (solo es un comentario); se reaplico 09_integridad.sql a banco.
+
+== verificacion en banco tras reaplicar 09_integridad.sql
+                                               ?column?                                                
+-------------------------------------------------------------------------------------------------------
+ comentario_E4-E11_38=true sin_26_ni_E4-E10=true defensas_fallidas=0 integridad_ok=true app_ejecuta=38
+(1 row)
+
+
+== coincidencias de '26 funciones | E4-E10 | E4 a E10' en db/sql: 0
+
+== git status (ningun archivo rastreado cambio; el parche del backend NO se integro en ninguna rama; sin worktrees ni ramas nuevas)
+?? .gitattributes
+?? 2026-11-18-contrato-bd-front.pdf
+?? db/
+?? docs/db/
+C:/Users/user/Desktop/Banco bases de datos  6027e8e [feat/db-core]
+* feat/db-core
+  main
+  remotes/origin/main
+

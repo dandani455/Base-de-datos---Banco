@@ -1,0 +1,33 @@
+git status --short (E4) - 2026-11-23 01:41
+?? .gitattributes
+?? db/
+?? docs/db/
+-- rama:
+feat/db-core
+-- front/, docs/specs, docs/superpowers sin cambios (lineas):
+0
+-- git log -1:
+6027e8e chore: unir historial con el README inicial de GitHub
+-- archivos nuevos/modificados de E4 (db/ y docs/db/):
+db/sql/13_auth_utilidades.sql
+db/sql/14_auth_funciones.sql
+db/tests/40_auth_normalizacion.test.sql
+db/tests/41_auth_registro.test.sql
+db/tests/42_auth_ingresos.test.sql
+db/tests/43_auth_referidos.test.sql
+db/tests/44_auth_sesion.test.sql
+db/tests/45_auth_permisos.test.sql
+db/tests/46_auth_reloj.test.sql
+db/tests/47_auth_aleatorio.test.sql
+db/tests/48_auth_atomicidad.test.sql
+db/tests/reales/39_auth_conexiones.sh
+db/tests/reales/40_auth_concurrencia.sh
+docs/db/etapas/04-auth-diseno.md
+docs/db/etapas/04-auth.md
+docs/db/etapas/04-resumen-para-juan.md
+docs/db/evidencias/04-auth-aplicacion.txt
+docs/db/evidencias/04-auth-mutaciones.txt
+docs/db/evidencias/04-auth.txt
+docs/db/evidencias/04-pgadmin-demo-salida.txt
+docs/db/evidencias/04-pgadmin-demo.sql
+docs/db/evidencias/capturas-pgadmin/e4-verificacion-pgadmin.jpg

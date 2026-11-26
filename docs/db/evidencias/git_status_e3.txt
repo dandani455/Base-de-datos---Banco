@@ -1,0 +1,10 @@
+git status --short (E3 + correccion) - 2026-11-22 00:19
+?? .gitattributes
+?? db/
+?? docs/db/
+-- rama:
+feat/db-core
+-- front/, docs/specs, docs/superpowers sin cambios (lineas):
+0
+-- git log -1:
+6027e8e chore: unir historial con el README inicial de GitHub

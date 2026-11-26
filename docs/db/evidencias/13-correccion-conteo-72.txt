@@ -1,0 +1,74 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-25 18:24:56 -0500
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+Filtro    : pruebas que empiezan por '72'
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   aplicado 13_auth_utilidades.sql
+   aplicado 14_auth_funciones.sql
+   aplicado 15_transferencias.sql
+   aplicado 16_bolsillos.sql
+   aplicado 17_motor_devengo.sql
+   aplicado 18_cdt.sql
+   aplicado 19_creditos_calculo.sql
+   aplicado 20_creditos.sql
+   aplicado 21_pagos_calculo.sql
+   aplicado 22_pagos.sql
+   aplicado 23_vistas.sql
+   aplicado 24_admin.sql
+   aplicado 25_control.sql
+   aplicado 26_mantenimiento.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 72_mantenimiento.test.sql
+   ok    A1 banco sano: ok = true, todos los desvios en 0 y las 6 secciones de detalle VACIAS ([])
+   ok    A2 las claves del informe son EXACTAMENTE las 12 de v_integridad_global + detalle, y cada valor coincide con la vista (una sola fuente de verdad)
+   ok    A3b el informe RESTAURA el search_path del llamador (set_config local dura hasta el fin de la transaccion): no cambia
+   ok    A3 el informe es SOLO LECTURA: ni saldos ni libro ni auditoria cambian al llamarlo (y es repetible: dos llamadas = el mismo informe)
+   ok    B1 un balance de cuenta alterado (+1): saldos (1 fila CUENTA, diferencia 1) y usuario (I5u), ok = false
+   ok    B2 un balance de bolsillo alterado: 1 fila BOLSILLO en saldos
+   ok    B3 un generado_acumulado de CDT alterado: 2 filas (CDT_GENERADO y CDT_INVERSION)
+   ok    B4 un capital_pendiente de credito alterado: 1 fila CREDITO en saldos y 1 de I5u
+   ok    B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+   ok    B6 un grupo descuadrado (100 contra 99): detalle.grupos lo trae
+   ok    B7 una DEFENSA caida (guardia de cuenta desactivado): defensas_fallidas >= 1 y el control con su nombre en detalle.defensas
+   ok    B8 un permiso de mas (banco_app recibe UPDATE de un acumulador): la defensa de roles cae y sale en detalle.defensas
+   ok    B9 la lista blanca de banco_app rota (se concede EXECUTE de una interna): la defensa de las 40 funciones cae
+   ok    B10 un CLIENTE sin cuenta (autenticacion): controles_auth_fallidos >= 1 y la fila en detalle.auth
+   ok    B11 un capital_pendiente que ya no cuadra con el plan de cuotas: creditos_con_plan_incoherente = 1 y la fila en detalle.creditos
+   ok    B12 un ENVIO que perdio a su RECIBO con la cuenta contraria VIVA es un error real (detalle.grupos), no un huerfano esperado
+   ok    B13 30 saldos alterados: el CONTEO es el real (30) y el detalle trae a lo sumo 20 filas (muestra_max)
+   ok    B14 despues de todos los sabotajes (deshechos) el banco vuelve a estar sano: ok = true y detalle vacio
+   ok    C1 los 2 procedimientos: prokind = p, SECURITY INVOKER y SIN clausula SET (la unica forma de poder hacer COMMIT), con COMMENT, dueño banco_owner
+   ok    C2 NADIE salvo dueño/superusuario los ejecuta: ni PUBLIC, ni banco_app, ni banco_lector, ni banco_dev (los 2 procedimientos y _reglas_mantenimiento)
+   ok    C3 banco_lector NO puede ejecutar sp_verificar_integridad (permiso denegado)
+   ok    C4 banco_app NO puede ejecutar sp_avanzar_todos (permiso denegado)
+   ok    C5 AJUSTE 1: en sp_avanzar_todos el orden de las instrucciones es S C F S R A C E S C: set_config del search_path en la transaccion de CAPTURA (S), su COMMIT (C), el bucle (F), set_config al INICIO DE CADA CUENTA (S), la instantanea del reloj DENTRO del bucle (R), el motor (A), el COMMIT de la cuenta (C), fin del bucle (E) y set_config en la transaccion FINAL de auditoria (S) con su COMMIT (C): despues de CADA COMMIT se vuelve a fijar (cada COMMIT descarta lo local)
+   ok    C6 sp_verificar_integridad fija el search_path y lo RESTAURA al terminar (2 set_config; no hace COMMIT, no escribe: sin INSERT/UPDATE/DELETE/COMMIT en su codigo)
+   ok    C7 AJUSTE 2: el 55P03 (lock_not_available) se cuenta como TIMEOUT DE BLOQUEO (clave omitidas_por_timeout_de_bloqueo, sin asumir que la cuenta estaba ocupada); no existe la clave antigua "omitidas_por_bloqueo" ni "ocupada"
+   ok    C8 cada cuenta usa SU instantanea del reloj y el motor de E7-E9: UNA _reloj_instantanea() y UNA _avanzar_hasta en el bucle; ningun INSERT en transaccion ni lectura suelta del reloj
+   ok    C9 valores provisionales fijados en _reglas_mantenimiento(): lock_timeout 2s, errores_max 20, muestra_max 20
+   ok    C10 sp_avanzar_todos DENTRO de una transaccion falla con "invalid transaction termination" (SQLSTATE 2D000): hay que llamarlo SOLO (autocommit)
+   ok    C11 ...y ese intento fallido no dejo NADA: ni evento de auditoria ni cambios
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+31 passed, 0 failed

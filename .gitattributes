@@ -1,0 +1,10 @@
+# Fin de linea estable entre Windows y Linux/macOS.
+# Los scripts de shell y el SQL deben ser LF (un CRLF rompe bash y los .sql montados en contenedores).
+*.sh   text eol=lf
+*.sql  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+# Los lanzadores de Windows conservan CRLF.
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf

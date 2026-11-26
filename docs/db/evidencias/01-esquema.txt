@@ -1,0 +1,379 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-21 13:14:37 -05:00
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   cargado helpers.sql (solo en banco_test)
+
+== 00_smoke.test.sql
+   ok    smoke: 1 = 1
+   ok    assert_eq: texto
+   ok    assert_eq: NULL = NULL (NULL-safe)
+   ok    assert_true: condicion verdadera
+   ok    assert_eq falla si los valores difieren
+   ok    assert_true falla con FALSE
+   ok    assert_raises falla si NO hay excepcion
+   ok    division por cero es 22012
+   ok    RAISE EXCEPTION por defecto es P0001 con el mensaje exacto
+   ok    assert_ok pasa con una sentencia valida
+   ok    assert_ok falla si la sentencia lanza error
+   ok    assert_violates reconoce la restriccion exacta
+   ok    assert_violates falla si la restriccion es otra
+   ok    json: forma correcta
+   ok    json: clave faltante
+   ok    json: tipo incorrecto (numero llegando como string)
+== 01_entorno.test.sql
+   ok    PostgreSQL 16.x
+   ok    extension unaccent instalada
+   ok    extension pg_trgm instalada
+   ok    unaccent quita tildes (busqueda de usuarios)
+   ok    pg_trgm: texto identico = similitud 1
+   ok    gen_random_uuid() genera 36 caracteres
+   ok    TimeZone de la BD
+   ok    offset de now() es -05:00
+   ok    timestamptz se serializa a JSON con offset -05:00 (contrato: ISO 8601 con zona)
+   ok    02:00 UTC del 21-nov es el 20-nov en Bogota
+   ok    hoy en Bogota = current_date de una sesion Bogota
+   ok    NUMERIC(18,2) a jsonb conserva los 2 decimales
+   ok    NUMERIC(18,2) en jsonb es de tipo number
+   ok    date en jsonb es texto ISO
+   ok    esquema tests presente en banco_test
+   ok    la BD de pruebas es banco_test
+== 02_roles.test.sql
+   ok    los 5 roles del banco existen
+   ok    banco_owner no inicia sesion
+   ok    banco_ledger no inicia sesion
+   ok    banco_app inicia sesion
+   ok    banco_lector inicia sesion
+   ok    banco_dev inicia sesion
+   ok    ningun rol del banco es superusuario ni puede crear roles/BD ni saltarse RLS ni replicar
+   ok    los roles con login tienen contrasena SCRAM (no vacia)
+   ok    los roles sin login no tienen contrasena
+   ok    banco_app: statement_timeout, lock_timeout e idle_in_transaction
+   ok    banco_lector: solo lectura por defecto y statement_timeout
+   ok    banco_dev: statement_timeout 30s
+   ok    banco_dev es miembro de banco_lector y banco_app (y de nadie mas)
+   ok    nadie mas es miembro de un rol del banco
+   ok    banco_app NO hereda de banco_owner (no puede ser dueno)
+   ok    banco_lector NO hereda de banco_app
+   ok    CONNECT: banco_app, banco_lector y banco_dev si
+   ok    CONNECT: banco_ledger y banco_owner no (nadie inicia sesion con ellos)
+   ok    PUBLIC no tiene ningun privilegio sobre la base de datos
+   ok    solo banco_owner puede crear esquemas en la base de datos
+   ok    nadie (salvo superusuario) puede crear tablas temporales
+   ok    existe un privilegio por defecto de funciones de banco_owner sin PUBLIC
+   ok    una funcion nueva de banco_owner NO es ejecutable por banco_app, banco_lector ni banco_dev
+   ok    ...y si por banco_owner
+   ok    ...y PUBLIC no figura en su lista de privilegios
+== 03_schema.test.sql
+   ok    public tiene EXACTAMENTE estas 11 tablas
+   ok    public tiene 11 tablas (conteo)
+   ok    audit tiene SOLO la tabla evento
+   ok    no hay vistas ni funciones del banco todavia en public (E1 es solo estructura)
+   ok    no hay triggers de usuario todavia (los del libro mayor son de E2)
+   ok    todas las tablas, esquemas, tipos y dominios son de banco_owner
+   ok    toda tabla y toda columna tiene COMMENT (diccionario en la propia BD)
+   ok    audit.evento no tiene ninguna FK (ni hacia ni desde ella)
+   ok    ninguna tabla de public referencia al esquema audit
+   ok    dinero acepta el maximo 9999999999999.99 y el minimo negativo equivalente
+   ok    dinero rechaza 10^13
+   ok    dinero rechaza -10^13
+   ok    dinero conserva los 2 decimales
+   ok    porcentaje acepta 0.001, 12, 13.5 y 100
+   ok    porcentaje rechaza 0
+   ok    porcentaje rechaza 100.001
+   ok    porcentaje rechaza negativos
+   ok    enum rol_usuario
+   ok    enum estado_usuario
+   ok    enum estado_cdt
+   ok    enum estado_credito
+   ok    enum contenedor_contable
+   ok    enum sentido_asiento
+   ok    enum tipo_transaccion tiene los 17 tipos del contrato
+   ok    un valor fuera del enum de rol se rechaza
+== 04_restricciones.test.sql
+   ok    usuario: los datos base entraron (4 usuarios)
+   ok    usuario: defaults (CLIENTE, ACTIVO, sin verificar, sin bono, codigo_referido generado)
+   ok    usuario: un ADMIN valido entra (rol ADMIN, sin referidor)
+   ok    usuario: un CLIENTE referido y con bono pagado es valido
+   ok    usuario: username duplicado
+   ok    usuario: cedula duplicada
+   ok    usuario: correo duplicado
+   ok    usuario: telefono duplicado
+   ok    usuario: codigo_referido duplicado
+   ok    usuario: id duplicado (PK)
+   ok    usuario: username con mayusculas
+   ok    usuario: username demasiado corto (2)
+   ok    usuario: username que empieza por digito
+   ok    usuario: username con guion bajo
+   ok    usuario: username demasiado largo (31)
+   ok    usuario: username de 3 y de 30 caracteres
+   ok    usuario: correo sin arroba
+   ok    usuario: correo sin punto en el dominio
+   ok    usuario: correo con espacio
+   ok    usuario: correo con mayusculas (el UNIQUE debe ser insensible a mayusculas)
+   ok    usuario: cedula con letras
+   ok    usuario: telefono con guion
+   ok    usuario: nombres en blanco
+   ok    usuario: apellidos vacios
+   ok    usuario: nacimiento anterior a 1900
+   ok    usuario: password_hash en blanco
+   ok    usuario: username es NOT NULL
+   ok    usuario: un ADMIN no puede tener referidor (subtipo)
+   ok    usuario: un ADMIN no puede tener bono de referido pagado (subtipo)
+   ok    usuario: nadie se refiere a si mismo
+   ok    usuario: referido_por debe existir (FK recursiva)
+   ok    usuario: rol/estado fuera de los enumerados se rechazan
+   ok    cuenta: un CLIENTE puede tener cuenta (positiva)
+   ok    cuenta: el balance conserva 2 decimales
+   ok    cuenta: NO se puede crear una cuenta para un ADMIN (FK compuesta, rol por defecto)
+   ok    cuenta: NO se puede forzar rol ADMIN en cuenta (CHECK)
+   ok    cuenta: NO se puede cambiar a ADMIN el rol de un cliente que ya tiene cuenta
+   ok    cuenta: el esquema NO obliga a que un CLIENTE tenga cuenta (eso lo garantiza registrar_usuario, E4)
+   ok    cuenta: como MAXIMO una por usuario
+   ok    cuenta: numero de cuenta unico
+   ok    cuenta: numero de 9 digitos
+   ok    cuenta: numero de 11 digitos
+   ok    cuenta: numero con letras
+   ok    cuenta: balance negativo
+   ok    cuenta: balance fuera del dominio dinero (10^13)
+   ok    cuenta: el usuario debe existir
+   ok    bolsillo: DOS bolsillos con el mismo nombre en la misma cuenta SI se permiten
+   ok    bolsillo: bolsillo valido con saldo
+   ok    bolsillo: nombre en blanco
+   ok    bolsillo: balance negativo
+   ok    bolsillo: la cuenta debe existir
+   ok    bolsillo: ultimo_cobro es NOT NULL (lo fija la funcion al crear)
+   ok    cdt_definicion: definicion valida (tasa 0.001 y 100 son los extremos)
+   ok    cdt_definicion: nombre unico
+   ok    cdt_definicion: nombre en blanco
+   ok    cdt_definicion: plazo 0
+   ok    cdt_definicion: monto minimo 0
+   ok    cdt_definicion: tasa 0
+   ok    cdt_definicion: tasa 100.001
+   ok    cdt: CDT valido con fin = inicio + plazo
+   ok    cdt: fecha_fin distinta de inicio + plazo
+   ok    cdt: monto 0
+   ok    cdt: plazo 0
+   ok    cdt: generado negativo
+   ok    cdt: ultimo_cobro anterior al inicio
+   ok    cdt: nombre en blanco
+   ok    cdt: la cuenta debe existir
+   ok    cdt: la definicion, si se indica, debe existir
+   ok    cdt: puede existir sin definicion (definicion_id NULL)
+   ok    cdt: estado fuera del enum
+   ok    credito_producto: producto con tope absoluto, multiplicador y regla de edad
+   ok    credito_producto: nombre unico
+   ok    credito_producto: nombre en blanco
+   ok    credito_producto: monto minimo 0
+   ok    credito_producto: monto minimo mayor que el maximo
+   ok    credito_producto: plazo minimo 0
+   ok    credito_producto: plazo minimo mayor que el maximo
+   ok    credito_producto: tope absoluto 0
+   ok    credito_producto: multiplicador 0
+   ok    credito_producto: tasa 101
+   ok    credito: segundo credito ACTIVO del mismo producto en la misma cuenta
+   ok    credito: un credito ACTIVO de OTRO producto en la misma cuenta si
+   ok    credito: el mismo producto en OTRA cuenta si
+   ok    credito: dos creditos PAGADOS del mismo producto conviven con el ACTIVO
+   ok    credito: capital pendiente mayor que el monto
+   ok    credito: capital pendiente negativo
+   ok    credito: PAGADO con deuda pendiente
+   ok    credito: monto 0
+   ok    credito: plazo 0
+   ok    credito: mora negativa
+   ok    credito: el producto debe existir
+   ok    credito: la cuenta debe existir
+   ok    cuota: cuota valida (capital + interes = valor)
+   ok    cuota: cuota pagada con fecha de pago
+   ok    cuota: (credito_id, numero) unico (clave real de la entidad debil)
+   ok    cuota: numero 0
+   ok    cuota: valor 0
+   ok    cuota: capital + interes distinto del valor
+   ok    cuota: capital programado negativo
+   ok    cuota: pagada sin fecha de pago
+   ok    cuota: fecha de pago sin estar pagada
+   ok    cuota: pagos negativos
+   ok    cuota: el credito debe existir
+   ok    reloj: una sola fila, modo real, sin fecha manual
+   ok    reloj: no admite una segunda fila (id <> 1)
+   ok    reloj: no admite repetir el id 1
+   ok    reloj: modo manual exige fecha_sistema
+   ok    reloj: modo manual con fecha es valido
+   ok    parametro: una sola fila con los valores del spec y sin tasa de mora
+   ok    parametro: no admite una segunda fila
+   ok    parametro: no admite repetir el id 1
+   ok    parametro: tasa de mora valida
+   ok    parametro: tasa de mora 0
+   ok    parametro: tasa de mora 100.001
+   ok    parametro: bono 0
+   ok    parametro: ingreso simulado minimo mayor que el maximo
+   ok    parametro: monto maximo fuera del dominio dinero
+   ok    audit.evento: evento con actor que NO existe en usuario (sin FK)
+   ok    audit.evento: evento del sistema (sin actor)
+   ok    audit.evento: accion en blanco
+   ok    audit.evento: orden es creciente
+   ok    audit.evento: orden no se puede fijar a mano (GENERATED ALWAYS)
+== 05_libro_mayor.test.sql
+   ok    la lista independiente de permitidas tiene 37 combinaciones
+   ok    matriz: las 37 combinaciones permitidas entran
+   ok    matriz: las 133 combinaciones prohibidas se rechazan (check_violation)
+   ok    matriz: ninguna combinacion se comporto al reves
+   ok    matriz: el lado D/C generado coincide con la tabla contable en las 37 permitidas
+   ok    las 37 filas de la matriz quedaron en el libro (orden creciente sin huecos de logica)
+   ok    RECIBO solo es una ENTRADA de la cuenta (RECIBO/CUENTA/S)
+   ok    DEPOSITO_BANCO solo aumenta el resultado (DEPOSITO_BANCO/RESULTADO/S)
+   ok    un ENVIO no puede afectar al CDT
+   ok    lado no se puede insertar (GENERATED ALWAYS)
+   ok    orden no se puede insertar (GENERATED ALWAYS identity)
+   ok    orden crece con cada insercion
+   ok    fila valida: RECIBO a la cuenta
+   ok    monto 0
+   ok    monto negativo (el signo lo dan sentido/lado, nunca el monto)
+   ok    monto fuera del dominio dinero
+   ok    BOLSO_INGRESO exige bolsillo_id
+   ok    INTERES_BOLSO exige bolsillo_id
+   ok    ENVIO desde la cuenta no lleva bolsillo_id
+   ok    ENVIO desde un bolsillo exige bolsillo_id
+   ok    RECIBO no lleva bolsillo_id
+   ok    CDT_CREACION exige cdt_id
+   ok    RECIBO no lleva cdt_id
+   ok    CREDITO_CUOTA exige credito_id
+   ok    RECIBO no lleva credito_id
+   ok    contenedor almacenado (CUENTA) sin saldos
+   ok    saldo posterior incoherente con previo + monto
+   ok    saldo posterior incoherente con previo - monto
+   ok    una salida no puede dejar saldo negativo
+   ok    saldo previo negativo
+   ok    contenedor derivado (RESULTADO) no lleva saldos
+   ok    contenedor derivado (CDT) no lleva saldos
+   ok    el pasivo (CREDITO) lleva saldos como los activos: E suma deuda
+   ok    la cuenta propietaria debe existir
+   ok    el bolsillo debe existir
+   ok    el cdt debe existir
+   ok    el credito debe existir
+   ok    E1 acepta una pata sola (un grupo descuadrado): el cuadre por grupo es de la Etapa 2
+   ok    ...y ese grupo queda descuadrado (ΣD - ΣC = 100): lo detectara E2
+== 06_borrados.test.sql
+   ok    escenario: 8 patas del libro (7 de A y 1 de B)
+   ok    NO se puede borrar un BOLSILLO que tiene movimientos
+   ok    NO se puede borrar un CDT que tiene movimientos
+   ok    NO se puede borrar un CREDITO que tiene movimientos
+   ok    ...y el rechazo fue completo: sus cuotas siguen ahi
+   ok    un bolsillo SIN movimientos si se puede borrar
+   ok    NO se puede borrar un producto de credito con creditos
+   ok    borrar la plantilla de CDT deja el CDT vivo con definicion_id NULL
+   ok    ...el CDT conserva sus copias y definicion_id es NULL
+   ok    antes: A tiene 1 cuenta, 1 bolsillo, 1 CDT, 1 credito, 2 cuotas y 7 patas
+   ok    antes: B tiene el RECIBO de A y es su referido
+   ok    DELETE del usuario A (con cuenta, bolsillos, CDT, credito, cuotas y movimientos) tiene exito
+   ok    despues: de A no queda NADA (usuario, cuenta, bolsillos, CDT, creditos, cuotas, movimientos)
+   ok    B sigue existiendo y su referido_por quedo en NULL (SET NULL)
+   ok    el RECIBO de B sobrevive y la contraparte (A) queda guardada como TEXTO, sin FK huerfana
+   ok    el bolsillo de B y su cuenta siguen intactos
+   ok    el catalogo (producto de credito) no se toca
+   ok    la auditoria SOBREVIVE al borrado del usuario (sin FK, con snapshot)
+   ok    borrar la cuenta de B por si sola tambien cascadea a sus movimientos
+   ok    ...y no quedan patas ni bolsillos huerfanos
+== 07_indices.test.sql
+   ok    indices de aplicacion (ix_*): exactamente los 14 previstos
+   ok    historial: ix_transaccion_cuenta_orden es (cuenta_id, orden DESC)
+   ok    ix_transaccion_grupo es (grupo_id)
+   ok    ix_transaccion_bolsillo es parcial (bolsillo_id IS NOT NULL)
+   ok    ix_transaccion_cdt es parcial (cdt_id IS NOT NULL)
+   ok    ix_transaccion_credito es parcial (credito_id IS NOT NULL)
+   ok    ix_cdt_cuenta_estado es (cuenta_id, estado)
+   ok    ix_credito_cuenta_estado es (cuenta_id, estado)
+   ok    ix_cuota_pendiente es parcial (NOT pagada)
+   ok    ix_usuario_referidor es parcial (referido_por IS NOT NULL)
+   ok    ix_evento_fecha ordena por fecha DESC
+   ok    uq_credito_vivo_por_producto es UNICO y parcial (estado = ACTIVO)
+   ok    toda FK del banco tiene un indice de soporte (primera columna) para joins y borrados en cascada
+   ok    todos los indices son validos y pertenecen a banco_owner
+   ok    cada tabla de public y audit tiene clave primaria
+   ok    todos los ids de entidad son uuid con gen_random_uuid() por defecto
+== 08_permisos.test.sql
+   ok    banco_lector NO tiene SELECT a nivel de TABLA sobre usuario (solo por columna)
+   ok    banco_lector NO tiene SELECT sobre password_hash
+   ok    banco_lector SI tiene SELECT sobre las otras 15 columnas de usuario
+   ok    usuario tiene 16 columnas (15 legibles + password_hash)
+   ok    ninguna columna de usuario es legible por banco_lector salvo las 15 permitidas (lista exacta)
+   ok    banco_lector no puede escribir ninguna columna de usuario
+   ok    POSITIVA: banco_lector lee username, nombres, cedula y estado
+   ok    POSITIVA: banco_lector lee las 15 columnas permitidas de una vez
+   ok    POSITIVA: banco_lector puede contar usuarios y filtrar por columnas permitidas
+   ok    NEGATIVA: banco_lector NO puede leer password_hash
+   ok    NEGATIVA: banco_lector NO puede hacer SELECT * (incluye password_hash)
+   ok    NEGATIVA: banco_lector NO puede filtrar por password_hash (WHERE)
+   ok    NEGATIVA: banco_lector NO puede ordenar por password_hash
+   ok    NEGATIVA: banco_lector NO puede obtener la fila completa con row(u.*) / to_jsonb(u)
+   ok    NEGATIVA: banco_lector NO puede alcanzar password_hash por un JOIN ni una subconsulta
+   ok    NEGATIVA: banco_lector NO puede leer password_hash ni siquiera de su propia sesion (banco_dev hereda lo mismo)
+   ok    POSITIVA: banco_dev (via banco_lector) lee las columnas permitidas
+   ok    NEGATIVA: banco_app no lee NI las columnas permitidas de usuario
+   ok    NEGATIVA: banco_lector NO puede cambiar password_hash
+   ok    hay 12 tablas inspeccionadas (11 public + 1 audit)
+   ok    banco_app: CERO privilegios de tabla en las 12 tablas
+   ok    banco_app: ningun privilegio de columna en ninguna tabla (ni SELECT)
+   ok    banco_lector: solo SELECT, y solo en 11 tablas (todas menos usuario, que es por columna)
+   ok    banco_lector: ninguna columna escribible en ninguna tabla
+   ok    banco_dev: ningun privilegio propio de escritura (hereda solo lectura de banco_lector)
+   ok    banco_dev: lee lo mismo que banco_lector
+   ok    banco_owner es dueno y tiene todo en las 12 tablas
+   ok    PUBLIC no tiene NINGUN privilegio sobre ninguna tabla, esquema ni secuencia
+   ok    esquema public: USAGE para app, lector, dev y ledger
+   ok    esquema public: solo banco_owner puede CREAR objetos
+   ok    esquema audit: USAGE solo para banco_lector y banco_dev (heredado); NADA para banco_app ni banco_ledger
+   ok    banco_app NO puede leer cuenta
+   ok    banco_app NO puede insertar en cuenta
+   ok    banco_app NO puede actualizar el balance
+   ok    banco_app NO puede borrar usuarios
+   ok    banco_app NO puede vaciar transaccion (TRUNCATE)
+   ok    banco_app NO puede entrar al esquema audit
+   ok    banco_app NO puede crear tablas en public
+   ok    banco_app NO puede crear tablas temporales
+   ok    banco_lector lee cuenta, transaccion, parametro y audit.evento
+   ok    banco_lector NO puede insertar
+   ok    banco_lector NO puede actualizar
+   ok    banco_lector NO puede borrar
+   ok    banco_lector NO puede vaciar tablas
+   ok    banco_lector NO puede escribir en la auditoria
+   ok    banco_dev NO puede escribir (ni siquiera con banco_app heredado)
+   ok    banco_ledger puede actualizar EXACTAMENTE estas 4 columnas y ninguna otra
+   ok    ningun otro rol de acceso puede actualizar esas columnas
+   ok    banco_ledger no puede insertar, borrar ni vaciar nada
+   ok    banco_ledger lee solo cuenta, bolsillo, cdt y credito
+   ok    banco_ledger SI puede actualizar cuenta.balance, bolsillo.balance, cdt.generado_acumulado y credito.capital_pendiente
+   ok    banco_ledger NO puede cambiar el numero de cuenta
+   ok    banco_ledger NO puede cambiar el monto de un CDT (inmutable)
+   ok    banco_ledger NO puede cambiar el monto de un credito
+   ok    banco_ledger NO puede leer usuario
+   ok    banco_ledger NO puede insertar en el libro
+   ok    ningun rol de acceso es dueno de tablas, esquemas ni tipos
+   ok    banco_app NO puede darse permisos (GRANT)
+   ok    banco_lector NO puede alterar la estructura
+== 09_idempotencia.test.sql
+   ok    la huella del catalogo no es vacia
+   ok    2a aplicacion: el catalogo no cambia (misma huella)
+   ok    3a aplicacion: el catalogo sigue igual
+   ok    las filas unicas de reloj y parametro no se duplican
+   ok    reaplicar 03_schema.sql conserva los datos existentes
+   ok    ...y reaplicar los permisos tampoco los toca
+   ok    despues de reaplicar permisos el catalogo es identico
+   ok    desviacion provocada: banco_app tiene UPDATE sobre cuenta
+   ok    05_permisos.sql corrige la desviacion (banco_app vuelve a no tener UPDATE)
+   ok    ...y el catalogo vuelve a ser identico
+
+== aislamiento
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+349 passed, 0 failed
+Duracion  : 10,8 s

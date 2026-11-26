@@ -1,0 +1,52 @@
+-- Salida real de 10-pgadmin-demo.sql ejecutado contra la BD banco (reset + apply) con: docker compose -f db/compose.dev.yml exec -T db psql -X -U postgres -d banco -v ON_ERROR_STOP=1 < docs/db/evidencias/10-pgadmin-demo.sql
+-- Fecha: 2026-11-24 21:41:31 -0500. Los NOTICE son lo que pgAdmin muestra en la pestaña Messages.
+
+BEGIN
+NOTICE:  Hoy del banco: 2026-11-24. Ana tiene 22813589.00 en la cuenta (5 ingresos simulados + un deposito de la demo)
+NOTICE:  1) Carla (recien registrada): filas de historial = 5 (sus 5 ingresos simulados); dashboard: cdts = {"activos": 0, "generado": 0}, creditos = {"cuota_por_pagar": 0, "interes_corriendo": 0}
+NOTICE:  2) vista_historial(Ana) tras 1 ingreso de depositos, 3 envios/recibos, 3 movimientos de bolsillo, 1 CDT y 1 credito con su cuota: UNA fila por operacion (la mas reciente primero):
+NOTICE:       CREDITO_CUOTA        | envio  |    455231.88 | Demo Libre                         | -
+NOTICE:       CREDITO_DESEMBOLSO   | recibo |   5000000.00 | Demo Libre                         | -
+NOTICE:       CDT_CREACION         | envio  |   2000000.00 | Demo CDT 30                        | -
+NOTICE:       ENVIO                | envio  |     30000.00 | Beto Vistas · 4049887414           | desde bolsillo
+NOTICE:       BOLSO_RETIRO         | recibo |     50000.00 | Emergencias                        | -
+NOTICE:       BOLSO_MOVIMIENTO     | envio  |    200000.00 | Emergencias                        | -
+NOTICE:       BOLSO_INGRESO        | envio  |   1000000.00 | Viajes                             | -
+NOTICE:       RECIBO               | recibo |    120000.00 | Beto Vistas · 4049887414           | devuelta
+NOTICE:       ENVIO                | envio  |    500000.00 | Beto Vistas · 4049887414           | arriendo
+NOTICE:       DEPOSITO_BANCO       | recibo |  20000000.00 | Banco Digital                      | -
+NOTICE:       INGRESO_SIMULADO     | recibo |    496132.00 | Banco Digital                      | Ingreso simulado
+NOTICE:       INGRESO_SIMULADO     | recibo |    598029.00 | Banco Digital                      | Ingreso simulado
+NOTICE:       INGRESO_SIMULADO     | recibo |    666034.00 | Banco Digital                      | Ingreso simulado
+NOTICE:       INGRESO_SIMULADO     | recibo |    735870.00 | Banco Digital                      | Ingreso simulado
+NOTICE:       INGRESO_SIMULADO     | recibo |    317524.00 | Banco Digital                      | Ingreso simulado
+NOTICE:     (la pata CREDITO y la pata RESULTADO de cada operacion NO aparecen; BOLSO_MOVIMIENTO sale UNA vez; el envio entre cuentas lleva el nombre y la cuenta de la contraparte)
+NOTICE:     grupos del libro de Ana con pata de liquidez = 15, filas del historial = 15
+NOTICE:     p_limite: 3 -> 3 filas; 0 y -5 se acotan a 1 (1 y 1); 1000 -> 15 filas (el maximo es 50)
+NOTICE:     el receptor ve el mismo envio como RECIBO: {"id": "12d37d2c-d472-4629-a08f-ebdb5e1182b2", "nota": "arriendo", "tipo": "recibo", "fecha": "2026-11-24T21:30:36.81782-05:00", "monto": 500000.00, "contraparte": "Ana Vistas · 4096168321", "tipo_detalle": "RECIBO"}
+NOTICE:  3) reloj +45 dias (hoy = 2027-01-08). vista_dashboard: nombre=Ana, balance_total=26975518.09, cdts={"activos": 0, "generado": 0}, creditos={"cuota_por_pagar": 455231.88, "interes_corriendo": 31008.45}
+NOTICE:     las 3 primeras transacciones del dashboard (el motor las acaba de escribir): CDT_VENCIMIENTO 2014216.49 ; INTERES_CDT 14216.49 ; INTERES_BOLSO 2110.51
+NOTICE:     coherencia: balance_total = vista_balance.total -> t ; transacciones = las 8 primeras del historial -> t
+NOTICE:     vista_cdts: fecha_cierre es un INSTANTE ISO con zona (D-E10-5): [{"id": "62e53966-5126-4e4d-9d5a-ddf7ed109592", "monto": 2000000.00, "fecha_cierre": "2026-12-24T00:00:00-05:00", "tiempo_restante": "Cerrado", "generado_hasta_hoy": 14216.49}]
+NOTICE:  4) Carla (descuento activo, sin saldo; la cuota vence el dia ~31 y su CDT cierra el dia 40). UNA lectura del dashboard a +50 dias cobro la cuota: cuota_por_pagar = 273139.13 (ya es la cuota 2); transacciones:
+NOTICE:       CREDITO_MORA         | envio  |      2020.48 | Demo Libre   | fecha 2027-02-17
+NOTICE:       CREDITO_CUOTA        | envio  |    273139.13 | Demo Libre   | fecha 2027-02-17
+NOTICE:       CDT_VENCIMIENTO      | recibo |   8024494.64 | Demo CDT 40  | fecha 2027-02-17
+NOTICE:       INTERES_CDT          | recibo |     17033.38 | Banco Digita | fecha 2027-02-17
+NOTICE:       INTERES_CDT          | recibo |     58394.26 | Banco Digita | fecha 2027-02-27
+NOTICE:       CDT_CREACION         | envio  |   7949067.00 | Demo CDT 40  | fecha 2027-01-08
+NOTICE:       DEPOSITO_BANCO       | recibo |   2000000.00 | Banco Digita | fecha 2027-01-08
+NOTICE:       CREDITO_DESEMBOLSO   | recibo |   3000000.00 | Demo Libre   | fecha 2027-01-08
+NOTICE:     (el cobro lleva la fecha del cierre del CDT (dia 40, con mora de los dias entre el vencimiento y el cierre), ANTES que la de hoy (dia 50): por eso el historial se ordena por orden de escritura, no por fecha)
+NOTICE:     segunda lectura: patas nuevas = 0 (idempotente)
+NOTICE:  5) _reglas_historial() = {"limite_max": 50, "mostrar_bolso": true, "mostrar_interes_cdt": true, "contraparte_respaldo": "Banco Digital", "mostrar_interes_bolso": true} (D8 PROVISIONAL: todo visible, como propone el contrato; cambiarlo = cambiar solo esta funcion)
+NOTICE:  6) usuario inexistente: Sesión inválida
+NOTICE:     banco_app ejecuta 26 funciones publicas (las 2 de E10: vista_dashboard, vista_historial); SELECT de banco_app sobre v_transaccion_usuario = f (miraria a todos los usuarios); banco_lector = t
+NOTICE:  7) v_integridad_global.ok = t (defensas fallidas=0, grupos con error=0, cuentas con desvio=0, creditos con plan incoherente=0)
+DO
+ROLLBACK
+                                            resultado                                             
+--------------------------------------------------------------------------------------------------
+ Demo terminada: ROLLBACK ejecutado (el reloj, la tasa de mora y los datos quedaron como estaban)
+(1 row)
+

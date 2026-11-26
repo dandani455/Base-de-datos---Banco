@@ -1,0 +1,46 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-21 00:49:28 -05:00
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   cargado helpers.sql (solo en banco_test)
+
+== 00_smoke.test.sql
+   ok    smoke: 1 = 1
+   ok    assert_eq: texto
+   ok    assert_eq: NULL = NULL (NULL-safe)
+   ok    assert_true: condicion verdadera
+   ok    assert_eq falla si los valores difieren
+   ok    assert_true falla con FALSE
+   ok    assert_raises falla si NO hay excepcion
+   ok    division por cero es 22012
+   ok    RAISE EXCEPTION por defecto es P0001 con el mensaje exacto
+   ok    json: forma correcta
+   ok    json: clave faltante
+   ok    json: tipo incorrecto (numero llegando como string)
+== 01_entorno.test.sql
+   ok    PostgreSQL 16.x
+   ok    extension unaccent instalada
+   ok    extension pg_trgm instalada
+   ok    unaccent quita tildes (busqueda de usuarios)
+   ok    pg_trgm: texto identico = similitud 1
+   ok    gen_random_uuid() genera 36 caracteres
+   ok    TimeZone de la BD
+   ok    offset de now() es -05:00
+   ok    timestamptz se serializa a JSON con offset -05:00 (contrato: ISO 8601 con zona)
+   ok    02:00 UTC del 21-nov es el 20-nov en Bogota
+   ok    hoy en Bogota = current_date de una sesion Bogota
+   ok    NUMERIC(18,2) a jsonb conserva los 2 decimales
+   ok    NUMERIC(18,2) en jsonb es de tipo number
+   ok    date en jsonb es texto ISO
+   ok    esquema tests presente en banco_test
+   ok    la BD de pruebas es banco_test
+
+== aislamiento
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+29 passed, 0 failed
+Duracion  : 4,6 s

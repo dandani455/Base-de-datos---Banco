@@ -1,0 +1,15 @@
+--- git status --short -- front   (vacio = front/ intacto)
+--- git diff --stat HEAD   (vacio = ningun archivo versionado modificado)
+--- git ls-files --others --exclude-standard (no versionados, agrupado por carpeta superior)
+      1 .gitattributes
+      1 db/.env.example
+      1 db/compose.dev.yml
+      1 db/ctl.cmd
+      1 db/ctl.ps1
+      1 db/ctl.sh
+      2 db/docker
+      6 db/sql
+     13 db/tests
+     17 docs/db
+--- busqueda de db_zip.zip
+0

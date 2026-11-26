@@ -1,0 +1,84 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-25 14:48:14 -0500
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+Filtro    : pruebas que empiezan por '71'
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   aplicado 13_auth_utilidades.sql
+   aplicado 14_auth_funciones.sql
+   aplicado 15_transferencias.sql
+   aplicado 16_bolsillos.sql
+   aplicado 17_motor_devengo.sql
+   aplicado 18_cdt.sql
+   aplicado 19_creditos_calculo.sql
+   aplicado 20_creditos.sql
+   aplicado 21_pagos_calculo.sql
+   aplicado 22_pagos.sql
+   aplicado 23_vistas.sql
+   aplicado 24_admin.sql
+   aplicado 25_control.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 71_control.test.sql
+   ok    A1 forma del contrato (types.ts Esquema): {tablas}; cada tabla {nombre, columnas, fks}; cada columna {nombre, tipo, llave, unico, no_nulo}; cada fk {columna, tabla_destino, columna_destino}
+   ok    A2 son EXACTAMENTE las 11 tablas de la lista, en el orden del grafo (la lista blanca de _reglas_control)
+   ok    A3 DERIVA: la lista blanca = las tablas base REALES de public (si alguien agrega una tabla, esta prueba falla hasta que se decida su visibilidad); audit.evento y el esquema tests no estan
+   ok    A4 las columnas de las 11 tablas (nombre, ORDEN, llave, unico, no_nulo y tipo) coinciden una a una con el oraculo de information_schema: 0 diferencias en ambos sentidos y mas de 100 columnas comparadas
+   ok    A5 las FK coinciden con el oraculo de information_schema (una entrada por restriccion, con su primera columna): 0 diferencias y las 12 del catalogo
+   ok    A6 incluye la FK propia usuario.referido_por -> usuario.id (checklist del contrato) y la compuesta de cuenta (usuario_id, rol) sale UNA sola vez (usuario_id -> id), sin una arista duplicada rol -> rol
+   ok    A7 las banderas con sentido (PK, UNIQUE de una columna, NOT NULL, tipo literal): usuario.id llave sin unico; username unico; cuota.numero (UNIQUE compuesto) NO es unico; cuenta.usuario_id unico y no nulo; tipos dinero / uuid / estado_usuario
+   ok    A8 el esquema NO escribe nada ni corre el motor: huella de saldos y eventos de auditoria intactos
+   ok    B1 tabla vacia (cdt_definicion): filas [] , pagina 1 de 1 y las columnas del esquema
+   ok    B2 forma del contrato (PaginaTabla): {columnas, filas, pagina, total_paginas}
+   ok    B3 50 por pagina: >= 122 usuarios (120 clientes + 2 admin) = ceil(n/50) paginas (>= 3); las dos primeras traen 50 y la ultima el resto
+   ok    B4 el orden es el de _reglas_control (creado_en DESC, id): la pagina 1 es EXACTAMENTE las 50 primeras ids del oraculo
+   ok    B5 p_pagina es TEXTO y se recorta: NULL, vacio, espacios, "abc", "0", "-3", "1.5", "1; DROP TABLE usuario" = pagina 1; "99" y "999999999" = la ULTIMA; "2" = 2; " 3 " = 3
+   ok    B5b enteros positivos de cualquier longitud mayores que el total = la ULTIMA pagina y NUNCA un error: 10 digitos (1000000000), mas que un integer (2147483648, 4294967296), 19 y 20 digitos, 30 digitos, 5000 digitos, con ceros a la izquierda y con espacios
+   ok    B5c ...y se conserva lo demas: ceros a la izquierda de una pagina valida ("0000000000002" = 2), solo ceros = 1, y NULL, vacio, "-1000000000", "+5", "1e9", "1000000000.5", "1,5", "mil" y 5000 letras = pagina 1 sin error
+   ok    B6 la tabla sigue en pie tras el "1; DROP TABLE usuario" (no es SQL: es un texto no numerico)
+   ok    B7 total_paginas = max(1, ceil(filas / 50)) y las filas de la pagina = min(50, resto) para las 11 tablas (oraculo: count(*))
+   ok    B8 las 11 tablas tienen al menos una fila en esta prueba (la comparacion de claves de abajo no es vacia)
+   ok    B9 para las 11 tablas: columnas = las del esquema (mismo orden) y las claves de CADA fila son exactamente esas columnas
+   ok    B10 usuario: TODAS las filas (3 paginas) traen password_hash = "••••" exacto (U+2022 x4) y el hash real de nadie aparece en ninguna parte de la respuesta
+   ok    B11 ninguna de las 11 tablas deja pasar un hash real (busqueda del texto REALHASH en toda la respuesta)
+   ok    B12 sin sobre-enmascarar: la fila de usuario es la real MENOS el hash (el resto de columnas intacto) y una fila de cuenta es EXACTAMENTE to_jsonb de la fila
+   ok    B13 tipos JSON: dinero y orden = NUMERO (nunca texto), fecha ISO con -05:00 aunque la sesion pida UTC (por codigo), date = YYYY-MM-DD, uuid = texto; tx_id (xid8) sale como texto (decision D-E12-6)
+   ok    B14 transaccion: mas reciente primero (orden DESC) y estrictamente decreciente en la pagina; cuota: (credito_id, numero) ascendente
+   ok    B15 FUERA de la lista = "Tabla no permitida" (mensaje del contrato, P0001): audit.evento, evento, public.usuario, mayusculas, espacios, pg_user, pg_catalog.*, information_schema.*, tests.*, vacio y NULL
+   ok    B16 ...y NULL tambien
+   ok    B17 inyeccion: nombres con comillas, punto y coma y comentarios son un nombre no permitido y NO ejecutan nada (las tablas siguen)
+   ok    B18 el administrador se valida ANTES que la tabla: un cliente o un admin bloqueado con una tabla invalida recibe Acceso denegado / el mensaje de bloqueo, no "Tabla no permitida" (no sondea la lista)
+   ok    C1 SOLO LECTURA por catalogo: ambas son STABLE (PostgreSQL impide que escriban) y su codigo no contiene INSERT / UPDATE / DELETE / TRUNCATE
+   ok    C2 ni esquema ni tabla cambian saldos, libro ni auditoria al llamarse (tampoco con la tabla de la que depende el motor)
+   ok    C3 con el reloj adelantado (intereses y cierres pendientes) el visor NO devenga ni cobra: el libro no crece, el bolsillo conserva su ultimo_cobro y el CDT sigue ACTIVO (muestra lo guardado, no lo derivado)
+   ok    C4 los valores PROVISIONALES estan fijados en _reglas_control(): 11 tablas, 50 por pagina, solo password_hash enmascarado (D-E12-D1), "••••", el mensaje del contrato y SIN audit.evento (D-E12-D2)
+   ok    C5 cada tabla de la lista tiene su orden definido y es una expresion que funciona (las 11 paginas responden)
+   ok    D1 _validar_admin es lo primero en ambas (antes de leer, validar o armar SQL); sin motor, sin libro, sin auditoria, sin reloj suelto; el SQL dinamico solo con %I y el nombre de la lista
+   ok    D2 SECURITY DEFINER, search_path fijo, zona de Bogota por codigo y jsonb en ambas
+   ok    D3 permisos: banco_app y banco_dev ejecutan las 2; PUBLIC y banco_lector ninguna; _reglas_control: nadie salvo el dueño
+   ok    D4 banco_app ejecuta las 2 con un admin valido (y el hash sale enmascarado)
+   ok    D5 banco_lector NO ejecuta admin_tabla (permiso denegado)
+   ok    D6 ni siquiera banco_dev ejecuta el helper _reglas_control
+   ok    D7 la secuencia entera deja el banco sano: v_integridad_global.ok
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+42 passed, 0 failed

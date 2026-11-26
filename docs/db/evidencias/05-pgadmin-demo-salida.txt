@@ -1,0 +1,18 @@
+NOTICE:  Emisora Ana (cuenta 4042822513) saldo 2424871.00 y bolsillo 20000.00;  Receptor Beto (cuenta 4080161743) saldo 1852144.00
+NOTICE:  1) nombre_destinatario(4080161743): {"nombre": "Beto Receptor"}
+NOTICE:  1b) sin sesion viva RECHAZADO: Sesión inválida
+NOTICE:  2) hacer_transferencia devuelve: {"id": "85b7d4bc-51f5-47d2-8534-b54709ee74ed", "fecha": "2026-11-23T22:47:10.499759-05:00"}
+NOTICE:       pata: RECIBO CUENTA E $150000.50 nota=[Pago del arriendo] contraparte=Ana Emisora (4042822513)
+NOTICE:       pata: ENVIO CUENTA S $150000.50 nota=[Pago del arriendo] contraparte=Beto Receptor (4080161743)
+NOTICE:       saldos: emisora 2274870.50 | receptor 2002144.50
+NOTICE:  3) desde el bolsillo: bolsillo 15000.00 (antes 20000), cuenta principal sin cambio=t, pata de salida del contenedor BOLSILLO
+NOTICE:  4a) monto 0: Monto inválido
+NOTICE:  4b) 3 decimales: Monto inválido
+NOTICE:  4c) destino inexistente: Cuenta no encontrada
+NOTICE:  4d) autoenvio: No puedes enviarte dinero a ti mismo
+NOTICE:  4e) bolsillo inexistente/ajeno: Recurso no encontrado
+NOTICE:  4f) bolsillo mal formado (negocio, no error de driver): Recurso no encontrado
+NOTICE:  4g) nota de 141 caracteres (PROVISIONAL D-E5-8): Nota inválida
+NOTICE:  4h) saldo insuficiente: Saldo insuficiente
+NOTICE:  4i) mas que el saldo del bolsillo: Saldo insuficiente
+NOTICE:  5) suma de cuentas + bolsillos: antes 4297015.00 = despues 4297015.00 ; integridad global ok = t

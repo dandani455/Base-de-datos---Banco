@@ -1,0 +1,11 @@
+# precision.test.mjs (D.8 / D3, D-E10-9): node db/tests/precision.test.mjs  — Fecha: 2026-11-24 21:41:31 -0500
+PASS: se probaron 100024 importes (>= 100000), positivos y negativos
+PASS: 100 % de los importes dentro del rango (< 1e13) conservan sus centavos exactos tras jsonb -> JSON.parse -> Math.round(x*100)
+PASS: extremos del rango: 9.999.999.999.999,99, 0,01, 0,29 y 1.234.567,89 se recuperan exactos
+PASS: 1e13, 1e13 + 0,01, 1e15, -1e13 y 99.999.999.999.999.999 se RECHAZAN en el dominio dinero y en _validar_monto (Monto inválido); 9.999.999.999.999,99, 0,01 y 1.234.567,89 se ACEPTAN
+PASS: vista_balance.principal (9999992995322.4) conserva sus centavos exactos
+PASS: vista_balance.total (9999994229890.29) = principal + bolsillos, centavos exactos (la BD lo calcula en NUMERIC)
+PASS: vista_dashboard.balance_total (9999994229890.29) = vista_balance.total
+PASS: todo importe de las salidas es un NUMBER (no string), como exige el contrato
+PASS: cada monto del historial del dashboard es positivo y menor que 1e13 (el signo lo da tipo)
+RESUMEN: 9 pass, 0 fail

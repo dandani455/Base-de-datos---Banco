@@ -1,0 +1,79 @@
+BEGIN
+psql:/tmp/d/demo.sql:44: NOTICE:  sp_verificar_integridad: ok = true, desvios de saldos = 0, grupos con error = 0, desvios I5u = 0, defensas caidas = 0, auth = 0, planes = 0, desvio de transferencias = 0.00
+psql:/tmp/d/demo.sql:44: NOTICE:  1) banco sano: ok = true, desvios de saldos = 0, grupos con error = 0, I5u = 0, defensas caidas = 0, planes = 0; filas defectuosas en el detalle: saldos 0, grupos 0, defensas 0
+psql:/tmp/d/demo.sql:44: NOTICE:     el informe coincide con la vista: t
+psql:/tmp/d/demo.sql:44: NOTICE:  sp_verificar_integridad: ok = false, desvios de saldos = 1, grupos con error = 0, desvios I5u = 1, defensas caidas = 1, auth = 0, planes = 0, desvio de transferencias = 0.00
+psql:/tmp/d/demo.sql:44: NOTICE:  2) saldo alterado a mano (+12345) y guardia apagado: ok = false, desvios de saldos = 1, I5u = 1, defensas caidas = 1
+psql:/tmp/d/demo.sql:44: NOTICE:     la fila de saldos: {"ok": false, "calculado": 1884476.00, "cuenta_id": "e2a072d1-3e87-4864-a8a7-7fccd471b19e", "almacenado": 1896821.00, "contenedor": "CUENTA", "diferencia": 12345.00, "contenedor_id": "e2a072d1-3e87-4864-a8a7-7fccd471b19e"}
+psql:/tmp/d/demo.sql:44: NOTICE:     la defensa caida: trigger activo: cuenta.trg_zz_proteger_cuenta -> DESACTIVADO (tgenabled=D)
+psql:/tmp/d/demo.sql:44: NOTICE:     (un solo CALL: el informe se arma en UNA sentencia, asi que conteos y filas nunca se contradicen)
+psql:/tmp/d/demo.sql:44: NOTICE:  3) sp_avanzar_todos DENTRO de una transaccion -> "invalid transaction termination" (SQLSTATE 2D000): hay que llamarlo SOLO, en autocommit
+psql:/tmp/d/demo.sql:44: NOTICE:     nadie salvo dueño/superusuario ejecuta los procedimientos: banco_app = f, banco_lector = f, banco_dev = f
+psql:/tmp/d/demo.sql:44: NOTICE:     son procedimientos SECURITY INVOKER sin clausula SET (unica forma de poder hacer COMMIT): sp_avanzar_todos secdef=false config=ninguna ; sp_verificar_integridad secdef=false config=ninguna
+DO
+ROLLBACK
+ cliente_1  
+------------
+ ccierre337
+(1 row)
+
+ cliente_2  
+------------
+ dcierre847
+(1 row)
+
+ cliente_3  
+------------
+ ecierre366
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+DO
+ hoy_del_banco 
+---------------
+ 2027-01-09
+(1 row)
+
+ bolsillos | con_interes_pendiente | cdt_activos_ya_vencidos 
+-----------+-----------------------+-------------------------
+         3 |                     3 |                       3
+(1 row)
+
+psql:/tmp/d/demo.sql:79: NOTICE:  sp_avanzar_todos: {"grupos": 12, "cuentas": 3, "errores": [], "con_error": 0, "hoy_desde": "2027-01-09", "hoy_hasta": "2027-01-09", "procesadas": 3, "con_cambios": 3, "omitidas_por_timeout_de_bloqueo": 0}
+                                                                                         resultado                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"grupos": 12, "cuentas": 3, "errores": [], "con_error": 0, "hoy_desde": "2027-01-09", "hoy_hasta": "2027-01-09", "procesadas": 3, "con_cambios": 3, "omitidas_por_timeout_de_bloqueo": 0}
+(1 row)
+
+ con_interes_pendiente | cdt_cerrados | cuotas_1_cobradas_automaticamente 
+-----------------------+--------------+-----------------------------------
+                     0 |            3 |                                 3
+(1 row)
+
+psql:/tmp/d/demo.sql:87: NOTICE:  sp_avanzar_todos: {"grupos": 0, "cuentas": 3, "errores": [], "con_error": 0, "hoy_desde": "2027-01-09", "hoy_hasta": "2027-01-09", "procesadas": 3, "con_cambios": 0, "omitidas_por_timeout_de_bloqueo": 0}
+                                                                                         resultado                                                                                         
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"grupos": 0, "cuentas": 3, "errores": [], "con_error": 0, "hoy_desde": "2027-01-09", "hoy_hasta": "2027-01-09", "procesadas": 3, "con_cambios": 0, "omitidas_por_timeout_de_bloqueo": 0}
+(1 row)
+
+        accion         | actor_username | cuentas | con_cambios | grupos 
+-----------------------+----------------+---------+-------------+--------
+ MANTENIMIENTO_AVANZAR | postgres       | 3       | 3           | 12
+ MANTENIMIENTO_AVANZAR | postgres       | 3       | 0           | 0
+(2 rows)
+
+                                                                                                                                                                                        resultado                                                                                                                                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "patas": 81, "grupos": 39, "cuentas": 3, "detalle": {"auth": [], "grupos": [], "saldos": [], "usuario": [], "creditos": [], "defensas": []}, "cuentas_borradas": 0, "grupos_con_error": 0, "defensas_fallidas": 0, "desvio_transferencias": 0, "cuentas_con_desvio_i5u": 0, "contenedores_con_desvio": 0, "controles_auth_fallidos": 0, "creditos_con_plan_incoherente": 0}
+(1 row)
+
+psql:/tmp/d/demo.sql:91: NOTICE:  sp_verificar_integridad: ok = true, desvios de saldos = 0, grupos con error = 0, desvios I5u = 0, defensas caidas = 0, auth = 0, planes = 0, desvio de transferencias = 0
+ reloj_real 
+------------
+ true
+(1 row)
+
+DELETE 3
+DELETE 1
+DELETE 1

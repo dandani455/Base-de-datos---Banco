@@ -1,0 +1,87 @@
+﻿# Mutaciones de E12 (M401-M430, 30): 29 detectadas + 1 equivalente declarada (M407). Fecha: 2026-11-25
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+M401  DETECTADA  admin_esquema NO valida al admin (un cliente, un desconocido o un admin bloqueado leeria el esquema)
+      -> 71_control: ERROR:  FAIL: D1 _validar_admin es lo primero en ambas (antes de leer, validar o armar SQL); sin motor, sin libro, sin auditoria, sin reloj suelto; el
+M402  DETECTADA  admin_tabla NO valida al admin (leeria las filas de cualquier tabla de la lista)
+      -> 71_control: ERROR:  FAIL: B18 el administrador se valida ANTES que la tabla: un cliente o un admin bloqueado con una tabla invalida recibe Acceso denegado / el me
+M403  DETECTADA  admin_tabla valida al admin DESPUES de comprobar la tabla (un cliente sondearia la lista blanca)
+      -> 71_control: ERROR:  FAIL: B18 el administrador se valida ANTES que la tabla: un cliente o un admin bloqueado con una tabla invalida recibe Acceso denegado / el me
+M404  DETECTADA  el hash NO se enmascara (_reglas_control sin columnas enmascaradas)
+      -> 71_control: ERROR:  FAIL: B10 usuario: TODAS las filas (3 paginas) traen password_hash = "••••" exacto (U+2022 x4) y el hash real de nadie aparece en ning
+M405  DETECTADA  se enmascara cedula en vez de password_hash (el hash viaja)
+      -> 71_control: ERROR:  FAIL: B10 usuario: TODAS las filas (3 paginas) traen password_hash = "••••" exacto (U+2022 x4) y el hash real de nadie aparece en ning
+M406  DETECTADA  la mascara no es la del contrato
+      -> 71_control: ERROR:  FAIL: B10 usuario: TODAS las filas (3 paginas) traen password_hash = "••••" exacto (U+2022 x4) y el hash real de nadie aparece en ning
+M407  *** NO DETECTADA ***  el enmascarado sobrescribe pero NO quita la columna original (equivalente: el || reemplaza el valor)
+      -> EQUIVALENTE (no observable, no es un hueco de pruebas): el operador || del JSON reemplaza el valor de la clave: el hash real no sale aunque no se quite antes (la resta es una defensa redundante)
+M408  DETECTADA  50 por pagina pasa a 49
+      -> 71_control: ERROR:  FAIL: B3 50 por pagina: >= 122 usuarios (120 clientes + 2 admin) = ceil(n/50) paginas (>= 3); las dos primeras traen 50 y la ultima el resto (
+M409  DETECTADA  sin recorte superior de la pagina (la pagina 99 devuelve vacio)
+      -> 71_control: ERROR:  integer out of range
+M410  DETECTADA  total_paginas redondea hacia abajo (la ultima pagina parcial no cuenta)
+      -> 71_control: ERROR:  FAIL: B3 50 por pagina: >= 122 usuarios (120 clientes + 2 admin) = ceil(n/50) paginas (>= 3); las dos primeras traen 50 y la ultima el resto (
+M411  DETECTADA  una pagina no numerica da la pagina 0 (offset negativo)
+      -> 71_control: ERROR:  OFFSET must not be negative
+M412  DETECTADA  transaccion sale de la mas antigua a la mas reciente
+      -> 71_control: ERROR:  FAIL: B14 transaccion: mas reciente primero (orden DESC) y estrictamente decreciente en la pagina; cuota: (credito_id, numero) ascendente (esp
+M413  DETECTADA  usuario se ordena por id descendente (no por creado_en)
+      -> 71_control: ERROR:  FAIL: B4 el orden es el de _reglas_control (creado_en DESC, id): la pagina 1 es EXACTAMENTE las 50 primeras ids del oraculo (esperado={1000000
+M414  DETECTADA  la lista blanca incluye audit.evento
+      -> 71_control: ERROR:  FAIL: A3 DERIVA: la lista blanca = las tablas base REALES de public (si alguien agrega una tabla, esta prueba falla hasta que se decida su vis
+M415  DETECTADA  el nombre de tabla se compara sin distinguir mayusculas (Usuario pasa)
+      -> 71_control: ERROR:  FAIL: B15 FUERA de la lista = "Tabla no permitida" (mensaje del contrato, P0001): audit.evento, evento, public.usuario, mayusculas, espacios, 
+M416  DETECTADA  el mensaje de tabla no permitida cambia
+      -> 71_control: ERROR:  FAIL: B15 FUERA de la lista = "Tabla no permitida" (mensaje del contrato, P0001): audit.evento, evento, public.usuario, mayusculas, espacios, 
+M417  DETECTADA  el SQL dinamico usa %s en vez de %I (sin entrecomillar identificadores)
+      -> 71_control: ERROR:  FAIL: D1 _validar_admin es lo primero en ambas (antes de leer, validar o armar SQL); sin motor, sin libro, sin auditoria, sin reloj suelto; el
+M418  DETECTADA  la FK compuesta de cuenta sale duplicada (usuario_id -> id y rol -> rol)
+      -> 71_control: ERROR:  FAIL: A5 las FK coinciden con el oraculo de information_schema (una entrada por restriccion, con su primera columna): 0 diferencias y las 12 d
+M419  DETECTADA  las FK de una tabla a si misma (usuario.referido_por) no salen
+      -> 71_control: ERROR:  FAIL: A5 las FK coinciden con el oraculo de information_schema (una entrada por restriccion, con su primera columna): 0 diferencias y las 12 d
+M420  DETECTADA  llave marca las UNIQUE y no la clave primaria
+      -> 71_control: ERROR:  FAIL: A4 las columnas de las 11 tablas (nombre, ORDEN, llave, unico, no_nulo y tipo) coinciden una a una con el oraculo de information_schema:
+M421  DETECTADA  unico marca tambien los UNIQUE compuestos (cuota.numero)
+      -> 71_control: ERROR:  FAIL: A4 las columnas de las 11 tablas (nombre, ORDEN, llave, unico, no_nulo y tipo) coinciden una a una con el oraculo de information_schema:
+M422  DETECTADA  no_nulo siempre falso
+      -> 71_control: ERROR:  FAIL: A4 las columnas de las 11 tablas (nombre, ORDEN, llave, unico, no_nulo y tipo) coinciden una a una con el oraculo de information_schema:
+M423  DETECTADA  tipo sin la precision (numeric(8,2) -> numeric)
+      -> 71_control: ERROR:  FAIL: A4 las columnas de las 11 tablas (nombre, ORDEN, llave, unico, no_nulo y tipo) coinciden una a una con el oraculo de information_schema:
+M424  DETECTADA  las tablas del esquema salen en orden alfabetico y no en el de la lista
+      -> 71_control: ERROR:  FAIL: A2 son EXACTAMENTE las 11 tablas de la lista, en el orden del grafo (la lista blanca de _reglas_control) (esperado={usuario,cuenta,bolsi
+M425  DETECTADA  admin_tabla pasa a VOLATILE (ya no es de solo lectura por catalogo)
+      -> 71_control: ERROR:  FAIL: C1 SOLO LECTURA por catalogo: ambas son STABLE (PostgreSQL impide que escriban) y su codigo no contiene INSERT / UPDATE / DELETE / TRUNC
+M426  DETECTADA  admin_esquema pasa a VOLATILE
+      -> 71_control: ERROR:  FAIL: C1 SOLO LECTURA por catalogo: ambas son STABLE (PostgreSQL impide que escriban) y su codigo no contiene INSERT / UPDATE / DELETE / TRUNC
+M427  DETECTADA  admin_tabla pasa a SECURITY INVOKER
+      -> 71_control: ERROR:  FAIL: D2 SECURITY DEFINER, search_path fijo, zona de Bogota por codigo y jsonb en ambas (esperado=(2,t,t,t,t), actual=(2,f,t,t,t))
+M428  DETECTADA  banco_lector recibe EXECUTE de admin_tabla
+      -> 71_control: ERROR:  FAIL: D3 permisos: banco_app y banco_dev ejecutan las 2; PUBLIC y banco_lector ninguna; _reglas_control: nadie salvo el dueño (esperado=(2,2,
+M429  DETECTADA  PUBLIC recibe EXECUTE de admin_esquema
+      -> 71_control: ERROR:  FAIL: D3 permisos: banco_app y banco_dev ejecutan las 2; PUBLIC y banco_lector ninguna; _reglas_control: nadie salvo el dueño (esperado=(2,2,
+M430  DETECTADA  banco_app recibe EXECUTE de _reglas_control
+      -> 71_control: ERROR:  FAIL: D3 permisos: banco_app y banco_dev ejecutan las 2; PUBLIC y banco_lector ninguna; _reglas_control: nadie salvo el dueño (esperado=(2,2,
+
+RESUMEN: 30 de 30 mutaciones detectadas
+

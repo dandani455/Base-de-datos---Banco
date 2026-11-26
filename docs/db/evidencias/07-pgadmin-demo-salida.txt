@@ -1,0 +1,42 @@
+BEGIN
+NOTICE:  Hoy del banco: 2026-11-24. Ana tiene en su cuenta principal 4489195.00 (ingresos simulados + deposito de la demo)
+NOTICE:  1) listar_cdt_definiciones: [{"id": "2f428e2c-25ef-4d2e-9be3-756344a55195", "tasa": 10.000, "nombre": "Demo CDT 90 dias", "monto_min": 100000.00, "plazo_dias": 90}]
+NOTICE:     simular_cdt($500.000, 90 dias, 10 % E.A.): {"generado_dia": 130.58, "generado_mes": 3932.24, "generado_vencimiento": 11889.73}  (PROVISIONAL D1: tasa efectiva anual estricta)
+NOTICE:     crear_cdt devuelve: {"id": "cd28ad57-a763-40cc-a784-1c7367ec0e9a", "fecha": "2026-11-24T11:22:43.492978-05:00"}
+NOTICE:     vista_balance: {"total": 4489195.00, "bolsillos": [{"id": "219a270c-31c6-4e4f-8d80-228033ac6ab1", "saldo": 1000000.00, "nombre": "Ahorro"}], "principal": 2989195.00} (el total NO baja al crear el CDT: incluye los CDT activos, D-E7-5 provisional)
+NOTICE:  2) reloj +30 dias: hoy = 2026-12-24
+NOTICE:     vista_balance (devenga antes de leer): {"total": 4502485.44, "bolsillos": [{"id": "219a270c-31c6-4e4f-8d80-228033ac6ab1", "saldo": 1009358.20, "nombre": "Ahorro"}], "principal": 2989195.00}
+NOTICE:       pata: INTERES_BOLSO BOLSILLO E $9358.20 nota "30 días" contraparte=Banco Digital
+NOTICE:       pata: INTERES_BOLSO RESULTADO E $9358.20 nota "30 días" contraparte=Banco Digital
+NOTICE:       pata: INTERES_CDT CDT E $3932.24 nota "30 días" contraparte=Banco Digital
+NOTICE:       pata: INTERES_CDT RESULTADO E $3932.24 nota "30 días" contraparte=Banco Digital
+NOTICE:     comprobacion: 1.000.000 * (1,12^(30/365) - 1) = 9358.20  (formula independiente exp/ln)
+NOTICE:     consultar de nuevo NO escribe nada mas (idempotente): patas antes=20, despues=20
+NOTICE:     vista_cdts a los 30 dias: [{"id": "cd28ad57-a763-40cc-a784-1c7367ec0e9a", "monto": 500000.00, "fecha_cierre": "2027-02-22", "tiempo_restante": "60 días", "generado_hasta_hoy": 3932.24}]
+NOTICE:  3) saldo del bolsillo con intereses: 1009358.20  -> retirar_de_bolsillo por ese monto exacto: {"id": "b079073b-0347-4c4e-aa98-6b87148f57ff", "fecha": "2026-12-24T11:22:43.519124-05:00"}
+NOTICE:  4) reloj +95 dias: hoy = 2027-02-27. Cuenta antes de consultar: 3998553.20
+NOTICE:     vista_cdts (cierra y acredita): [{"id": "cd28ad57-a763-40cc-a784-1c7367ec0e9a", "monto": 500000.00, "fecha_cierre": "2027-02-22", "tiempo_restante": "Cerrado", "generado_hasta_hoy": 11889.73}]
+NOTICE:       pata: INTERES_CDT CDT E $3932.24 fecha 2026-12-24 11:22:43.50343-05
+NOTICE:       pata: INTERES_CDT RESULTADO E $3932.24 fecha 2026-12-24 11:22:43.50343-05
+NOTICE:       pata: INTERES_CDT CDT E $7957.49 fecha 2027-02-22 00:00:00-05
+NOTICE:       pata: INTERES_CDT RESULTADO E $7957.49 fecha 2027-02-22 00:00:00-05
+NOTICE:       pata: CDT_VENCIMIENTO CDT S $511889.73 fecha 2027-02-22 00:00:00-05
+NOTICE:       pata: CDT_VENCIMIENTO CUENTA E $511889.73 fecha 2027-02-22 00:00:00-05
+NOTICE:     la cuenta paso de 3998553.20 a 4510442.93 (+ monto 500000 + generado); el CDT esta CERRADO
+NOTICE:     generado final = 11889.73 = simular_cdt (generado_vencimiento): 11889.73 
+NOTICE:     a +500 dias (hoy = 2028-04-07) NO se devenga nada mas (el interes se topa en fecha_fin): CDT sigue con generado 11889.73
+NOTICE:  5) hacer_transferencia: {"id": "4cc0ce31-d7e9-478c-903d-c4bc09f42513", "fecha": "2028-04-07T11:22:43.537571-05:00"}
+NOTICE:  6) de vuelta al reloj real (hoy = 2026-11-24): vista_balance y vista_cdts no escriben nada (patas antes=27, despues=27)
+NOTICE:     guardia monotonica: UPDATE ultimo_cobro hacia atras rechazado: Motor de devengo: ultimo_cobro no puede retroceder (2028-04-07 -> 2028-04-06)
+NOTICE:  7) monto bajo el minimo: Monto por debajo del mínimo del CDT
+NOTICE:  7) saldo insuficiente: Saldo insuficiente
+NOTICE:  7) monto invalido: Monto inválido
+NOTICE:  7) definicion mal formada (negocio, no error de driver): Recurso no encontrado
+NOTICE:  8) v_integridad_global.ok = t (defensas fallidas=0, grupos con error=0, contenedores con desvio=0)
+DO
+ROLLBACK
+                                    resultado                                    
+---------------------------------------------------------------------------------
+ Demo terminada: ROLLBACK ejecutado (el reloj y los datos quedaron como estaban)
+(1 row)
+

@@ -1,0 +1,85 @@
+﻿=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+
+=== Mutaciones de E13 (mantenimiento: COMMIT por cuenta, search_path en cada transaccion, 55P03, motor, resumen, evento, informe de integridad y permisos) ===
+M434  DETECTADA  sin COMMIT por cuenta (todo el cierre en UNA transaccion: un corte pierde lo ya procesado)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M435  DETECTADA  sin captura de errores por cuenta (una cuenta que falla aborta TODA la corrida)
+      -> reales/56_mantenimiento: FAIL: C1 una falla inyectada en UNA cuenta (1711): con_error = 1, la lista de errores trae SU cuenta y el mensaje, la corrida SIGUE y no hay omitidas 
+M436  DETECTADA  sin lock_timeout (una cuenta tomada deja la corrida esperando indefinidamente)
+      -> reales/56_mantenimiento: FAIL: D1 una CUENTA tomada por otra sesion mas alla del lock_timeout: queda omitida por timeout de bloqueo (1), sin error, la corrida SIGUE (la vecina
+M437  DETECTADA  el 55P03 se cuenta como ERROR de la cuenta y no como timeout de bloqueo (ajuste 2)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M438  DETECTADA  UNA sola instantanea del reloj para todas las cuentas (fuera del bucle)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M439  DETECTADA  el search_path NO se fija al inicio de cada cuenta (un COMMIT lo descarto)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M440  DETECTADA  el search_path NO se fija en la transaccion FINAL de auditoria
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M441  DETECTADA  el search_path NO se fija en la transaccion de CAPTURA de cuentas
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M442  DETECTADA  el cierre NO llama al motor (_avanzar_hasta)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M443  DETECTADA  el total de grupos cuenta 1 por cuenta con cambios y no los grupos escritos
+      -> reales/56_mantenimiento: FAIL: A2 el resumen cuenta lo que se escribio de verdad: grupos del resumen = grupos nuevos del libro (esperado=[28] actual=[7])
+M444  DETECTADA  con_cambios cuenta doble
+      -> reales/56_mantenimiento: FAIL: A4 con_cambios = EXACTAMENTE las cuentas en las que se escribio algo (oraculo: cuentas con patas nuevas del libro, >= 7: B ya estaba al dia por 
+M445  DETECTADA  las cuentas omitidas por timeout no se cuentan
+      -> reales/56_mantenimiento: FAIL: D1 una CUENTA tomada por otra sesion mas alla del lock_timeout: queda omitida por timeout de bloqueo (1), sin error, la corrida SIGUE (la vecina
+M446  DETECTADA  los errores por cuenta no se detallan
+      -> reales/56_mantenimiento: FAIL: C1 una falla inyectada en UNA cuenta (1711): con_error = 1, la lista de errores trae SU cuenta y el mensaje, la corrida SIGUE y no hay omitidas 
+M447  DETECTADA  el evento de auditoria lleva otro nombre
+      -> reales/56_mantenimiento: FAIL: A8 hay UN evento MANTENIMIENTO_AVANZAR por corrida: actor = el usuario de la sesion, el resumen SIN la lista de errores y con los mismos grupos 
+M448  DETECTADA  el evento guarda tambien la lista de errores
+      -> reales/56_mantenimiento: FAIL: A8 hay UN evento MANTENIMIENTO_AVANZAR por corrida: actor = el usuario de la sesion, el resumen SIN la lista de errores y con los mismos grupos 
+M449  DETECTADA  el evento no registra quien lo ejecuto
+      -> reales/56_mantenimiento: FAIL: A8 hay UN evento MANTENIMIENTO_AVANZAR por corrida: actor = el usuario de la sesion, el resumen SIN la lista de errores y con los mismos grupos 
+M450  DETECTADA  la captura de cuentas es incompleta (solo 5)
+      -> reales/56_mantenimiento: FAIL: A3 todas las cuentas del banco procesadas, sin omitidas ni errores; hoy_desde = hoy_hasta = el hoy del reloj (esperado=[8|0|0|2027-01-09|2027-01
+M451  DETECTADA  el informe no trae las filas defectuosas de los creditos
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M452  DETECTADA  el informe no trae las defensas caidas
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M453  DETECTADA  el informe no limita la muestra de filas (tope 1000 en vez de 20)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M454  DETECTADA  el informe dice ok = true aunque haya desvios
+      -> 72_mantenimiento: ERROR:  FAIL: B1 un balance de cuenta alterado (+1): saldos (1 fila CUENTA, diferencia 1) y usuario (I5u), ok = false (el sabotaje NO fue detectado po
+M455  DETECTADA  el informe no restaura el search_path del llamador
+      -> 72_mantenimiento: ERROR:  function assert_eq(unknown, text, text) does not exist
+M456  DETECTADA  el tope de muestra se ignora (3 filas)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M457  DETECTADA  banco_app recibe EXECUTE de sp_avanzar_todos
+      -> 72_mantenimiento: ERROR:  FAIL: A1 banco sano: ok = true, todos los desvios en 0 y las 6 secciones de detalle VACIAS ([]) (esperado=(true,0,0,0,0,0,0,"auth=0,creditos=0
+M458  DETECTADA  banco_lector recibe EXECUTE de sp_verificar_integridad
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M459  DETECTADA  PUBLIC recibe EXECUTE de _reglas_mantenimiento
+      -> 72_mantenimiento: ERROR:  FAIL: A1 banco sano: ok = true, todos los desvios en 0 y las 6 secciones de detalle VACIAS ([]) (esperado=(true,0,0,0,0,0,0,"auth=0,creditos=0
+M460  DETECTADA  sp_avanzar_todos pasa a SECURITY DEFINER (ya no puede hacer COMMIT)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M461  DETECTADA  sp_avanzar_todos recibe una clausula SET search_path (ya no puede hacer COMMIT)
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+M462  DETECTADA  el lock_timeout provisional pasa de 2s a 60s
+      -> 72_mantenimiento: NOTICE:  PASS: B5 una pata suelta (grupo de una sola pata): grupos_con_error = 1 y la fila en detalle.grupos con estado ERROR
+
+RESUMEN: 29 de 29 mutaciones detectadas

@@ -1,0 +1,48 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Banco - administración (postgres)",
+      "Group": "Banco Digital",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "banco",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass",
+      "Comment": "Superusuario del contenedor: úsalo solo para aplicar DDL (db/sql/*.sql). Puede saltarse las protecciones; no lo uses para explorar."
+    },
+    "2": {
+      "Name": "Banco - banco_dev (explorar y probar funciones)",
+      "Group": "Banco Digital",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "banco",
+      "Username": "banco_dev",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass",
+      "Comment": "Sin ser superusuario: lee todo (menos password_hash) y ejecutará las funciones públicas (E3+). No puede escribir en tablas."
+    },
+    "3": {
+      "Name": "Banco - banco_app (simula al backend)",
+      "Group": "Banco Digital",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "banco",
+      "Username": "banco_app",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass",
+      "Comment": "El rol del backend: sin permisos sobre tablas; solo ejecutará funciones y leerá vistas (E3+). Úsalo para comprobar que lo demás está bloqueado."
+    },
+    "4": {
+      "Name": "Banco - banco_lector (solo lectura)",
+      "Group": "Banco Digital",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "banco",
+      "Username": "banco_lector",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass",
+      "Comment": "Solo lectura, sin acceso a usuario.password_hash. Pensado para el profesor."
+    }
+  }
+}

@@ -1,0 +1,78 @@
+﻿=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+
+=== Mutaciones de E13 (mantenimiento: COMMIT por cuenta, search_path en cada transaccion, 55P03, motor, resumen, evento, informe de integridad y permisos) ===
+
+=== Mutaciones de E14 (seed y QA: catalogo, identidades fijas, clave, historia, estado final, limpieza del esquema seed, reproducibilidad y respaldo/restauracion protegidos) ===
+M468  DETECTADA  la tasa del CDT de 90 dias cambia (9,25 -> 9,5)
+      -> reales/57_seed: FAIL: A2 3 CDT (nombre|plazo|tasa|minimo): 90, 180 y 360 dias con tasas crecientes y minimo 100.000 (D-E14-D1) (esperado=[CDT 180 días|180|10.000|100
+M469  DETECTADA  el tope de Libre inversion deja de ser 30M (31M)
+      -> reales/57_seed: FAIL: A3 4 productos de credito segun el spec §7.6 (nombre|min|max|plazos|tope|multiplicador|edad) con las tasas del mock (esperado=[Educación|10000
+M470  DETECTADA  Inmuebles pierde la regla de edad
+      -> reales/57_seed: FAIL: A3 4 productos de credito segun el spec §7.6 (nombre|min|max|plazos|tope|multiplicador|edad) con las tasas del mock (esperado=[Educación|10000
+M471  DETECTADA  el minimo de los CDT baja a 50.000
+      -> reales/57_seed: FAIL: A2 3 CDT (nombre|plazo|tasa|minimo): 90, 180 y 360 dias con tasas crecientes y minimo 100.000 (D-E14-D1) (esperado=[CDT 180 días|180|10.000|100
+M472  DETECTADA  recargar el catalogo ya no restaura la tasa editada de los CDT
+      -> reales/57_seed: FAIL: A6 recargar el catalogo RESTAURA los valores editados (y conserva los ids) (esperado=[9.250|30000000.00|13b207823036de3018f0dbd678db737d] actual
+M473  DETECTADA  el cliente no recibe sus identidades fijas (seed.fijar_identidad no se llama)
+      -> reales/57_seed: FAIL: B1 sembrar.sh demo termina bien y avisa que el esquema seed fue eliminado (esperado=[0|t] actual=[1|f])
+M474  DETECTADA  verificar_correo ANTES de fijar la identidad (el bono guardaria la cuenta aleatoria)
+      -> reales/57_seed: FAIL: B1 sembrar.sh demo termina bien y avisa que el esquema seed fue eliminado (esperado=[0|t] actual=[1|f])
+M475  DETECTADA  session_replication_role no se restablece tras fijar la identidad
+      -> reales/57_seed: FAIL: B1 sembrar.sh demo termina bien y avisa que el esquema seed fue eliminado (esperado=[0|t] actual=[1|f])
+M476  DETECTADA  admin1 se crea como CLIENTE
+      -> reales/57_seed: FAIL: B1 sembrar.sh demo termina bien y avisa que el esquema seed fue eliminado (esperado=[0|t] actual=[1|f])
+M477  DETECTADA  el hash demo ya no corresponde a Banco2026
+      -> reales/57_seed: FAIL: B5 la clave Banco2026 corresponde al hash de los 12 usuarios (crypt) y el hash es bcrypt valido (esperado=[12|12] actual=[0|12])
+M478  DETECTADA  el seed termina con el reloj en modo MANUAL (no vuelve a real)
+      -> reales/57_seed: FAIL: B13 ESTADO FINAL: reloj en modo REAL, sin fecha manual, 0 patas en el futuro, banco no vacio (esperado=[t||0|f] actual=[f|2026-11-21|0|false])
+M479  DETECTADA  el seed no corre sp_avanzar_todos al final (lo guardado queda atrasado)
+      -> reales/57_seed: FAIL: B15 el seed termina con UN evento MANTENIMIENTO_AVANZAR y una segunda corrida no escribe nada (lo guardado esta al dia) (esperado=[1|0] actual=[
+M480  DETECTADA  bloqueado1 no se bloquea
+      -> reales/57_seed: FAIL: B2 12 usuarios: 1 ADMIN y 11 CLIENTE; solo bloqueado1 esta BLOQUEADO; el ADMIN no tiene cuenta (esperado=[12|1|11|bloqueado1|0] actual=[])
+M481  DETECTADA  la mora del seed deja de ser 30 %
+      -> reales/57_seed: FAIL: B9b ...el Vehiculo tiene mora_acumulada > 0 y el Libre inversion >= 2 cuotas pagadas (esperado=[t|t] actual=[false|t])
+M482  DETECTADA  el credito Vehiculo se crea con mas cuotas pagadas: se le activa el descuento automatico
+      -> reales/57_seed: FAIL: B9 el credito Libre inversion tiene descuento automatico y esta AL DIA (mora 0); el Vehiculo NO lo tiene y no ha pagado ninguna cuota (esperado=
+M483  DETECTADA  se omite setseed (los ingresos aleatorios dejan de ser reproducibles)
+      -> reales/57_seed: FAIL: D1 REPRODUCIBLE: dos siembras en bases distintas dan el MISMO estado funcional (usuarios, cuentas, codigos, libro con montos, notas y contrapart
+M484  DETECTADA  el esquema seed ya no se elimina si la historia falla (sin trap de limpieza)
+      -> reales/57_seed: FAIL: C4 ...y el esquema temporal seed fue ELIMINADO igualmente (condicion de limpieza) (esperado=[t] actual=[false])
+M485  DETECTADA  el seed deja de negarse sobre un banco con datos
+      -> reales/57_seed: FAIL: C1 sobre un banco CON datos el seed se NIEGA (codigo 2, mensaje claro) y no cambia nada (esperado=[2|t|ed2f50b371ef172c0f6b799e36561181|t] actua
+M487  DETECTADA  restore se ejecuta sin --yes
+      -> reales/58_respaldo: FAIL: B1 SIN --yes no hace nada: error, la BD queda como estaba y no existe BD de paso (esperado=[t|d68984c88c8b550a6fe86e99b37fa018|0] actual=[f|f390
+M488  DETECTADA  restore no compara la BD de paso con el manifiesto antes de intercambiar
+      -> reales/58_respaldo: FAIL: C3 un manifiesto que NO coincide con el contenido se rechaza DESPUES de restaurar en la BD de paso: la BD no cambia, la de paso se elimina y no 
+M489  DETECTADA  restore no exige manifiesto
+      -> reales/58_respaldo: FAIL: C2 un respaldo SIN manifiesto se rechaza (no se puede verificar) y la BD no cambia (esperado=[t|t|424aad75c87c1f38a70db5cbdc27c138] actual=[t|f|
+M490  *** NO DETECTADA ***  restore no cierra las conexiones abiertas antes del intercambio
+M491  DETECTADA  restore no comprueba que el volcado sea de este banco
+      -> reales/58_respaldo: FAIL: C4 el volcado de OTRA base (sin las tablas del banco) se rechaza y la BD no cambia (esperado=[t|t|b8ccce31b03379debcd3aa90c6072e97] actual=[t|f|
+M492  DETECTADA  backup guarda un manifiesto vacio (sin huella)
+      -> reales/58_respaldo: FAIL: A1 backup termina bien y deja el archivo y su manifiesto (.huella) (esperado=[0|t|t] actual=[0|t|f])
+M493  DETECTADA  la restauracion no conserva la BD anterior como _previo
+      -> reales/58_respaldo: FAIL: B4 la BD anterior (con el adelanto) quedo como banco_rs_previo: es la vuelta atras (esperado=[1|b253ef1256ba539ac1ef644b89c7c131] actual=[0|])
+
+RESUMEN: 24 de 25 mutaciones detectadas

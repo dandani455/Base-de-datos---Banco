@@ -1,0 +1,1982 @@
+﻿
+== E14: aplicacion desde cero con el camino canonico de Windows (db\ctl.ps1, Windows PowerShell 5.1)
+== reset (recrea la BD banco, elimina banco_test)
+DROP DATABASE
+DROP DATABASE
+CREATE DATABASE
+ALTER DATABASE
+BD "banco" recreada vacia. Reconecta pgAdmin (clic derecho en el servidor > Refresh).
+Siguiente paso: db\ctl.cmd apply
+codigo de salida: 0
+== apply #1 (todos los scripts de db\sql)
+== Aplicando 00_extensiones.sql
+CREATE EXTENSION
+CREATE EXTENSION
+DO
+== Aplicando 01_roles.sql
+BEGIN
+DO
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+GRANT ROLE
+GRANT ROLE
+DO
+GRANT
+ALTER DEFAULT PRIVILEGES
+psql:/work/sql/01_roles.sql:63: NOTICE:  role "banco_dev" has already been granted membership in role "banco_lector" by role "postgres"
+psql:/work/sql/01_roles.sql:64: NOTICE:  role "banco_dev" has already been granted membership in role "banco_app" by role "postgres"
+COMMIT
+== Aplicando 02_tipos_dominios.sql
+BEGIN
+SET
+DO
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMIT
+== Aplicando 03_schema.sql
+BEGIN
+COMMENT
+SET
+CREATE SCHEMA
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 1
+INSERT 0 1
+COMMENT
+DO
+COMMIT
+== Aplicando 04_indices.sql
+BEGIN
+SET
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMIT
+== Aplicando 05_permisos.sql
+BEGIN
+REVOKE
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+DO
+COMMIT
+== Aplicando 06_libro_mayor_estructura.sql
+BEGIN
+SET
+ALTER TABLE
+ALTER TABLE
+COMMENT
+COMMENT
+RESET
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+COMMIT
+== Aplicando 07_libro_mayor_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+CREATE FUNCTION
+ALTER FUNCTION
+COMMENT
+DO
+GRANT
+GRANT
+COMMIT
+== Aplicando 08_libro_mayor_triggers.sql
+BEGIN
+CREATE TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+psql:/work/sql/08_libro_mayor_triggers.sql:32: NOTICE:  trigger "ct_transaccion_cuadre" for relation "public.transaccion" does not exist, skipping
+CREATE TRIGGER
+DROP TRIGGER
+psql:/work/sql/08_libro_mayor_triggers.sql:38: NOTICE:  trigger "ct_transaccion_cdt" for relation "public.transaccion" does not exist, skipping
+CREATE TRIGGER
+DROP TRIGGER
+psql:/work/sql/08_libro_mayor_triggers.sql:45: NOTICE:  trigger "ct_cdt_inversion" for relation "public.cdt" does not exist, skipping
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+DO
+ALTER EVENT TRIGGER
+ALTER EVENT TRIGGER
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMIT
+== Aplicando 09_integridad.sql
+BEGIN
+SET
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+RESET
+GRANT
+COMMIT
+== Aplicando 10_reloj_estructura.sql
+BEGIN
+SET
+DO
+RESET
+REVOKE
+GRANT
+COMMIT
+== Aplicando 11_reloj_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+GRANT
+COMMIT
+== Aplicando 12_reloj_triggers.sql
+BEGIN
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+SET
+CREATE VIEW
+COMMENT
+RESET
+GRANT
+COMMIT
+== Aplicando 13_auth_utilidades.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 14_auth_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 15_transferencias.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 16_bolsillos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 17_motor_devengo.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 18_cdt.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 19_creditos_calculo.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+psql:/work/sql/19_creditos_calculo.sql:174: NOTICE:  trigger "ct_credito_plan" for relation "public.credito" does not exist, skipping
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+psql:/work/sql/19_creditos_calculo.sql:180: NOTICE:  trigger "ct_credito_plan_cuota" for relation "public.cuota" does not exist, skipping
+CREATE TRIGGER
+COMMENT
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 20_creditos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 21_pagos_calculo.sql
+BEGIN
+SET
+DO
+COMMENT
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE TRIGGER
+COMMENT
+RESET
+GRANT
+DO
+COMMIT
+== Aplicando 22_pagos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 23_vistas.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+DO
+REVOKE
+GRANT
+GRANT
+COMMIT
+== Aplicando 24_admin.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 25_control.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 26_mantenimiento.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE PROCEDURE
+COMMENT
+CREATE PROCEDURE
+COMMENT
+RESET
+DO
+COMMIT
+Listo: 27 archivo(s) aplicado(s) a la BD 'banco'.
+codigo de salida: 0
+== apply #2 (todos los scripts de db\sql)
+== Aplicando 00_extensiones.sql
+CREATE EXTENSION
+CREATE EXTENSION
+psql:/work/sql/00_extensiones.sql:15: NOTICE:  extension "unaccent" already exists, skipping
+psql:/work/sql/00_extensiones.sql:16: NOTICE:  extension "pg_trgm" already exists, skipping
+DO
+== Aplicando 01_roles.sql
+BEGIN
+DO
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+GRANT ROLE
+psql:/work/sql/01_roles.sql:63: NOTICE:  role "banco_dev" has already been granted membership in role "banco_lector" by role "postgres"
+GRANT ROLE
+psql:/work/sql/01_roles.sql:64: NOTICE:  role "banco_dev" has already been granted membership in role "banco_app" by role "postgres"
+DO
+GRANT
+ALTER DEFAULT PRIVILEGES
+COMMIT
+== Aplicando 02_tipos_dominios.sql
+BEGIN
+SET
+DO
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMIT
+== Aplicando 03_schema.sql
+BEGIN
+COMMENT
+SET
+CREATE SCHEMA
+psql:/work/sql/03_schema.sql:31: NOTICE:  schema "audit" already exists, skipping
+psql:/work/sql/03_schema.sql:71: NOTICE:  relation "usuario" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:92: NOTICE:  relation "cuenta" already exists, skipping
+CREATE TABLE
+CREATE TABLE
+psql:/work/sql/03_schema.sql:108: NOTICE:  relation "bolsillo" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:124: NOTICE:  relation "cdt_definicion" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:151: NOTICE:  relation "cdt" already exists, skipping
+psql:/work/sql/03_schema.sql:175: NOTICE:  relation "credito_producto" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:201: NOTICE:  relation "credito" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:205: NOTICE:  relation "uq_credito_vivo_por_producto" already exists, skipping
+CREATE INDEX
+psql:/work/sql/03_schema.sql:232: NOTICE:  relation "cuota" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:311: NOTICE:  relation "transaccion" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:323: NOTICE:  relation "reloj" already exists, skipping
+CREATE TABLE
+CREATE TABLE
+psql:/work/sql/03_schema.sql:343: NOTICE:  relation "parametro" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:362: NOTICE:  relation "evento" already exists, skipping
+INSERT 0 0
+INSERT 0 0
+COMMENT
+DO
+COMMIT
+== Aplicando 04_indices.sql
+BEGIN
+SET
+CREATE INDEX
+psql:/work/sql/04_indices.sql:18: NOTICE:  relation "ix_transaccion_cuenta_orden" already exists, skipping
+psql:/work/sql/04_indices.sql:19: NOTICE:  relation "ix_transaccion_grupo" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:20: NOTICE:  relation "ix_transaccion_bolsillo" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:21: NOTICE:  relation "ix_transaccion_cdt" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:22: NOTICE:  relation "ix_transaccion_credito" already exists, skipping
+psql:/work/sql/04_indices.sql:25: NOTICE:  relation "ix_bolsillo_cuenta" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:26: NOTICE:  relation "ix_cdt_cuenta_estado" already exists, skipping
+psql:/work/sql/04_indices.sql:27: NOTICE:  relation "ix_credito_cuenta_estado" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:28: NOTICE:  relation "ix_credito_producto" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:29: NOTICE:  relation "ix_cdt_definicion" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:32: NOTICE:  relation "ix_cuota_pendiente" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:35: NOTICE:  relation "ix_usuario_referidor" already exists, skipping
+psql:/work/sql/04_indices.sql:38: NOTICE:  relation "ix_evento_fecha" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:39: NOTICE:  relation "ix_evento_entidad" already exists, skipping
+CREATE INDEX
+COMMIT
+== Aplicando 05_permisos.sql
+BEGIN
+REVOKE
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+DO
+COMMIT
+== Aplicando 06_libro_mayor_estructura.sql
+BEGIN
+SET
+psql:/work/sql/06_libro_mayor_estructura.sql:39: NOTICE:  column "registrado_en" of relation "transaccion" already exists, skipping
+ALTER TABLE
+psql:/work/sql/06_libro_mayor_estructura.sql:40: NOTICE:  column "tx_id" of relation "transaccion" already exists, skipping
+ALTER TABLE
+COMMENT
+COMMENT
+RESET
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+COMMIT
+== Aplicando 07_libro_mayor_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+CREATE FUNCTION
+ALTER FUNCTION
+COMMENT
+DO
+GRANT
+GRANT
+COMMIT
+== Aplicando 08_libro_mayor_triggers.sql
+BEGIN
+CREATE TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+DO
+ALTER EVENT TRIGGER
+ALTER EVENT TRIGGER
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMIT
+== Aplicando 09_integridad.sql
+BEGIN
+SET
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+RESET
+GRANT
+COMMIT
+== Aplicando 10_reloj_estructura.sql
+BEGIN
+SET
+DO
+RESET
+REVOKE
+GRANT
+COMMIT
+== Aplicando 11_reloj_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+GRANT
+COMMIT
+== Aplicando 12_reloj_triggers.sql
+BEGIN
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+SET
+CREATE VIEW
+COMMENT
+RESET
+GRANT
+COMMIT
+== Aplicando 13_auth_utilidades.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 14_auth_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 15_transferencias.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 16_bolsillos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 17_motor_devengo.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 18_cdt.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 19_creditos_calculo.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 20_creditos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 21_pagos_calculo.sql
+BEGIN
+SET
+DO
+COMMENT
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE TRIGGER
+COMMENT
+RESET
+GRANT
+DO
+COMMIT
+== Aplicando 22_pagos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 23_vistas.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+DO
+REVOKE
+GRANT
+GRANT
+COMMIT
+== Aplicando 24_admin.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 25_control.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 26_mantenimiento.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE PROCEDURE
+COMMENT
+CREATE PROCEDURE
+COMMENT
+RESET
+DO
+COMMIT
+Listo: 27 archivo(s) aplicado(s) a la BD 'banco'.
+codigo de salida: 0
+== apply #3 (todos los scripts de db\sql)
+== Aplicando 00_extensiones.sql
+CREATE EXTENSION
+CREATE EXTENSION
+psql:/work/sql/00_extensiones.sql:15: NOTICE:  extension "unaccent" already exists, skipping
+psql:/work/sql/00_extensiones.sql:16: NOTICE:  extension "pg_trgm" already exists, skipping
+DO
+== Aplicando 01_roles.sql
+BEGIN
+DO
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+GRANT ROLE
+GRANT ROLE
+psql:/work/sql/01_roles.sql:63: NOTICE:  role "banco_dev" has already been granted membership in role "banco_lector" by role "postgres"
+psql:/work/sql/01_roles.sql:64: NOTICE:  role "banco_dev" has already been granted membership in role "banco_app" by role "postgres"
+DO
+GRANT
+ALTER DEFAULT PRIVILEGES
+COMMIT
+== Aplicando 02_tipos_dominios.sql
+BEGIN
+SET
+DO
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMIT
+== Aplicando 03_schema.sql
+BEGIN
+COMMENT
+SET
+CREATE SCHEMA
+psql:/work/sql/03_schema.sql:31: NOTICE:  schema "audit" already exists, skipping
+psql:/work/sql/03_schema.sql:71: NOTICE:  relation "usuario" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:92: NOTICE:  relation "cuenta" already exists, skipping
+CREATE TABLE
+CREATE TABLE
+psql:/work/sql/03_schema.sql:108: NOTICE:  relation "bolsillo" already exists, skipping
+psql:/work/sql/03_schema.sql:124: NOTICE:  relation "cdt_definicion" already exists, skipping
+CREATE TABLE
+CREATE TABLE
+psql:/work/sql/03_schema.sql:151: NOTICE:  relation "cdt" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:175: NOTICE:  relation "credito_producto" already exists, skipping
+CREATE TABLE
+psql:/work/sql/03_schema.sql:201: NOTICE:  relation "credito" already exists, skipping
+psql:/work/sql/03_schema.sql:205: NOTICE:  relation "uq_credito_vivo_por_producto" already exists, skipping
+CREATE INDEX
+CREATE TABLE
+psql:/work/sql/03_schema.sql:232: NOTICE:  relation "cuota" already exists, skipping
+psql:/work/sql/03_schema.sql:311: NOTICE:  relation "transaccion" already exists, skipping
+CREATE TABLE
+CREATE TABLE
+psql:/work/sql/03_schema.sql:323: NOTICE:  relation "reloj" already exists, skipping
+psql:/work/sql/03_schema.sql:343: NOTICE:  relation "parametro" already exists, skipping
+CREATE TABLE
+CREATE TABLE
+psql:/work/sql/03_schema.sql:362: NOTICE:  relation "evento" already exists, skipping
+INSERT 0 0
+INSERT 0 0
+COMMENT
+DO
+COMMIT
+== Aplicando 04_indices.sql
+BEGIN
+SET
+psql:/work/sql/04_indices.sql:18: NOTICE:  relation "ix_transaccion_cuenta_orden" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:19: NOTICE:  relation "ix_transaccion_grupo" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:20: NOTICE:  relation "ix_transaccion_bolsillo" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:21: NOTICE:  relation "ix_transaccion_cdt" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:22: NOTICE:  relation "ix_transaccion_credito" already exists, skipping
+psql:/work/sql/04_indices.sql:25: NOTICE:  relation "ix_bolsillo_cuenta" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:26: NOTICE:  relation "ix_cdt_cuenta_estado" already exists, skipping
+psql:/work/sql/04_indices.sql:27: NOTICE:  relation "ix_credito_cuenta_estado" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:28: NOTICE:  relation "ix_credito_producto" already exists, skipping
+psql:/work/sql/04_indices.sql:29: NOTICE:  relation "ix_cdt_definicion" already exists, skipping
+CREATE INDEX
+CREATE INDEX
+psql:/work/sql/04_indices.sql:32: NOTICE:  relation "ix_cuota_pendiente" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:35: NOTICE:  relation "ix_usuario_referidor" already exists, skipping
+psql:/work/sql/04_indices.sql:38: NOTICE:  relation "ix_evento_fecha" already exists, skipping
+CREATE INDEX
+psql:/work/sql/04_indices.sql:39: NOTICE:  relation "ix_evento_entidad" already exists, skipping
+CREATE INDEX
+COMMIT
+== Aplicando 05_permisos.sql
+BEGIN
+REVOKE
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+DO
+COMMIT
+== Aplicando 06_libro_mayor_estructura.sql
+BEGIN
+SET
+psql:/work/sql/06_libro_mayor_estructura.sql:39: NOTICE:  column "registrado_en" of relation "transaccion" already exists, skipping
+ALTER TABLE
+psql:/work/sql/06_libro_mayor_estructura.sql:40: NOTICE:  column "tx_id" of relation "transaccion" already exists, skipping
+ALTER TABLE
+COMMENT
+COMMENT
+RESET
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+COMMIT
+== Aplicando 07_libro_mayor_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+CREATE FUNCTION
+ALTER FUNCTION
+COMMENT
+DO
+GRANT
+GRANT
+COMMIT
+== Aplicando 08_libro_mayor_triggers.sql
+BEGIN
+CREATE TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+DO
+ALTER EVENT TRIGGER
+ALTER EVENT TRIGGER
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+COMMIT
+== Aplicando 09_integridad.sql
+BEGIN
+SET
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE VIEW
+COMMENT
+RESET
+GRANT
+COMMIT
+== Aplicando 10_reloj_estructura.sql
+BEGIN
+SET
+DO
+RESET
+REVOKE
+GRANT
+COMMIT
+== Aplicando 11_reloj_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+GRANT
+COMMIT
+== Aplicando 12_reloj_triggers.sql
+BEGIN
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+SET
+CREATE VIEW
+COMMENT
+RESET
+GRANT
+COMMIT
+== Aplicando 13_auth_utilidades.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 14_auth_funciones.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 15_transferencias.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 16_bolsillos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 17_motor_devengo.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 18_cdt.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 19_creditos_calculo.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+DROP TRIGGER
+CREATE TRIGGER
+DROP TRIGGER
+CREATE TRIGGER
+COMMENT
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 20_creditos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 21_pagos_calculo.sql
+BEGIN
+SET
+DO
+COMMENT
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE TRIGGER
+COMMENT
+RESET
+GRANT
+DO
+COMMIT
+== Aplicando 22_pagos.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 23_vistas.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE VIEW
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+DO
+REVOKE
+GRANT
+GRANT
+COMMIT
+== Aplicando 24_admin.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 25_control.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+CREATE FUNCTION
+COMMENT
+RESET
+DO
+COMMIT
+== Aplicando 26_mantenimiento.sql
+BEGIN
+SET
+CREATE FUNCTION
+COMMENT
+CREATE PROCEDURE
+COMMENT
+CREATE PROCEDURE
+COMMENT
+RESET
+DO
+COMMIT
+Listo: 27 archivo(s) aplicado(s) a la BD 'banco'.
+codigo de salida: 0
+== seed catalogo (solo el catalogo; idempotente)
+== Catalogo (00_catalogo.sql) en la BD 'banco'
+codigo de salida: 0
+== seed demo (historia completa)
+== Catalogo (00_catalogo.sql) en la BD 'banco'
+== Funciones solo-seed (esquema temporal seed)
+psql:/work/seed/10_funciones_seed.sql:12: NOTICE:  schema "seed" does not exist, skipping
+== Historia de demostracion (20_demo.sql)
+ setseed 
+---------
+ 
+(1 row)
+
+psql:/work/seed/20_demo.sql:115: NOTICE:  sp_avanzar_todos: {"grupos": 4, "cuentas": 11, "errores": [], "con_error": 0, "hoy_desde": "2026-11-25", "hoy_hasta": "2026-11-25", "procesadas": 11, "con_cambios": 2, "omitidas_por_timeout_de_bloqueo": 0}
+                                                                                          resultado                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"grupos": 4, "cuentas": 11, "errores": [], "con_error": 0, "hoy_desde": "2026-11-25", "hoy_hasta": "2026-11-25", "procesadas": 11, "con_cambios": 2, "omitidas_por_timeout_de_bloqueo": 0}
+(1 row)
+
+ integridad_ok | defensas_fallidas | cuentas | grupos | patas | reloj_real | usuarios | cdt_activos | cdt_cerrados | creditos 
+---------------+-------------------+---------+--------+-------+------------+----------+-------------+--------------+----------
+ t             |                 0 |      11 |    161 |   324 | t          |       12 |           1 |            1 |        2
+(1 row)
+
+psql:/work/seed/20_demo.sql:126: NOTICE:  drop cascades to 10 other objects
+DETAIL:  drop cascades to table seed.cfg
+drop cascades to function seed.r()
+drop cascades to function seed.exigir_banco_sin_operaciones()
+drop cascades to function seed.u(text)
+drop cascades to function seed.admin_id()
+drop cascades to function seed.crear_admin(text,text,text,text,text,text,date)
+drop cascades to function seed.fijar_identidad(uuid,text,text,uuid)
+drop cascades to function seed.cliente(text,text,text,text,text,text,text,text,uuid,text)
+drop cascades to function seed.dia(integer)
+drop cascades to function seed.volver_a_real()
+== Seed completo. Esquema seed eliminado.
+codigo de salida: 0
+== verificacion tras el seed
+ usuarios | cuentas | integridad_ok | defensas_fallidas | reloj_real | patas_futuras | banco_vacio | esquema_seed_eliminado | cdt_def | productos 
+----------+---------+---------------+-------------------+------------+---------------+-------------+------------------------+---------+-----------
+       12 |      11 | t             |                 0 | t          |             0 | f           | t                      |       3 |         4
+(1 row)
+
+  username   |   rol   |  estado   | numero_cuenta 
+-------------+---------+-----------+---------------
+ amora271    | CLIENTE | ACTIVO    | 4007008009
+ bloqueado1  | CLIENTE | BLOQUEADO | 4005006007
+ cgomez12    | CLIENTE | ACTIVO    | 4003004005
+ dtorres219  | CLIENTE | ACTIVO    | 4006667778
+ farango352  | CLIENTE | ACTIVO    | 4002223334
+ jperez483   | CLIENTE | ACTIVO    | 4001002003
+ lospina604  | CLIENTE | ACTIVO    | 4008009001
+ pvargas907  | CLIENTE | ACTIVO    | 4003334445
+ sgomez118   | CLIENTE | ACTIVO    | 4001112223
+ sherrera630 | CLIENTE | ACTIVO    | 4005556667
+ vcastano445 | CLIENTE | ACTIVO    | 4004445556
+ admin1      | ADMIN   | ACTIVO    | 
+(12 rows)
+
+== segundo seed sobre el banco con datos: debe NEGARSE
+ERROR: el seed solo corre sobre un banco vacio (la BD 'banco' ya tiene datos). Para repetirlo: ctl reset --yes, ctl apply y ctl seed.
+ERROR: seed fallo (codigo 2).
+codigo de salida (esperado distinto de 0): 2
+== backup inicial
+Respaldo de 'banco' guardado en /tmp/banco_inicial.dump (531744 bytes). Huella: 486a0f0b1463b7f8e1a065652f6939b4
+Respaldo copiado a db\backups\banco_inicial.dump (+ .huella). Restaurar: db\ctl.cmd restore inicial -Yes
+codigo de salida: 0
+huella corta del estado inicial:  5b4f531f95e4ddd998e462e0406208b4
+== se ALTERA el estado: un unico adelanto del reloj (+10 dias) y CALL sp_avanzar_todos()
+ hoy_del_banco 
+---------------
+ 2026-12-05
+(1 row)
+
+                                                                                          resultado                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"grupos": 6, "cuentas": 11, "errores": [], "con_error": 0, "hoy_desde": "2026-12-05", "hoy_hasta": "2026-12-05", "procesadas": 11, "con_cambios": 2, "omitidas_por_timeout_de_bloqueo": 0}
+(1 row)
+
+NOTICE:  sp_avanzar_todos: {"grupos": 6, "cuentas": 11, "errores": [], "con_error": 0, "hoy_desde": "2026-12-05", "hoy_hasta": "2026-12-05", "procesadas": 11, "con_cambios": 2, "omitidas_por_timeout_de_bloqueo": 0}
+ patas | reloj_real 
+-------+------------
+   337 | f
+(1 row)
+
+== restore SIN -Yes: debe negarse
+ERROR: La restauracion REEMPLAZA la BD 'banco' (la actual queda como banco_previo). Repite con -Yes.
+codigo de salida (esperado distinto de 0): 1
+ patas_sin_cambio | reloj_real 
+------------------+------------
+              337 | f
+(1 row)
+
+== restore inicial -Yes
+NOTICE:  database "banco_restaurando" does not exist, skipping
+NOTICE:  database "banco_previo" does not exist, skipping
+Restaurado: 'banco' = respaldo /tmp/banco_inicial.dump (huella 486a0f0b1463b7f8e1a065652f6939b4). La BD anterior quedo como 'banco_previo' (respaldo.sh descartar banco la elimina).
+codigo de salida: 0
+== tras restaurar: el estado vuelve al inicial
+ patas | reloj_real | integridad_ok | usuarios 
+-------+------------+---------------+----------
+   324 | t          | t             |       12
+(1 row)
+
+== la BD anterior quedo como banco_previo (vuelta atras)
+   datname    
+--------------
+ banco
+ banco_previo
+(2 rows)
+
+== descartar-previo
+Eliminada 'banco_previo' (si existia).
+codigo de salida: 0
+ datname 
+---------
+ banco
+(1 row)
+
+== el seed desde el respaldo es repetible: restaurar de nuevo
+NOTICE:  database "banco_restaurando" does not exist, skipping
+NOTICE:  database "banco_previo" does not exist, skipping
+Restaurado: 'banco' = respaldo /tmp/banco_inicial.dump (huella 486a0f0b1463b7f8e1a065652f6939b4). La BD anterior quedo como 'banco_previo' (respaldo.sh descartar banco la elimina).
+codigo de salida: 0
+ patas | integridad_ok 
+-------+---------------
+   324 | t
+(1 row)
+
+== descartar-previo
+Eliminada 'banco_previo' (si existia).
+codigo de salida: 0
+== archivos de respaldo en el host
+.gitignore  73 bytes
+banco_inicial.dump  531744 bytes
+banco_inicial.dump.huella  107 bytes

@@ -1,0 +1,4 @@
+git status --short (2026-11-23, fin de E5; sin commits; front/ y backend intactos)
+?? .gitattributes
+?? db/
+?? docs/db/

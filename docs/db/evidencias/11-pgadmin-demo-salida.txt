@@ -1,0 +1,84 @@
+﻿BEGIN
+docker : NOTICE:  Hoy del banco: 2026-11-25. Clientes: Ana (5 ingresos simulados + 5.000.000 de la demo), Beto 
+(badmin455) y Zoé; administradores: admdemo11 y admblq11 (bloqueado).
+En línea: 1 Carácter: 532
++ ... ding UTF8 | docker compose --env-file .env -f compose.dev.yml exec -T ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (NOTICE:  Hoy de...11 (bloqueado).:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+NOTICE:  1) admin_listar_usuarios: 3 filas (los 2 ADMIN no aparecen). Claves de cada fila: cedula, correo, estado, id, 
+nombre, numero_cuenta, username
+NOTICE:     busqueda "zoe" (sin tildes ni mayusculas) -> Zoé Muñoz; "MUNOZ" -> Zoé Muñoz; por numero de cuenta de Beto 
+-> badmin455; "%" (el comodin es literal) -> 0 filas
+NOTICE:  2) admin_detalle_usuario(Ana): principal=8662985.00, total=9662985.00, bolsillos=1, cdts=[{"id": 
+"e646d392-f396-4d3c-b2a0-07c8ab13514c", "monto": 1000000.00}], creditos=[{"id": 
+"6508db1e-ea2f-4a4b-a9a8-b66398e3bdf6", "saldo": 2000000.00, "producto": "Demo Libre"}]
+NOTICE:     historial (ultimas 50, la mas reciente primero): 9 filas; la primera: {"id": 
+"f328a1fb-aa7a-46cc-9c74-6bb60804b6e0", "nota": null, "tipo": "recibo", "fecha": "2026-11-25T00:55:17.696508-05:00", 
+"monto": 2000000.00, "contraparte": "Demo Libre", "tipo_detalle": "CREDITO_DESEMBOLSO"}
+NOTICE:     el historial del detalle es EXACTAMENTE el de vista_historial(Ana): t
+NOTICE:  3) +250000.50 a Beto por UUID -> {"id": "7cc0e687-4088-41e9-9cee-43f7a7b61740", "fecha": 
+"2026-11-25T00:55:17.715602-05:00", "monto": 250000.50}; saldo = 1592694.50
+NOTICE:     -1000 por USERNAME -> {"id": "d2c0e13f-7777-46ce-9d75-031d5896c2f8", "fecha": 
+"2026-11-25T00:55:17.720283-05:00", "monto": -1000}; saldo = 1591694.50
+NOTICE:     +10 por NUMERO DE CUENTA -> {"id": "24d10aee-e8db-4b70-ae71-2c3c23cc09b0", "fecha": 
+"2026-11-25T00:55:17.723938-05:00", "monto": 10}; saldo = 1591704.50
+NOTICE:     un ajuste negativo que dejaria la cuenta bajo cero -> "Saldo insuficiente" (no cambia nada)
+NOTICE:     monto 0 -> "Monto inválido"
+NOTICE:     monto con 3 decimales -> "Monto inválido"
+NOTICE:     ajustar a un ADMIN -> "Recurso no encontrado"
+NOTICE:     el historial de Beto muestra los ajustes: recibo 10.00 por numero de cuenta ; envio 1000.00 - ; recibo 
+250000.50 bono manual
+NOTICE:     eventos AJUSTE_ADMIN de la auditoria: 3 (actor: admdemo11)
+NOTICE:  4) admin_bloquear(Zoe) -> {"id": "9e716a8b-a645-4d7e-a614-4b694c3d334d", "estado": "BLOQUEADO"}
+NOTICE:     la SIGUIENTE peticion de Zoe -> "Tu cuenta ha sido restringida, contacte con el banco para desbloquearla"
+NOTICE:     bloquear dos veces es idempotente: eventos USUARIO_BLOQUEADO = 1
+NOTICE:     admin_desbloquear(Zoe) -> {"id": "9e716a8b-a645-4d7e-a614-4b694c3d334d", "estado": "ACTIVO"}; 
+vista_balance de Zoe responde de nuevo: t
+NOTICE:     un admin no puede bloquearse a si mismo ni a otro admin -> "Recurso no encontrado"
+NOTICE:  5) admin_get_reloj -> {"fecha_actual": "2026-11-25", "fecha_sistema": null, "usar_fecha_real": true}
+NOTICE:     admin_set_reloj(+5 dias) -> {"fecha_actual": "2026-11-30", "fecha_sistema": "2026-11-30", 
+"usar_fecha_real": false}
+NOTICE:     retroceder a hoy -> "El reloj no puede retroceder"
+NOTICE:     fecha invalida -> "Fecha inválida"
+NOTICE:     volver a la fecha real (el front manda una fecha que se IGNORA) -> {"fecha_actual": "2026-11-25", 
+"fecha_sistema": null, "usar_fecha_real": true}
+NOTICE:     auditoria del reloj atribuida al admin: RELOJ_CAMBIO por admdemo11 ; RELOJ_CAMBIO por admdemo11
+NOTICE:  6) admin_get_tasas (la mora sin valor se LEE como 0, D-E11-D7a provisional) -> {"cdts": [{"id": 
+"e62ad62b-dacf-43cc-8f5a-38c528b70b62", "tasa": 9.000, "nombre": "Demo CDT 30"}], "mora": 0, "creditos": [{"id": 
+"4e568136-31ea-4e71-b23c-067e4db4197d", "tasa": 18.000, "nombre": "Demo Libre"}]}
+NOTICE:     set_tasa_cdt 12.5 -> {"id": "e62ad62b-dacf-43cc-8f5a-38c528b70b62", "tasa": 12.5}; set_tasa_credito 19 -> 
+{"id": "4e568136-31ea-4e71-b23c-067e4db4197d", "tasa": 19}; set_tasa_mora 30 -> {"mora": 30}
+NOTICE:     tasa 100.5 -> "Tasa inválida"
+NOTICE:     tasa "doce" -> "Tasa inválida"
+NOTICE:     definicion inexistente -> "Recurso no encontrado"
+NOTICE:     formulario con una tasa invalida en la 2a llamada -> "Tasa inválida"; tasas intactas tras el ROLLBACK: t
+NOTICE:     mora "0" = sin mora: set_tasa_mora(0) -> {"mora": 0}; en la BD queda NULL: t; get_tasas la lee como 0
+NOTICE:     eventos TASA_CAMBIO: 4 (solo los cambios reales)
+NOTICE:     D-E11-D7b (NO decidido por el equipo): cambiar la tasa de mora cambia la mora de las cuotas YA vencidas, 
+porque E9 la deriva; E11 no agrega logica sobre eso.
+NOTICE:  7) antes de borrar a Beto: 17 patas suyas en el libro, saldo 1591704.50; Ana ve en su historial a "Beto Admin 
+· 4045608691"
+NOTICE:     admin_borrar_usuario(Beto) -> {"id": "c464a05d-f122-437e-8d5b-f4765f298d61", "borrado": true}
+NOTICE:     quedan: usuario=0, cuenta=0, patas=0; Ana sigue viendo a "Beto Admin · 4045608691"
+NOTICE:     auditoria: USUARIO_BORRADO (admdemo11) ; CUENTA_BORRADA (admdemo11)
+NOTICE:     CUENTA_BORRADA conserva lo que se destruyo: {"patas": 17, "balance": 1591704.50, "pasivos": 0, 
+"bolsillos": 0, "resultado": 1471704.50, "usuario_id": "c464a05d-f122-437e-8d5b-f4765f298d61", "cdt_vigente": 0, 
+"transf_neto": 120000.00, "numero_cuenta": "4045608691"}
+NOTICE:     borrarlo otra vez -> "Recurso no encontrado"; la sesion de Beto -> "Sesión inválida"
+NOTICE:     validar_sesion(Beto borrado) -> "Sesión inválida"
+NOTICE:     un admin no puede borrarse a si mismo -> "Recurso no encontrado"
+NOTICE:  8) un CLIENTE (Ana) llamando a admin_get_reloj, admin_listar_usuarios y admin_set_tasa_mora:
+NOTICE:       -> "Acceso denegado"
+NOTICE:       -> "Acceso denegado"
+NOTICE:       -> "Acceso denegado"
+NOTICE:     un ADMIN BLOQUEADO -> "Tu cuenta ha sido restringida, contacte con el banco para desbloquearla"
+NOTICE:     un usuario inexistente -> "Acceso denegado"
+NOTICE:  9) banco_app ejecuta las 12 admin_* y ninguno de los 4 helpers: 12 | 0 ; funciones publicas de banco_app en 
+total: 38
+NOTICE:     banco_lector NO ejecuta admin_get_reloj: t
+NOTICE:     v_integridad_global.ok = t (partida doble, I5u, conservacion con los borrados incluidos, defensas)
+DO
+ROLLBACK
+

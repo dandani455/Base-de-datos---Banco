@@ -1,0 +1,23 @@
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+M86  DETECTADA  banco_app recibe EXECUTE de una funcion interna (_pagar_bono_referido)
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC; banco_app ejecuta SOLO las 7 funciones publicas de E4-E5; banco_lector/banco_dev, solo _planti
+M87  DETECTADA  PUBLIC recibe EXECUTE de obtener_credenciales
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC; banco_app ejecuta SOLO las 7 funciones publicas de E4-E5; banco_lector/banco_dev, solo _planti
+M88  DETECTADA  banco_lector recibe EXECUTE de validar_sesion
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC; banco_app ejecuta SOLO las 7 funciones publicas de E4-E5; banco_lector/banco_dev, solo _planti
+M89  DETECTADA  banco_app recibe SELECT de la tabla usuario (veria password_hash)
+      -> 08_permisos: ERROR:  FAIL: NEGATIVA: banco_lector NO puede leer password_hash ni siquiera de su propia sesion (banco_dev hereda lo mismo) (se esperaba una excepcio
+M90  DETECTADA  el control de integridad de referidos se desactiva (siempre ok)
+      -> 43_auth_referidos: ERROR:  FAIL: estado sano: los 2 controles de v_integridad_auth estan en orden (la condicion no se cumplio: f)
+M91  DETECTADA  registrar_usuario pierde su SECURITY DEFINER (el backend necesitaria privilegios sobre las tablas)
+      -> 10_libro_triggers: ERROR:  FAIL: SECURITY DEFINER: _asentar_grupo, los 2 triggers diferidos (se disparan al COMMIT con el usuario de la sesion), la de aplicar, la audito
+
+=== Mutaciones de E5 (transferencias) ===
+
+RESUMEN: 6 de 6 mutaciones detectadas

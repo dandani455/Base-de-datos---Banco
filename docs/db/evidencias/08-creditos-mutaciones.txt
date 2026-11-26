@@ -1,0 +1,102 @@
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+M176  DETECTADA  la tasa mensual pasa a nominal i = tasa/12 (contradice la convencion E.A. centralizada en _tasa_mensual)
+      -> 57_creditos_calculo: ERROR:  FAIL: $10.000.000, 12 cuotas, 18 % E.A.: cuota 910.463,77; la ultima 910.463,73 absorbe el redondeo; total 10.925.565,20; intereses 925.565,20
+M177  DETECTADA  la cuota fija no se redondea a centavos
+      -> 57_creditos_calculo: ERROR:  FAIL: $10.000.000, 12 cuotas, 18 % E.A.: cuota 910.463,77; la ultima 910.463,73 absorbe el redondeo; total 10.925.565,20; intereses 925.565,20
+M178  DETECTADA  el interes de cada periodo no se redondea a centavos
+      -> 57_creditos_calculo: ERROR:  FAIL: $10.000.000, 12 cuotas, 18 % E.A.: cuota 910.463,77; la ultima 910.463,73 absorbe el redondeo; total 10.925.565,20; intereses 925.565,20
+M179  DETECTADA  la ULTIMA cuota NO absorbe el redondeo (capital = cuota - interes tambien al final)
+      -> 57_creditos_calculo: ERROR:  FAIL: $10.000.000, 12 cuotas, 18 % E.A.: cuota 910.463,77; la ultima 910.463,73 absorbe el redondeo; total 10.925.565,20; intereses 925.565,20
+M180  DETECTADA  los vencimientos pasan a 30 dias fijos en vez de meses calendario anclados
+      -> 57_creditos_calculo: ERROR:  FAIL: desembolso 31-ene-2026: 28-feb, 31-mar, 30-abr, 31-may (anclado, no iterativo) (esperado={2026-02-28,2026-03-31,2026-04-30,2026-05-31}, 
+M181  DETECTADA  solicitar_credito numera los vencimientos desde 0 (la cuota 1 vence el dia del desembolso)
+      -> 58_creditos: ERROR:  FAIL: el plan: 12 cuotas numeradas 1..12, vencimientos = desembolso + k meses, valor_cuota = valor_cuota_original = capital + interes, nada pa
+M182  DETECTADA  el patrimonio para el tope NO resta la deuda (el credito infla el tope de Inmuebles)
+      -> 58_creditos: ERROR:  FAIL: tras el credito: cuenta +10M, deuda 10M, patrimonio neto = 5.000.000 y el tope de Inmuebles NO se infla (500.000.000) (esperado=(1350000
+M183  DETECTADA  el tope fijo del producto se ignora
+      -> 58_creditos: ERROR:  FAIL: cuenta en 0: Inmuebles monto_max = 0 (100 x 0), el producto SE LISTA igual; los demas con sus topes; plazo_max de Inmuebles 360 (edad 36
+M184  DETECTADA  el tope puede quedar NEGATIVO (sin el piso 0)
+      -> 58_creditos: ERROR:  FAIL: gastada la cuenta (13.500.000 enviados): activos 1.500.000 (bolsillo + CDT) - deuda 10.000.000 = patrimonio -8.500.000; el tope de Inmue
+M185  DETECTADA  el plazo tecnico (360) no se aplica a un producto mal cargado
+      -> 58_creditos: ERROR:  FAIL: producto mal cargado con plazo_max_meses = 480: el plazo efectivo se topa en el tecnico 360 (en la lista y al solicitar 361) (esperado=(
+M186  DETECTADA  el multiplicador usa balance_total (sin restar la deuda) en vez del patrimonio neto
+      -> 58_creditos: ERROR:  FAIL: tras el credito: cuenta +10M, deuda 10M, patrimonio neto = 5.000.000 y el tope de Inmuebles NO se infla (500.000.000) (esperado=(1350000
+M187  DETECTADA  la edad se calcula por diferencia de anios calendario (no anios cumplidos)
+      -> 58_creditos: ERROR:  FAIL: cumpleaños: quien cumple 43 HOY ya tiene 43 (324 meses); quien los cumple MAÑANA aun tiene 42 (336 meses) (esperado=("(1.00,100000000.
+M188  DETECTADA  el plazo por edad regala 12 meses ((limite - edad) * 12 + 12)
+      -> 58_creditos: ERROR:  FAIL: edad 43: plazo_max de Inmuebles = (70-43)*12 = 324 meses (el ejemplo del spec); edad 69: 12; edad 70 y 80: 0 (el producto se lista) (esp
+M189  DETECTADA  productos_publicos no aplica el tope fijo (muestra monto_max del rango)
+      -> 58_creditos: ERROR:  FAIL: productos_publicos: topes BASE (sin multiplicador ni edad): Inmuebles 1 a 2.000M y 12 a 360 meses; Libre inversion 1M a 30M (esperado=In
+M190  DETECTADA  un plazo fraccionario (12,5) se acepta y se redondea
+      -> 57_creditos_calculo: ERROR:  FAIL: plazo invalido: 0, -1, 12.5, 0.99, NaN, Infinity, -Infinity, 1000001 y NULL = "Plazo fuera de rango" (esperado={"Plazo fuera de rango","
+M191  DETECTADA  el interes corriendo no se topa en el interes de la cuota (sigue creciendo vencida)
+      -> 58_creditos: ERROR:  FAIL: 20 dias DESPUES del vencimiento sin pagar: sigue el interes completo de la cuota 1 (no crece, no hay mora en E8) y no se escribe nada (e
+M192  DETECTADA  el interes corriendo puede ser negativo (sin el piso 0)
+      -> 58_creditos: ERROR:  FAIL: de vuelta al reloj real (hoy < fecha_interes de la cuota 2): el interes corriendo se queda en 0.00 (nunca negativo) (esperado=0.00, actu
+M193  DETECTADA  el interes corriendo toma SIEMPRE la cuota 1 (no la proxima impaga)
+      -> 58_creditos: ERROR:  FAIL: el interes corriendo pasa a la cuota 2: hoy = vencimiento 1 + 20 dias dentro de un periodo de ~30 -> mayor que 0 y menor que el interes 
+M194  DETECTADA  ct_credito_plan deja de comparar el capital pendiente con el plan
+      -> 57_creditos_calculo: ERROR:  FAIL: credito con plan Σ capital = 3000 pero capital_pendiente 0 (sin desembolso): el diferido lo rechaza (esperado=Créditos: el plan del cr
+M195  DETECTADA  ct_credito_plan ignora capital_pagado
+      -> 57_creditos_calculo: ERROR:  FAIL: capital_pagado de una cuota impaga se resta (la regla ya lo admite): sin ajustar la deuda, falla; con la deuda coherente, cuadra (espera
+M196  DETECTADA  ct_credito_plan cuenta tambien las cuotas PAGADAS
+      -> 57_creditos_calculo: ERROR:  FAIL: liquidacion marcando las restantes pagadas (y el credito PAGADO): cuadra (esperado=OK, actual=Créditos: el plan del crédito <id> no cu
+M197  DETECTADA  se elimina el trigger ct_credito_plan de credito (el UPDATE de capital_pendiente del libro no dispara la regla)
+      -> 57_creditos_calculo: ERROR:  FAIL: credito con plan Σ capital = 3000 pero capital_pendiente 0 (sin desembolso): el diferido lo rechaza (esperado=Créditos: el plan del cr
+M198  DETECTADA  se elimina el trigger ct_credito_plan_cuota de cuota (una cuota borrada o editada no dispara la regla)
+      -> 57_creditos_calculo: ERROR:  FAIL: credito con plan Σ capital = 3000 pero capital_pendiente 0 (sin desembolso): el diferido lo rechaza (esperado=Créditos: el plan del cr
+M199  DETECTADA  solicitar_credito no verifica ct_credito_plan antes de volver (un plan corrupto solo fallaria en el COMMIT)
+      -> 58_creditos: ERROR:  FAIL: plan que no cuadra con el capital pendiente: ct_credito_plan falla DENTRO de solicitar_credito y se revierte todo (esperado=(t,t,0,0), a
+M200  DETECTADA  solicitar_credito no afirma que inserto las n cuotas
+      -> 58_creditos: ERROR:  FAIL: plan con 11 de 12 cuotas: solicitar_credito lo rechaza ANTES de asentar y no queda nada (esperado=("Créditos: el plan insertó 11 cuota
+M201  DETECTADA  solicitar_credito NO devenga antes de calcular el tope y desembolsar
+      -> 58_creditos: ERROR:  FAIL: solicitar con el reloj +30 dias: el motor devengo ANTES (1 grupo INTERES_BOLSO del bolsillo de 3.000.000) y el credito se acepto (espera
+M202  DETECTADA  productos_disponibles NO devenga antes de calcular los topes
+      -> 58_creditos: ERROR:  FAIL: el primer productos_disponibles tras el salto escribe 1 grupo de interes; las 3 lecturas siguientes (disponibles, vista, simular) NO esc
+M203  DETECTADA  simular_credito NO devenga antes de calcular los topes
+      -> 58_creditos: ERROR:  FAIL: las 4 que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez y _reloj_instantanea EXACTAMENTE 1 vez, con la instantanea ANTES del devengo;
+M204  DETECTADA  vista_creditos NO devenga antes de leer
+      -> 58_creditos: ERROR:  FAIL: las 4 que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez y _reloj_instantanea EXACTAMENTE 1 vez, con la instantanea ANTES del devengo;
+M205  DETECTADA  solicitar_credito no bloquea explicitamente la cuenta (lee el tope sin el bloqueo del libro)
+      -> 58_creditos: ERROR:  FAIL: solicitar_credito bloquea la cuenta (_bloquear_cuentas) EXACTAMENTE 1 vez y DESPUES del devengo; ninguna otra funcion de E8 la bloquea p
+M206  DETECTADA  solicitar_credito no valida el credito vigente (solo el indice unico, traducido, y DESPUES de los rangos)
+      -> 58_creditos: ERROR:  FAIL: segundo Vehiculo vivo: "Ya tienes un crédito vigente de este producto" (aun con un monto fuera de rango: la validacion del vigente va A
+M207  DETECTADA  el credito vigente cuenta tambien los PAGADOS (un credito liquidado bloquea el producto para siempre)
+      -> 58_creditos: ERROR:  FAIL: un credito PAGADO no aparece en vista_creditos y deja de bloquear el producto (se puede pedir otro Libre inversion) (esperado=([],OK:), 
+M208  DETECTADA  el credito nace con capital_pendiente = monto (el libro lo subiria dos veces)
+      -> 58_creditos: ERROR:  FAIL: Libre inversion $10.000.000 a 12 meses: se acepta (esperado=OK:, actual=Lib)
+M209  DETECTADA  el credito copia una tasa distinta de la del producto
+      -> 58_creditos: ERROR:  FAIL: el credito COPIA tasa y plazo del producto; monto; fecha_desembolso = hoy; fecha_interes = hoy (inicio del periodo); capital_pendiente =
+M210  DETECTADA  simular_credito usa otra tasa que solicitar_credito (la simulacion no coincide con lo que se cobra)
+      -> 58_creditos: ERROR:  FAIL: LA SIMULACION ES LO QUE SE COBRA: cuota_mensual, total_a_pagar e intereses_totales de simular_credito = cuota 1, Σ cuotas y Σ interese
+M211  DETECTADA  solicitar_credito toma la instantanea del reloj DOS veces
+      -> 58_creditos: ERROR:  FAIL: las 4 que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez y _reloj_instantanea EXACTAMENTE 1 vez, con la instantanea ANTES del devengo;
+M212  DETECTADA  solicitar_credito pasa now() al motor en vez del ahora de la instantanea
+      -> 58_creditos: ERROR:  FAIL: ninguna funcion de E8 lee el reloj ni el tiempo por su cuenta (now, current_date, current_timestamp, clock_timestamp, hoy_banco, ahora_b
+M213  DETECTADA  vista_creditos incluye los creditos PAGADOS
+      -> 58_creditos: ERROR:  FAIL: un credito PAGADO no aparece en vista_creditos y deja de bloquear el producto (se puede pedir otro Libre inversion) (esperado=([],OK:), 
+M214  DETECTADA  banco_lector recibe EXECUTE de vista_creditos
+      -> 58_creditos: ERROR:  FAIL: la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente) (esperado=(t,0), actual
+M215  DETECTADA  banco_app pierde EXECUTE de solicitar_credito (el front no podria pedir creditos)
+      -> 58_creditos: ERROR:  FAIL: la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente) (esperado=(t,0), actual
+M216  DETECTADA  banco_app recibe EXECUTE de la interna _plan_cuotas
+      -> 58_creditos: ERROR:  FAIL: la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente) (esperado=(t,0), actual
+M217  DETECTADA  solicitar_credito pierde su SECURITY DEFINER
+      -> 58_creditos: ERROR:  FAIL: las 5 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner; ct_credito_plan tambien (el diferido corre con el usuario
+
+RESUMEN: 42 de 42 mutaciones detectadas
+EXIT=0

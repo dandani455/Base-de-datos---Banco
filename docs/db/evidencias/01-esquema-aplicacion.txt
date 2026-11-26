@@ -1,0 +1,26 @@
+Banco Digital - Etapa 1 - evidencia de aplicacion de los scripts sobre la BD 'banco' (desde cero) y estado resultante
+Fecha: 2026-11-21 13:14:04 -05:00   Rama: feat/db-core
+
+=== 1. db\ctl.ps1 reset -Yes  (BD banco vacia; los roles del cluster se conservan)
+exit=0
+
+=== 2 (1a aplicacion). db\ctl.ps1 apply   (aplica db\sql\00..05 a 'banco')
+lineas ERROR/FATAL: 0   exit=0
+
+=== 3 (2a aplicacion: idempotencia). db\ctl.ps1 apply   (aplica db\sql\00..05 a 'banco')
+lineas ERROR/FATAL: 0   exit=0
+
+=== 4 (3a aplicacion). db\ctl.ps1 apply   (aplica db\sql\00..05 a 'banco')
+lineas ERROR/FATAL: 0   exit=0
+
+=== 5. Tablas: EXACTAMENTE 11 en public y audit.evento en audit
+
+=== 6. Restricciones por tabla (p = PK, u = UNIQUE, f = FK, c = CHECK)
+
+=== 7. Indices
+
+=== 8. Roles
+
+=== 9. Permisos: password_hash y escritura
+
+=== 10. Duenos

@@ -1,0 +1,135 @@
+﻿# Regresion (55 mutaciones) de E2-E10 (libro, auditoria del borrado, reloj, integridad, motor, vista_cdts, permisos y plantillas) con las pruebas ADAPTADAS a E11. Fecha: 2026-11-25
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+M03  DETECTADA  se elimina el trigger de cuadre (ct_transaccion_cuadre)
+      -> 10_libro_triggers: ERROR:  FAIL: los 21 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_ultimo_cobro_monotono,bolsillo.trg_zz_proteger_bolsillo,cdt.ct_
+M04  DETECTADA  se quita el sellado del grupo (patas agregadas despues de confirmar)
+      -> reales/26_atomicidad_sellado: FAIL: agregar una pata a un grupo ya confirmado se rechaza (sellado por tx_id) (el patron [ya fue confirmado] no aparece en: ERROR:  Libro mayor: el g
+M08  DETECTADA  se permite el DELETE directo de patas
+      -> 15_libro_inmutable: ERROR:  FAIL: superusuario: DELETE de todo el libro (se esperaba una excepcion y no ocurrio)
+M09  DETECTADA  se permite el UPDATE de patas
+      -> 15_libro_inmutable: ERROR:  FAIL: superusuario: UPDATE de nota (mensaje esperado "%inmutables%", recibido "Libro mayor: las patas no se pueden borrar (solo caen con la cu
+M12  DETECTADA  banco_app recibe EXECUTE sobre _asentar_grupo
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC; banco_app ejecuta SOLO las 38 funciones publicas de E4-E11; banco_lector/banco_dev, solo _plan
+M15  DETECTADA  se altera la plantilla BONO_REFERIDO (RESULTADO con sentido S)
+      -> 12_libro_asentar: ERROR:  FAIL: BONO_REFERIDO 50 (no debia fallar; SQLSTATE P0001: Libro mayor: el grupo 55afaa4f-65b5-4836-b163-882db3f1baca no corresponde a ninguna f
+M16  DETECTADA  el cuadre deja de comparar debitos con creditos
+      -> 12_libro_asentar: ERROR:  FAIL: grupo descuadrado (1000 contra 999) (se esperaba una excepcion y no ocurrio)
+M20  DETECTADA  se desactiva la auditoria del borrado de cuentas
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=1)
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+M25  DETECTADA  se desactiva el trigger de validacion del reloj (trg_reloj_a_validar)
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=1)
+M26  DETECTADA  el reloj manual puede retroceder (se quita la regla de no retroceso)
+      -> 31_reloj_trigger: ERROR:  FAIL:    manual(+60) -> manual(+59): RETROCESO rechazado con el mensaje exacto del contrato (se esperaba una excepcion y no ocurrio)
+M27  DETECTADA  se bloquea volver a fecha real (el modo real cae en la validacion manual)
+      -> 31_reloj_trigger: ERROR:  Fecha inválida
+M28  DETECTADA  al volver a real se conserva la fecha manual (desfase oculto)
+      -> 31_reloj_trigger: ERROR:  FAIL:    vuelve inmediatamente a la fecha real de Colombia y NO queda ningun desfase ni fecha guardada (esperado=(t,t,t), actual=(t,f,t))
+M30  DETECTADA  se elimina el trigger de auditoria del reloj
+      -> 10_libro_triggers: ERROR:  FAIL: los 21 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_ultimo_cobro_monotono,bolsillo.trg_zz_proteger_bolsillo,cdt.ct_
+M31  DETECTADA  banco_app recibe EXECUTE sobre hoy_banco()
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC; banco_app ejecuta SOLO las 38 funciones publicas de E4-E11; banco_lector/banco_dev, solo _plan
+M34  DETECTADA  el libro deja de rechazar patas fechadas despues del reloj
+      -> 33_reloj_libro: ERROR:  FAIL: fechada manana a las 00:00:00 de Bogota: posterior al reloj (se esperaba una excepcion y no ocurrio)
+M35  DETECTADA  el libro compara instantes (timestamptz) en vez de fechas con el reloj
+      -> 33_reloj_libro: ERROR:  FAIL: fechada HOY a las 23:59:59.999999 de Bogota: es la misma FECHA que hoy_banco() (se compara fecha, no hora) (no debia fallar; SQLSTATE P0
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+M81  DETECTADA  _pagar_bono_referido consulta el reloj de pared en vez de usar el ahora que recibe
+      -> 46_auth_reloj: ERROR:  FAIL: NINGUNA funcion de E4 usa now(), current_date/time/timestamp, clock/statement/transaction_timestamp, localtime, timeofday, hoy_banco(), 
+
+=== Mutaciones de E5 (transferencias) ===
+M98  DETECTADA  las patas se fechan con now() en vez del ahora de la instantanea
+      -> 50_transferencias: ERROR:  FAIL: ambas patas: misma fecha (= la de la salida), misma transaccion (tx_id) y la misma nota recortada y colapsada (esperado=(1,1,t,"hola mun
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+M122  DETECTADA  las patas se fechan con now() en vez del ahora de la instantanea
+      -> 52_bolsillos: ERROR:  FAIL: INGRESAR: 2 patas BOLSO_INGRESO en UN grupo (el id devuelto): CUENTA S y BOLSILLO E, ambas con bolsillo_id = A, contraparte = nombre del
+M131  DETECTADA  mover_a_bolsillo usa la plantilla de RETIRO (ingresa al reves)
+      -> 52_bolsillos: ERROR:  FAIL: ingresar 300 a A (cuenta 1000 -> 700, A 300) (esperado=(OK,700.00,300.00), actual=("Saldo insuficiente",1000.00,0.00))
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+M137  DETECTADA  vista_balance NO devenga antes de leer (se quita _avanzar_hasta)
+      -> 54_devengo: ERROR:  FAIL: las 19 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M138  DETECTADA  los 3 movimientos de bolsillo (_mover_bolsillo) NO devengan antes del libro
+      -> 54_devengo: ERROR:  FAIL: retirar_de_bolsillo del saldo CON intereses (1.009.358,20) funciona: el motor devenga antes del libro (esperado=OK, actual=Saldo insufic
+M139  DETECTADA  crear_bolsillo NO devenga (uniformidad rota)
+      -> 54_devengo: ERROR:  FAIL: las 19 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M140  DETECTADA  hacer_transferencia NO devenga al emisor antes del libro
+      -> 54_devengo: ERROR:  Saldo insuficiente
+M141  DETECTADA  crear_cdt NO devenga antes de invertir
+      -> 54_devengo: ERROR:  FAIL: las 19 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M142  DETECTADA  vista_cdts NO devenga ni cierra antes de leer
+      -> 54_devengo: ERROR:  FAIL: las 19 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M143  DETECTADA  el motor NO toma el bloqueo de la cuenta (el devengo retendria bolsillos mientras espera el libro: riesgo de deadlock)
+      -> reales/46_motor_concurrencia: FAIL: 2. 12 sesiones mezcladas (lecturas con devengo, ingresos, retiros, envio y crear_cdt): ninguna falla (esperado=[0] actual=[10])
+M148  DETECTADA  el motor lee el reloj (hoy_banco) en vez de usar el hoy de la instantanea
+      -> 54_devengo: ERROR:  FAIL: el motor y sus 5 ayudantes NO leen el reloj (ni now(), ni hoy_banco(), ni _ahora_real(), ni la instantanea): reciben (hoy, ahora) (esper
+M149  DETECTADA  el devengo de bolsillos fecha el asiento con now() en vez del ahora de la instantanea
+      -> 54_devengo: ERROR:  FAIL: el motor y sus 5 ayudantes NO leen el reloj (ni now(), ni hoy_banco(), ni _ahora_real(), ni la instantanea): reciben (hoy, ahora) (esper
+M156  DETECTADA  hacer_transferencia devenga SIN bloquear antes ambas cuentas (A->B || B->A se bloquean entre si)
+      -> 54_devengo: ERROR:  FAIL: hacer_transferencia: _bloquear_cuentas EXACTAMENTE 1 vez y ANTES del devengo (protocolo anti-deadlock, orden de id) (esperado=(1,t,t), a
+M157  DETECTADA  se elimina la guardia monotonica de ultimo_cobro en bolsillo
+      -> 54_devengo: ERROR:  FAIL: UPDATE de bolsillo.ultimo_cobro hacia atras: rechazado (P0001) (se esperaba una excepcion y no ocurrio)
+M158  DETECTADA  se elimina la guardia monotonica de ultimo_cobro en cdt
+      -> 55_cdt: ERROR:  FAIL: ultimo_cobro del CDT no retrocede (guardia monotonica, D-E7-8) (se esperaba una excepcion y no ocurrio)
+M162  DETECTADA  la salida rapida ignora los CDT (solo mira bolsillos): un CDT vencido sin bolsillos nunca se cierra
+      -> 55_cdt: ERROR:  FAIL: dia 7: generado = round(monto * factor(7 dias)); 1 grupo; 7 dias cobrados (esperado=(t,1,7), actual=(f,0,0))
+M170  DETECTADA  vista_cdts pasa now() al motor en vez del ahora de la instantanea
+      -> 54_devengo: ERROR:  FAIL: las 19 que devengan no usan now()/current_date/clock_timestamp/hoy_banco/ahora_banco/_ahora_real: el unico acceso al reloj es la instant
+M171  DETECTADA  banco_app recibe EXECUTE del motor (_avanzar_hasta)
+      -> 54_devengo: ERROR:  FAIL: TODA funcion ejecutable por banco_app esta en la lista "devenga" o "exenta" (una funcion nueva sin clasificar HACE FALLAR esta prueba: E
+M172  DETECTADA  banco_app pierde EXECUTE de crear_cdt (el front no podria abrir CDT)
+      -> 54_devengo: ERROR:  FAIL: TODA funcion ejecutable por banco_app esta en la lista "devenga" o "exenta" (una funcion nueva sin clasificar HACE FALLAR esta prueba: E
+M173  DETECTADA  banco_lector recibe EXECUTE de vista_cdts
+      -> 55_cdt: ERROR:  FAIL: v_integridad_global OK tras todo (partida doble, inversion del CDT, generado = suma de patas, I5u) (la condicion no se cumplio: f)
+M174  DETECTADA  crear_cdt pierde su SECURITY DEFINER
+      -> 55_cdt: ERROR:  FAIL: banco_app ejecuta las 4 publicas de CDT (no debia fallar; SQLSTATE 42501: permission denied for function _validar_cliente)
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+M214  DETECTADA  banco_lector recibe EXECUTE de vista_creditos
+      -> 58_creditos: ERROR:  FAIL: la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente) (esperado=(t,0), actual
+M215  DETECTADA  banco_app pierde EXECUTE de solicitar_credito (el front no podria pedir creditos)
+      -> 58_creditos: ERROR:  FAIL: la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente) (esperado=(t,0), actual
+M216  DETECTADA  banco_app recibe EXECUTE de la interna _plan_cuotas
+      -> 58_creditos: ERROR:  FAIL: la integridad del libro y de los planes sigue en orden (v_integridad_global.ok, 0 creditos con plan incoherente) (esperado=(t,0), actual
+M217  DETECTADA  solicitar_credito pierde su SECURITY DEFINER
+      -> 58_creditos: ERROR:  FAIL: las 5 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner; ct_credito_plan tambien (el diferido corre con el usuario
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+M262  DETECTADA  pagar_cuota NO corre el motor antes de decidir que cuota toca
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M283  DETECTADA  abonar_credito NO corre el motor antes de calcular mora e interes
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M290  DETECTADA  _avanzar_hasta ya no llama al cobro automatico de creditos
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(a) la cuota del dia 15 se paga con fecha del dia 20 (cuando el CDT acredito), NO el 30 ni el 15 (esperado=1:20|20, actual=-|-)
+M291  DETECTADA  la salida rapida de _avanzar_hasta ignora los creditos con descuento (una lectura no cobra lo vencido)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(e) el credito de la cuota mas antigua (inalcanzable con 200.000) NO bloquea al otro: el pequeno se paga el dia 14 y el grande sigue i
+M292  DETECTADA  la salida rapida ignora una cuota vencida impaga cuando el cursor ya es hoy (no se reintenta con saldo nuevo)
+      -> 62_cobro_automatico: ERROR:  FAIL: R2(a) la primera ronda con fecha >= activacion la cobra el dia 10 (no el 5) con mora de 5 dias; ningun asiento anterior al dia 10 (esper
+M297  DETECTADA  banco_app pierde EXECUTE de pagar_cuota
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M298  DETECTADA  banco_app recibe EXECUTE de la interna _cobrar_creditos
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M299  DETECTADA  banco_app recibe EXECUTE de la interna _pagar_cuota_interna (pagar sin pasar por el motor)
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M300  DETECTADA  banco_lector recibe EXECUTE de abonar_credito
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M301  DETECTADA  pagar_cuota pierde su SECURITY DEFINER
+      -> 61_pagos: ERROR:  FAIL: las 3 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner (esperado=true, actual=false)
+M302  DETECTADA  abonar_credito pierde su SECURITY DEFINER
+      -> 61_pagos: ERROR:  FAIL: las 3 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner (esperado=true, actual=false)
+M303  DETECTADA  banco_app recibe UPDATE sobre credito.cobro_hasta (mover el cursor a mano)
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M304  DETECTADA  banco_dev recibe EXECUTE de la interna _plan_restante
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+RESUMEN: 55 de 55 mutaciones detectadas
+
