@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { Db } from '../db';
+import { json, type Db } from '../db';
 import { requireAdmin, requireSession } from '../session';
 
 const wrap = (f: (req: any, res: any) => Promise<unknown>) => (req: any, res: any, next: any) => f(req, res).catch(next);
@@ -10,21 +10,23 @@ export function adminRoutes(db: Db, secret: string) {
   r.use(requireSession(db, secret), requireAdmin);
   const a = (req: any) => req.user.id;
   const b = (req: any) => req.body ?? {};
-  const json = async (fn: string, args: unknown[]) => (await db.call(fn, args))[0]?.[fn];
-  const hecho = (fn: string, args: (req: any) => unknown[]) =>
-    wrap(async (req, res) => { await db.call(fn, args(req)); res.json({}); });
+  /** Endpoint que llama a `fn` con los argumentos de `args(req)` y responde su jsonb (D3: todas devuelven jsonb). */
+  const ep = (fn: string, args: (req: any) => unknown[]) =>
+    wrap(async (req, res) => res.json((await json(db, fn, args(req))) ?? {}));
 
-  r.get('/usuarios', wrap(async (q, res) => res.json(await db.call('admin_listar_usuarios', [a(q), q.query.busqueda ?? '']))));
-  r.get('/usuarios/:id', wrap(async (q, res) => res.json(await json('admin_detalle_usuario', [a(q), q.params.id]))));
-  r.post('/usuarios/:id/bloquear', hecho('admin_bloquear', (q) => [a(q), q.params.id]));
-  r.post('/usuarios/:id/desbloquear', hecho('admin_desbloquear', (q) => [a(q), q.params.id]));
-  r.delete('/usuarios/:id', hecho('admin_borrar_usuario', (q) => [a(q), q.params.id]));
-  r.post('/balance', hecho('admin_ajustar_balance', (q) => [a(q), b(q).usuario_id, b(q).monto, b(q).nota ?? null]));
+  r.get('/usuarios', wrap(async (q, res) =>
+    res.json((await json(db, 'admin_listar_usuarios', [a(q), q.query.busqueda ?? ''])) ?? [])));
+  r.get('/usuarios/:id', ep('admin_detalle_usuario', (q) => [a(q), q.params.id]));
+  r.post('/usuarios/:id/bloquear', ep('admin_bloquear', (q) => [a(q), q.params.id]));
+  r.post('/usuarios/:id/desbloquear', ep('admin_desbloquear', (q) => [a(q), q.params.id]));
+  r.delete('/usuarios/:id', ep('admin_borrar_usuario', (q) => [a(q), q.params.id]));
+  // usuario_id: la BD acepta uuid, username o número de cuenta
+  r.post('/balance', ep('admin_ajustar_balance', (q) => [a(q), b(q).usuario_id, b(q).monto, b(q).nota ?? null]));
 
-  r.get('/reloj', wrap(async (q, res) => res.json(await json('admin_get_reloj', [a(q)]))));
-  r.put('/reloj', hecho('admin_set_reloj', (q) => [a(q), b(q).usar_fecha_real, b(q).fecha_sistema ?? null]));
+  r.get('/reloj', ep('admin_get_reloj', (q) => [a(q)]));
+  r.put('/reloj', ep('admin_set_reloj', (q) => [a(q), b(q).usar_fecha_real, b(q).fecha_sistema ?? null]));
 
-  r.get('/tasas', wrap(async (q, res) => res.json(await json('admin_get_tasas', [a(q)]))));
+  r.get('/tasas', ep('admin_get_tasas', (q) => [a(q)]));
   r.put('/tasas', wrap(async (q, res) => {
     const x = b(q), id = a(q);
     const calls: [string, unknown[]][] = [
@@ -36,8 +38,8 @@ export function adminRoutes(db: Db, secret: string) {
     res.json({});
   }));
 
-  r.get('/esquema', wrap(async (q, res) => res.json(await json('admin_esquema', [a(q)]))));
-  r.get('/tabla/:nombre', wrap(async (q, res) =>
-    res.json(await json('admin_tabla', [a(q), q.params.nombre, q.query.pagina ?? 1]))));
+  r.get('/esquema', ep('admin_esquema', (q) => [a(q)]));
+  // pagina va como TEXTO tal cual llega (la BD normaliza vacío, basura o fuera de rango)
+  r.get('/tabla/:nombre', ep('admin_tabla', (q) => [a(q), q.params.nombre, q.query.pagina ?? null]));
   return r;
 }

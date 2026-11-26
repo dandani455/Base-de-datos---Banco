@@ -43,7 +43,8 @@ export function dbConUsuarios(extra: Record<string, Handler> = {}) {
     validar_sesion: ([id]) => {
       if (!(id as string in estado)) return [];
       if (estado[id as string] === 'BLOQUEADO') throw negocio(BLOQ);
-      return [{ rol: rol[id as string], estado: estado[id as string] }];
+      const username = id === ADMIN ? 'admin1' : 'jperez483';
+      return [{ validar_sesion: { username, rol: rol[id as string], estado: estado[id as string] } }];
     },
     vista_perfil: ([id]) => [{ vista_perfil: { username: id === ADMIN ? 'admin1' : 'jperez483', numero_cuenta: '4001002003', codigo_referido: 'x' } }],
     ...extra,

@@ -6,20 +6,28 @@ export const WHITELIST = new Set([
   'registrar_usuario', 'verificar_correo', 'obtener_credenciales', 'validar_sesion',
   // cliente
   'nombre_destinatario', 'hacer_transferencia',
-  'crear_bolsillo', 'mover_a_bolsillo', 'retirar_de_bolsillo', 'mover_entre_bolsillos',
-  'crear_cdt', 'simular_cdt', 'simular_credito', 'solicitar_credito', 'pagar_cuota', 'abonar_credito',
-  'activar_descuento_automatico',
+  'vista_balance', 'crear_bolsillo', 'mover_a_bolsillo', 'retirar_de_bolsillo', 'mover_entre_bolsillos',
+  'listar_cdt_definiciones', 'crear_cdt', 'simular_cdt',
+  'productos_publicos', 'productos_disponibles', 'simular_credito', 'solicitar_credito',
+  'pagar_cuota', 'abonar_credito', 'activar_descuento_automatico',
   'vista_dashboard', 'vista_historial', 'vista_cdts', 'vista_creditos', 'vista_perfil',
-  // HUECOS: pendientes de crear en la BD (ver README)
-  'vista_balance', 'renombrar_bolsillo', 'listar_cdt_definiciones', 'productos_publicos',
-  'admin_get_reloj', 'admin_get_tasas',
   // admin
   'admin_listar_usuarios', 'admin_detalle_usuario', 'admin_bloquear', 'admin_desbloquear', 'admin_borrar_usuario',
-  'admin_ajustar_balance', 'admin_set_reloj', 'admin_set_tasa_cdt', 'admin_set_tasa_credito', 'admin_set_tasa_mora',
+  'admin_ajustar_balance', 'admin_get_reloj', 'admin_set_reloj',
+  'admin_get_tasas', 'admin_set_tasa_cdt', 'admin_set_tasa_credito', 'admin_set_tasa_mora',
   'admin_esquema', 'admin_tabla',
 ]);
 
 export type Row = Record<string, any>;
+
+/**
+ * Casi todas las funciones de la BD devuelven UN valor jsonb (decisión D3 de la BD): una fila con una
+ * columna que se llama como la función. Esto lo desenvuelve. Solo `obtener_credenciales` (TABLE) y
+ * `verificar_correo` (void) se leen con `db.call`.
+ */
+export async function json<T = any>(db: Db, fn: string, args: unknown[] = []): Promise<T> {
+  return (await db.call(fn, args))[0]?.[fn];
+}
 export interface Db {
   call(fn: string, args?: unknown[]): Promise<Row[]>;
   /** Varias llamadas en una sola transacción SQL (solo funciones de la whitelist). */

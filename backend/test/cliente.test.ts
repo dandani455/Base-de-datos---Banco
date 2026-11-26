@@ -14,16 +14,16 @@ describe('cliente', () => {
     expect((await (request(hacerApp(db)) as any)[m](url)).status).toBe(401);
   });
   it('crédito público no requiere sesión', async () => {
-    const { db } = dbConUsuarios({ productos_publicos: () => [{ id: 'p1', nombre: 'Libre inversión' }] });
+    const { db } = dbConUsuarios({ productos_publicos: () => [{ productos_publicos: [{ id: 'p1', nombre: 'Libre inversión' }] }] });
     const r = await request(hacerApp(db)).get('/api/creditos/productos');
     expect(r.body).toEqual([{ id: 'p1', nombre: 'Libre inversión' }]);
   });
   it('envío: usa el usuario de la SESIÓN aunque el body traiga otro', async () => {
-    const { db } = dbConUsuarios({ hacer_transferencia: () => [{ hacer_transferencia: 'tx1' }] });
+    const { db } = dbConUsuarios({ hacer_transferencia: () => [{ hacer_transferencia: { id: 'tx1' } }] });
     const app = hacerApp(db); const c = await login(app, request);
     const r = await request(app).post('/api/envios').set('Cookie', c)
       .send({ usuario_id: ADMIN, numero_destino: '4003004005', monto: 5000, nota: 'hola' });
-    expect(r.status).toBe(200); expect(r.body).toEqual({});
+    expect(r.status).toBe(200); expect(r.body).toEqual({ id: 'tx1' });
     expect((db as any).calls.find((x: any) => x[0] === 'hacer_transferencia')[1]).toEqual([UID, '4003004005', 5000, 'hola', null]);
   });
   it('monto inválido → 400 con el mensaje de la BD, no del backend', async () => {
@@ -40,9 +40,9 @@ describe('cliente', () => {
   });
   it('destinatario, dashboard (jsonb) y simulador de crédito con el contrato del front', async () => {
     const { db } = dbConUsuarios({
-      nombre_destinatario: () => [{ nombre_destinatario: 'Camila Rodríguez' }],
+      nombre_destinatario: () => [{ nombre_destinatario: { nombre: 'Camila Rodríguez' } }],
       vista_dashboard: () => [{ vista_dashboard: { nombre: 'Juan', balance_total: 10 } }],
-      simular_credito: () => [{ cuota: 100, total_pagar: 1200, intereses_totales: 200 }],
+      simular_credito: () => [{ simular_credito: { cuota_mensual: 100, total_a_pagar: 1200, intereses_totales: 200 } }],
     });
     const app = hacerApp(db); const c = await login(app, request);
     expect((await request(app).get('/api/destinatario/4003004005').set('Cookie', c)).body).toEqual({ nombre: 'Camila Rodríguez' });
