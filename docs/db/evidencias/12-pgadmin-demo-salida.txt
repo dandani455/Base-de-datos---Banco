@@ -1,0 +1,62 @@
+﻿BEGIN
+docker : NOTICE:  Hoy del banco: 2026-11-25. Hay 74 usuarios (2 clientes reales, 70 de relleno y 2 administradores).
+En línea: 5 Carácter: 137
++ ... ding UTF8 | docker compose --env-file .env -f compose.dev.yml exec -T ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (NOTICE:  Hoy de...ministradores).:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+NOTICE:  1) admin_esquema: 11 tablas, en este orden: usuario, cuenta, bolsillo, cdt_definicion, cdt, credito_producto, 
+credito, cuota, transaccion, reloj, parametro
+NOTICE:     columnas de usuario con sus banderas (llave / unico / no_nulo / tipo):
+NOTICE:       id PK NN [uuid] ; username UQ NN [text] ; password_hash NN [text] ; nombres NN [text] ; apellidos NN 
+[text] ; cedula UQ NN [text] ; correo UQ NN [text] ; telefono UQ NN [text] ; fecha_nacimiento NN [date] ; rol NN 
+[rol_usuario] ; estado NN [estado_usuario] ; correoverificado NN [boolean] ; codigo_referido UQ NN [uuid] ; 
+referido_por [uuid] ; bono_referido_pagado NN [boolean] ; creado_en NN [timestamp with time zone]
+NOTICE:     total de FK en el esquema: 12 ; la propia de usuario: [{"columna": "referido_por", "tabla_destino": 
+"usuario", "columna_destino": "id"}] ; la compuesta de cuenta sale UNA vez: [{"columna": "usuario_id", 
+"tabla_destino": "usuario", "columna_destino": "id"}]
+NOTICE:     audit.evento NO esta (D-E12-D2): f
+NOTICE:  2) admin_tabla(usuario): pagina 1 de 2, 50 filas en esta pagina (50 por pagina); la mas reciente primero
+NOTICE:     la primera fila: {"id": "88936cd1-2244-4cc5-9da3-c1863774131c", "rol": "CLIENTE", "cedula": "9900002", 
+"correo": "beto.e12@mail.co", "estado": "ACTIVO", "nombres": "Beto", "telefono": "3109900002", "username": 
+"bcontrol120", "apellidos": "Control", "creado_en": "2026-11-25T09:16:18.028136-05:00", "referido_por": null, 
+"password_hash": "••••", "codigo_referido": "fa89310e-742c-44a9-9afc-57250e2d5b05", "correoverificado": false, 
+"fecha_nacimiento": "1991-02-10", "bono_referido_pagado": false}
+NOTICE:     password_hash distinto de "••••" en esta pagina: 0 ; aparece algun "HASH-REAL" en la respuesta: f
+NOTICE:     (en la BD el hash real SI existe: 72 usuarios con hash real)
+NOTICE:     pagina 2 -> 24 filas; pagina 99 (se recorta a la ultima) -> pagina 2 con 24 filas; "abc" -> pagina 1; NULL 
+-> pagina 1
+NOTICE:     una tabla vacia (cdt_definicion): {"filas": [], "pagina": 1, "columnas": ["id", "nombre", "plazo_dias", 
+"tasa_anual", "monto_min"], "total_paginas": 1}
+NOTICE:     una tabla del libro (transaccion): 20 filas en total, la pagina 1 trae 20 y la mas reciente primero (orden 
+88)
+NOTICE:     cuenta (sin enmascarar nada): {"id": "4c88e7f7-95bb-4589-9606-e302732f38ca", "rol": "CLIENTE", "balance": 
+2758468.00, "creado_en": "2026-11-25T09:16:18.028136-05:00", "usuario_id": "88936cd1-2244-4cc5-9da3-c1863774131c", 
+"numero_cuenta": "4061420523"}
+NOTICE:  3) fuera de la lista blanca:
+NOTICE:       audit.evento -> "Tabla no permitida"
+NOTICE:       Usuario (mayuscula) -> "Tabla no permitida"
+NOTICE:       pg_catalog.pg_user -> "Tabla no permitida"
+NOTICE:       inyeccion "usuario; DROP TABLE cuenta; --" -> "Tabla no permitida" (la tabla cuenta sigue: t)
+NOTICE:       NULL -> "Tabla no permitida"
+NOTICE:  4) con el reloj +40 dias (el bolsillo tendria intereses pendientes) el visor NO escribe nada: patas en el 
+libro = 24 (antes: 24) y el bolsillo sigue con ultimo_cobro = 2026-11-25 (antes: 2026-11-25; con el motor seria 
+2027-01-04)
+NOTICE:     volatilidad en el catalogo (s = STABLE: PostgreSQL impide que escriban): admin_esquema=s, admin_tabla=s
+NOTICE:  5) un CLIENTE llamando a admin_esquema y a admin_tabla(audit.evento):
+NOTICE:       -> "Acceso denegado"
+NOTICE:       -> "Acceso denegado" (no puede ni sondear que tablas existen)
+NOTICE:     un ADMIN BLOQUEADO -> "Tu cuenta ha sido restringida, contacte con el banco para desbloquearla"
+NOTICE:     un usuario inexistente -> "Acceso denegado"
+NOTICE:  6) banco_app ejecuta admin_esquema y admin_tabla (las dos de E12): t ; _reglas_control: f ; banco_lector 
+ejecuta admin_tabla: f ; funciones publicas de banco_app en total: 40
+NOTICE:     libro y defensas (desvios de saldos, grupos con error, desvios I5u, defensas caidas, desvio de 
+transferencias) = (0,0,0,0,0)  (el control de autenticacion de v_integridad_global.ok no aplica aqui: los 70 usuarios 
+de relleno se insertaron sin cuenta ni ingresos)
+NOTICE:     _reglas_control (todo lo provisional en un solo lugar): {"tablas": ["usuario", "cuenta", "bolsillo", 
+"cdt_definicion", "cdt", "credito_producto", "credito", "cuota", "transaccion", "reloj", "parametro"], "mascara": 
+"••••", "msg_tabla": "Tabla no permitida", "enmascarar": {"usuario": ["password_hash"]}, "pagina_tam": 50}
+DO
+ROLLBACK
+

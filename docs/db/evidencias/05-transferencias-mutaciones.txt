@@ -1,0 +1,55 @@
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+M92  DETECTADA  hacer_transferencia no valida la sesion (usuario inexistente/admin/bloqueado)
+      -> 50_transferencias: ERROR:  FAIL: sesion: emisor inexistente, ADMIN y bloqueado (esperado=("Sesión inválida","Sesión inválida"), actual=("Recurso no encontrado","Recu
+M93  DETECTADA  _validar_monto acepta mas de 2 decimales
+      -> 50_transferencias: ERROR:  FAIL: _validar_monto: 14 casos (NULL, NaN, infinitos, <=0, mas de 2 decimales y sobre monto_maximo = Monto invalido) (esperado=, actual=0.001 
+M94  DETECTADA  _validar_monto ignora parametro.monto_maximo
+      -> 50_transferencias: ERROR:  FAIL: _validar_monto: 14 casos (NULL, NaN, infinitos, <=0, mas de 2 decimales y sobre monto_maximo = Monto invalido) (esperado=, actual=100000
+M95  DETECTADA  el autoenvio se permite
+      -> 50_transferencias: ERROR:  FAIL: autoenvio = No puedes enviarte dinero a ti mismo (aunque el numero lleve espacios) (esperado=("No puedes enviarte dinero a ti mismo","No
+M96  DETECTADA  se quita la comprobacion de que el bolsillo es de MI cuenta (bolsillo ajeno)
+      -> 50_transferencias: ERROR:  FAIL: bolsillo: ajeno, inexistente y mal formado = Recurso no encontrado (nunca un error de driver) (esperado=("Recurso no encontrado","Recurs
+M97  DETECTADA  hacer_transferencia toma la instantanea del reloj DOS veces
+      -> 50_transferencias: ERROR:  FAIL: _reloj_instantanea() aparece UNA vez en hacer_transferencia y NINGUNA en nombre_destinatario, _validar_monto, _msg_negocio ni _reglas_tr
+M98  DETECTADA  las patas se fechan con now() en vez del ahora de la instantanea
+      -> 50_transferencias: ERROR:  FAIL: ambas patas: misma fecha (= la de la salida), misma transaccion (tx_id) y la misma nota recortada y colapsada (esperado=(1,1,t,"hola mun
+M99  DETECTADA  la pata ENVIO lleva la cuenta del propio emisor como contraparte
+      -> 50_transferencias: ERROR:  Libro mayor: en la transferencia fe9093ef-ae6c-4bf6-a65a-ffc9f303cb16 la contraparte_cuenta de cada pata debe ser el número de cuenta de la o
+M100  DETECTADA  se quita la traduccion de carreras (destino/bolsillo borrados llegan como error interno del libro)
+      -> reales/41_transferencias_conexiones: FAIL: D1 ...la transferencia recibe el mensaje de NEGOCIO 'Cuenta no encontrada' (P0001, no un error de FK) (el patron [ERROR:  Cuenta no encontrada] 
+M101  DETECTADA  un destino BLOQUEADO deja de poder recibir (cambia la decision provisional D-E5-9)
+      -> 50_transferencias: ERROR:  FAIL: D-E5-9 (PROVISIONAL, negocio pendiente): una cuenta BLOQUEADA recibe dinero (esperado=(OK,t), actual=("Cuenta no encontrada",f))
+M102  DETECTADA  la nota no se recorta ni se normaliza
+      -> 50_transferencias: ERROR:  FAIL: ambas patas: misma fecha (= la de la salida), misma transaccion (tx_id) y la misma nota recortada y colapsada (esperado=(1,1,t,"hola mun
+M103  DETECTADA  nombre_destinatario no exige sesion viva (enumeracion anonima)
+      -> 50_transferencias: ERROR:  FAIL: exige SESION VIVA (D-E5-10, provisional): sin usuario, admin o bloqueado no se puede consultar (esperado=("Sesión inválida","Acceso de
+M104  DETECTADA  el bolsillo de origen se ignora (el envio sale siempre de la cuenta principal)
+      -> 50_transferencias: ERROR:  FAIL: saldo insuficiente (bolsillo de 300): 300.01 (esperado=Saldo insuficiente, actual=OK)
+M105  DETECTADA  banco_app recibe EXECUTE de un helper interno (_reglas_transferencia)
+      -> 50_transferencias: ERROR:  FAIL: integridad global en orden tras las transferencias (la condicion no se cumplio: f)
+M106  DETECTADA  hacer_transferencia pierde su SECURITY DEFINER
+      -> 50_transferencias: ERROR:  FAIL: banco_app ejecuta hacer_transferencia y nombre_destinatario (no debia fallar; SQLSTATE 42501: permission denied for function _validar_cl
+M107  DETECTADA  el monto se REDONDEA a 2 decimales en vez de validarse
+      -> 50_transferencias: ERROR:  FAIL: monto invalido ANTES que destino: con destino inexistente tambien dice Monto invalido (esperado=("Monto inválido","Monto inválido"), a
+M108  DETECTADA  la longitud maxima de la nota pasa de 140 a 141 (valor centralizado)
+      -> 50_transferencias: ERROR:  FAIL: _reglas_transferencia: nota_max = 140 (provisional D-E5-8, un solo lugar) (esperado={"nota_max": 140}, actual={"nota_max": 141})
+M109  DETECTADA  el mensaje de recurso ajeno pasa a 'Bolsillo no encontrado' (el del mock, no el del contrato)
+      -> 50_transferencias: ERROR:  FAIL: _msg_negocio: 5 mensajes del contrato exactos + nota provisional + clave desconocida = NULL (esperado=("Monto inválido","Cuenta no enco
+M110  DETECTADA  se quita la traduccion del propio emisor borrado en carrera
+      -> reales/41_transferencias_conexiones: FAIL: D4 el emisor borrado a mitad de la operacion: 'Sesión inválida' (traducido, sin el texto interno 'Libro mayor') (el patron [ERROR:  Sesión in
+M111  DETECTADA  se quita la traduccion del bolsillo borrado en carrera
+      -> reales/41_transferencias_conexiones: FAIL: D2 ...la transferencia recibe 'Recurso no encontrado' (traducido) (el patron [ERROR:  Recurso no encontrado] no aparece en: ERROR:  Libro mayor:
+M112  DETECTADA  banco_app pierde EXECUTE de hacer_transferencia (el backend dejaria de funcionar)
+      -> 50_transferencias: ERROR:  FAIL: integridad global en orden tras las transferencias (la condicion no se cumplio: f)
+M113  DETECTADA  banco_lector recibe EXECUTE de nombre_destinatario
+      -> 50_transferencias: ERROR:  FAIL: integridad global en orden tras las transferencias (la condicion no se cumplio: f)
+
+RESUMEN: 22 de 22 mutaciones detectadas

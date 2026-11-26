@@ -1,0 +1,55 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-25 18:26:59 -0500
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+Filtro    : pruebas que empiezan por '09'
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   aplicado 13_auth_utilidades.sql
+   aplicado 14_auth_funciones.sql
+   aplicado 15_transferencias.sql
+   aplicado 16_bolsillos.sql
+   aplicado 17_motor_devengo.sql
+   aplicado 18_cdt.sql
+   aplicado 19_creditos_calculo.sql
+   aplicado 20_creditos.sql
+   aplicado 21_pagos_calculo.sql
+   aplicado 22_pagos.sql
+   aplicado 23_vistas.sql
+   aplicado 24_admin.sql
+   aplicado 25_control.sql
+   aplicado 26_mantenimiento.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 09_idempotencia.test.sql
+   ok    la huella del catalogo no es vacia
+   ok    2a aplicacion: el catalogo no cambia (misma huella)
+   ok    3a aplicacion: el catalogo sigue igual
+   ok    las filas unicas de reloj y parametro no se duplican
+   ok    reaplicar 03_schema.sql conserva los datos existentes
+   ok    ...y reaplicar los permisos tampoco los toca
+   ok    despues de reaplicar permisos el catalogo es identico (incluye las vistas de integridad y los permisos de banco_ledger)
+   ok    desviacion provocada: banco_app tiene UPDATE sobre cuenta
+   ok    05_permisos.sql corrige la desviacion (banco_app vuelve a no tener UPDATE)
+   ok    ...y el catalogo vuelve a ser identico
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+12 passed, 0 failed

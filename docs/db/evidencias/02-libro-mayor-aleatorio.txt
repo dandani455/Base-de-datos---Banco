@@ -1,0 +1,95 @@
+Banco Digital - Etapa 2 - prueba aleatoria pesada (semilla fija 0.42): psql -v n_iter=15000 -f db/tests/17_libro_aleatorio.test.sql  (BD limpia con scripts 00-09 + helpers + harness)
+Fecha: 2026-11-21 16:51   Rama: feat/db-core
+Cada operacion valida se asienta con _asentar_grupo; con prob. ~40% se intenta ademas una version MUTADA e INVALIDA del mismo grupo (quitar pata, +0,01, invertir sentido, duplicar pata, mover pata a otra cuenta, cambiar tipo).
+
+ set_config 
+------------
+ 15000
+(1 row)
+BEGIN
+DO
+CREATE TABLE
+DO
+ assert_true 
+-------------
+ 
+(1 row)
+NOTICE:  PASS: se asentaron al menos el 60 % de las iteraciones como operaciones validas
+ assert_true 
+-------------
+ 
+(1 row)
+NOTICE:  PASS: se probaron mas de 500 grupos mutados invalidos
+NOTICE:  PASS: NINGUN grupo mutado invalido fue aceptado
+ assert_eq 
+-----------
+ 
+(1 row)
+ assert_eq 
+-----------
+ 
+(1 row)
+NOTICE:  PASS: TODOS los grupos mutados fueron rechazados
+ assert_eq 
+-----------
+ 
+(1 row)
+NOTICE:  PASS: NINGUN rechazo dejo rastro (saldos, contenedores y numero de patas intactos)
+NOTICE:  PASS: las 14 clases de operacion se ejercitaron al menos una vez
+ assert_true 
+-------------
+ 
+(1 row)
+NOTICE:  PASS: v_integridad_global.ok tras todas las operaciones
+ assert_true 
+-------------
+ 
+(1 row)
+NOTICE:  PASS: 0 contenedores con desvio, 0 grupos con error, 0 cuentas con desvio I5u
+ assert_eq 
+-----------
+ 
+(1 row)
+NOTICE:  PASS: conservacion del dinero entre clientes: transferencias netas = 0
+ assert_eq 
+-----------
+ 
+(1 row)
+NOTICE:  PASS: ningun saldo negativo en ningun contenedor
+ assert_true 
+-------------
+ 
+(1 row)
+NOTICE:  PASS: cada saldo de cuenta coincide con la suma de sus patas (recomputado por fuera de la vista)
+ assert_eq 
+-----------
+ 
+(1 row)
+ assert_true 
+-------------
+ 
+(1 row)
+NOTICE:  PASS: el resumen queda en NOTICE para la evidencia
+NOTICE:  ALEATORIO aceptadas_indebidas: 0
+NOTICE:  ALEATORIO con_rastro: 0
+NOTICE:  ALEATORIO iteraciones: 15000
+NOTICE:  ALEATORIO mutadas: 4444
+NOTICE:  ALEATORIO omitidas: 2005
+NOTICE:  ALEATORIO rechazadas: 4444
+NOTICE:  ALEATORIO uso_01: 1071
+NOTICE:  ALEATORIO uso_02: 1038
+NOTICE:  ALEATORIO uso_03: 1046
+NOTICE:  ALEATORIO uso_04: 1053
+NOTICE:  ALEATORIO uso_05: 1063
+NOTICE:  ALEATORIO uso_06: 1098
+NOTICE:  ALEATORIO uso_07: 1070
+NOTICE:  ALEATORIO uso_08: 1072
+NOTICE:  ALEATORIO uso_09: 1042
+NOTICE:  ALEATORIO uso_10: 986
+DO
+NOTICE:  ALEATORIO uso_11: 998
+NOTICE:  ALEATORIO uso_12: 168
+NOTICE:  ALEATORIO uso_13: 157
+NOTICE:  ALEATORIO uso_14: 1133
+NOTICE:  ALEATORIO validas: 12995
+ROLLBACK

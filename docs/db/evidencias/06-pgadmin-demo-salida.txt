@@ -1,0 +1,25 @@
+BEGIN
+NOTICE:  Ana tiene en su cuenta principal 2770078.00
+NOTICE:  1) vista_balance sin bolsillos: {"total": 2770078.00, "bolsillos": [], "principal": 2770078.00}
+NOTICE:  2) crear_bolsillo devuelve: {"id": "ff0fb9b2-7980-4c78-a559-71e1c8dd8abb", "nombre": "Vacaciones 2027"}
+NOTICE:  3a) mover_a_bolsillo devuelve: {"id": "829cb942-1009-4611-9c3a-fe03a603093c", "fecha": "2026-11-24T01:08:20.434238-05:00"}
+NOTICE:       pata: BOLSO_INGRESO BOLSILLO E $50000.50 contraparte=Vacaciones 2027
+NOTICE:       pata: BOLSO_INGRESO CUENTA S $50000.50 contraparte=Vacaciones 2027
+NOTICE:  3b) retirar_de_bolsillo devuelve: {"id": "386eca02-a1e8-4c70-b7f2-b3b499501961", "fecha": "2026-11-24T01:08:20.438918-05:00"}
+NOTICE:  3c) mover_entre_bolsillos devuelve: {"id": "cff35c93-80f8-494e-9b60-9899c0422be2", "fecha": "2026-11-24T01:08:20.442803-05:00"}
+NOTICE:       pata: BOLSO_MOVIMIENTO BOLSILLO E $20000.00 contraparte=Vacaciones 2027 (solo patas de bolsillo: la cuenta principal no se toca)
+NOTICE:       pata: BOLSO_MOVIMIENTO BOLSILLO S $20000.00 contraparte=Carro (solo patas de bolsillo: la cuenta principal no se toca)
+NOTICE:  4) vista_balance: {"total": 2770078.00, "bolsillos": [{"id": "ff0fb9b2-7980-4c78-a559-71e1c8dd8abb", "saldo": 30000.00, "nombre": "Vacaciones 2027"}, {"id": "2d0ddc4b-574b-455b-9bd1-c77f573ae251", "saldo": 20000.00, "nombre": "Carro"}], "principal": 2720078.00}
+NOTICE:     total=2770078.00 principal=2720078.00 (= 2770078.00 - 50000.50 + 0.50)  y NO aparece el bolsillo del vecino: t
+NOTICE:  5a) monto 0: Monto inválido
+NOTICE:  5b) 3 decimales: Monto inválido
+NOTICE:  5c) bolsillo mal formado (negocio, no error de driver): Recurso no encontrado
+NOTICE:  5d) bolsillo AJENO (indistinguible de uno inexistente): Recurso no encontrado
+NOTICE:  5e) mismo bolsillo (PROVISIONAL D-E6-9): Los bolsillos de origen y destino deben ser distintos
+NOTICE:  5f) un centavo mas que el bolsillo: Saldo insuficiente
+NOTICE:  5g) mas que la cuenta: Saldo insuficiente
+NOTICE:  5h) nombre de 41 caracteres (PROVISIONAL D-E6-8): Nombre de bolsillo inválido
+NOTICE:  5i) sin sesion viva: Sesión inválida
+NOTICE:  6) suma de cuentas + bolsillos: antes 4544679.00 = despues 4544679.00 ; integridad global ok = t
+DO
+ROLLBACK

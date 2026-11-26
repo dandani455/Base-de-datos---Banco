@@ -1,0 +1,30 @@
+# Regresion puntual de las mutaciones de E7 que miran permisos/catalogo/devengo (M137-M142, M171-M174) tras integrar E8, y M205 con SOLO la prueba de concurrencia real (reales/48)
+# 1) E7 (corrida con SOLO=... ; M205 NO DETECTADA en esa corrida porque el unico detector era estructural: ver 2)
+M137  DETECTADA  vista_balance NO devenga antes de leer (se quita _avanzar_hasta)
+      -> 54_devengo: ERROR:  FAIL: las 12 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M138  DETECTADA  los 3 movimientos de bolsillo (_mover_bolsillo) NO devengan antes del libro
+      -> 54_devengo: ERROR:  FAIL: retirar_de_bolsillo del saldo CON intereses (1.009.358,20) funciona: el motor devenga antes del libro (esperado=OK, actual=Saldo insufic
+M139  DETECTADA  crear_bolsillo NO devenga (uniformidad rota)
+      -> 54_devengo: ERROR:  FAIL: las 12 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M140  DETECTADA  hacer_transferencia NO devenga al emisor antes del libro
+      -> 54_devengo: ERROR:  Saldo insuficiente
+M141  DETECTADA  crear_cdt NO devenga antes de invertir
+      -> 54_devengo: ERROR:  FAIL: las 12 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M142  DETECTADA  vista_cdts NO devenga ni cierra antes de leer
+      -> 54_devengo: ERROR:  FAIL: las 12 funciones que devengan llaman _avanzar_hasta EXACTAMENTE 1 vez, _reloj_instantanea EXACTAMENTE 1 vez y la instantanea va ANTES de
+M171  DETECTADA  banco_app recibe EXECUTE del motor (_avanzar_hasta)
+      -> 54_devengo: ERROR:  FAIL: TODA funcion ejecutable por banco_app esta en la lista "devenga" o "exenta" (una funcion nueva sin clasificar HACE FALLAR esta prueba: E
+M172  DETECTADA  banco_app pierde EXECUTE de crear_cdt (el front no podria abrir CDT)
+      -> 54_devengo: ERROR:  FAIL: TODA funcion ejecutable por banco_app esta en la lista "devenga" o "exenta" (una funcion nueva sin clasificar HACE FALLAR esta prueba: E
+M173  DETECTADA  banco_lector recibe EXECUTE de vista_cdts
+      -> 55_cdt: ERROR:  FAIL: v_integridad_global OK tras todo (partida doble, inversion del CDT, generado = suma de patas, I5u) (la condicion no se cumplio: f)
+M174  DETECTADA  crear_cdt pierde su SECURITY DEFINER
+      -> 55_cdt: ERROR:  FAIL: banco_app ejecuta las 4 publicas de CDT (no debia fallar; SQLSTATE 42501: permission denied for function _validar_cliente)
+M205  *** NO DETECTADA ***  solicitar_credito no bloquea explicitamente la cuenta (lee el tope sin el bloqueo del libro)
+RESUMEN: 10 de 11 mutaciones detectadas
+EXIT=1
+
+# 2) M205 tras anadir a reales/48 la prueba 6b (un rechazo de rango tambien espera el bloqueo de la cuenta)
+M205  DETECTADA  solicitar_credito no bloquea explicitamente la cuenta (lee el tope sin el bloqueo del libro)
+      -> reales/48_creditos_concurrencia: FAIL: 6. ...esperó al menos 1 segundo: las validaciones se leen bajo el bloqueo explicito de la cuenta (esperado=[t] actual=[f])
+RESUMEN: 1 de 1 mutaciones detectadas

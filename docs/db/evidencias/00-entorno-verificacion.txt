@@ -1,0 +1,72 @@
+Banco Digital - Etapa 0 - evidencia de verificaciones manuales
+Fecha: 2026-11-21 (America/Bogota)   Rama: feat/db-core
+Entorno: Windows 11, Windows PowerShell 5.1.26100, Docker Desktop (Docker 29.9.3, Compose v5.7.0),
+         postgres:16-alpine (PostgreSQL 16.16), dpage/pgadmin4:9.19.0
+(La corrida automatica completa esta en 00-entorno.txt. Aqui van las comprobaciones que no son SQL.)
+
+=== A0.1  db\ctl.cmd up =====================================================
+NAME                 IMAGE                   SERVICE   STATUS                   PORTS
+banco-db-db-1        postgres:16-alpine      db        Up 7 seconds (healthy)   127.0.0.1:5433->5432/tcp
+banco-db-pgadmin-1   dpage/pgadmin4:9.19.0   pgadmin   Up 1 second              127.0.0.1:5050->80/tcp
+PostgreSQL: LISTO
+pgAdmin 4 : http://localhost:5050
+PostgreSQL: localhost:5433  (BD banco, usuario postgres)
+exit=0
+Nota: 5433 porque el equipo ya tiene un PostgreSQL local en 5432 (servicio postgres, PID 4524).
+
+=== A0.2 / A0.3  pgAdmin 4 (navegador integrado) ===========================
+- http://localhost:5050/browser/ carga directamente (sin pantalla de login).
+- Arbol: Banco Digital > Banco - administracion (postgres) > Databases (2): banco, postgres.
+  La conexion se establecio sin solicitar contrasena (archivo pgpass generado en el contenedor).
+- Query Tool sobre "banco", consulta:
+    SELECT current_database() AS bd, current_setting('TimeZone') AS zona, now() AS ahora,
+           (SELECT string_agg(extname, ', ' ORDER BY extname) FROM pg_extension) AS extensiones;
+  Resultado:  bd = banco | zona = America/Bogota | ahora = 2026-11-21 00:46:16.69... (hora de Bogota)
+              extensiones = pg_trgm, plpgsql, unaccent   (extensiones ya aplicadas por "ctl apply" antes)
+  Mensaje de pgAdmin: "Successfully run. Total query runtime: 119 msec. 1 rows affected."
+
+=== A0.4  00_extensiones.sql ejecutado DESDE pgAdmin =========================
+Query Tool > Open File > /work/sql/ > 00_extensiones.sql > F5
+  Messages:
+    NOTICE:  extension "unaccent" already exists, skipping
+    NOTICE:  extension "pg_trgm" already exists, skipping
+    DO
+    Query returned successfully in 105 msec.
+Luego, "db\ctl.cmd apply 00" dos veces seguidas: ambas con exit=0 (idempotente).
+
+=== A0.6  db\ctl.cmd reset -Yes y reaplicar ==================================
+CREATE DATABASE
+ALTER DATABASE
+BD "banco" recreada vacia. Reconecta pgAdmin (clic derecho en el servidor > Refresh).
+ current_database |       tz       | extensiones
+ banco            | America/Bogota |           0          <- recien recreada
+(tras "db\ctl.cmd apply")                     extensiones = 2
+
+=== A0.7  git ===============================================================
+git status --short:   ?? .gitattributes   ?? db/   ?? docs/db/
+git diff --stat -- front docs/specs docs/superpowers README.md:  (vacio: nada modificado)
+git check-ignore -v db/.env:   .gitignore:4:.env   db/.env
+No se hizo ningun commit.
+
+=== A0.8  Windows sin Bash ===================================================
+[A] powershell.exe -NoProfile -ExecutionPolicy Restricted -File .\db\ctl.ps1 status
+    -> "No se puede cargar el archivo ...\db\ctl.ps1 porque la ejecucion de scripts esta deshabilitada en este sistema."
+       (comportamiento esperado de la politica por defecto; es la razon de existir de ctl.cmd)
+[B] cmd.exe /c "db\ctl.cmd status"
+    -> PostgreSQL: LISTO / pgAdmin 4 : http://localhost:5050 / PostgreSQL: localhost:5433 ...   exit=0
+[C] powershell.exe con PATH = System32 + Windows + WindowsPowerShell + carpeta de Docker, ejecutando "db\ctl.cmd test 00":
+      git     -> NO disponible
+      node    -> NO disponible
+      python  -> NO disponible
+      psql    -> NO disponible
+      bash    -> NO disponible
+      ...
+      13 passed, 0 failed
+      exit=0
+[D] Prueba que falla (db\tests\99_falla.test.sql temporal con assert_eq('esto debe fallar',1,2)):
+      1 passed, 1 failed       exit(falla)=1      (archivo temporal eliminado despues)
+[E] "db\ctl.cmd apply 77" (sin archivos que coincidan): "ERROR: No hay archivos en db\sql que coincidan con '77'."  exit=1
+
+=== Equivalente opcional ctl.sh (Git Bash) ===================================
+bash db/tests/run.sh   ->  29 passed, 0 failed   exit=0
+(Se encontro y corrigio un fallo: rutas con espacios y rutas /c/... en Git Bash.)

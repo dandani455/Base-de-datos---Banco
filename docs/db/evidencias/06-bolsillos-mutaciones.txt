@@ -1,0 +1,59 @@
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+M114  DETECTADA  vista_balance no valida la sesion (admin/bloqueado ven el balance)
+      -> 52_bolsillos: ERROR:  FAIL: vista_balance: sesion inexistente/NULL = Sesion invalida; ADMIN = Acceso denegado; BLOQUEADO = mensaje de bloqueo (esperado=("Sesión in
+M115  DETECTADA  balance_total omite los bolsillos (total = solo la cuenta principal)
+      -> 52_bolsillos: ERROR:  FAIL: valores: principal = cuenta.balance (689.75); total = principal + suma de saldos (1000); bolsillos A, B, C con sus saldos, en orden de c
+M116  DETECTADA  vista_balance lista los bolsillos de TODAS las cuentas (sin filtro de cuenta)
+      -> 52_bolsillos: ERROR:  FAIL: valores: principal = cuenta.balance (689.75); total = principal + suma de saldos (1000); bolsillos A, B, C con sus saldos, en orden de c
+M117  DETECTADA  vista_balance devuelve null en vez de [] cuando no hay bolsillos
+      -> 52_bolsillos: ERROR:  FAIL: cliente sin bolsillos: bolsillos = [] (nunca null) y total = principal (esperado=([],0.00,0.00), actual=(null,0.00,0.00))
+M118  DETECTADA  balance_total pasa a VOLATILE (cada llamada toma su propia foto: lectura que puede ver un movimiento a medias)
+      -> 52_bolsillos: ERROR:  FAIL: balance_total: STABLE (usa la foto de la sentencia que la llama), vale 1000 para la cuenta 1 y NULL para una cuenta que no existe; la vi
+M119  DETECTADA  _mover_bolsillo no valida la sesion (admin/bloqueado mueven dinero)
+      -> 52_bolsillos: ERROR:  FAIL: ...ADMIN y BLOQUEADO (esperado=("Acceso denegado","Tu cuenta ha sido restringida, contacte con el banco para desbloquearla","Tu cuenta h
+M120  DETECTADA  _bolsillo_propio acepta bolsillos de OTRA cuenta
+      -> 52_bolsillos: ERROR:  FAIL: bolsillo mal formado, inexistente o AJENO = Recurso no encontrado (nunca un error de driver), en ingresar/retirar (esperado={"Recurso no
+M121  DETECTADA  _mover_bolsillo toma la instantanea del reloj DOS veces
+      -> 52_bolsillos: ERROR:  FAIL: _reloj_instantanea() aparece UNA vez en _mover_bolsillo y UNA en crear_bolsillo, y en NINGUNA otra funcion de E6 (esperado={_mover_bolsi
+M122  DETECTADA  las patas se fechan con now() en vez del ahora de la instantanea
+      -> 52_bolsillos: ERROR:  FAIL: INGRESAR: 2 patas BOLSO_INGRESO en UN grupo (el id devuelto): CUENTA S y BOLSILLO E, ambas con bolsillo_id = A, contraparte = nombre del
+M123  DETECTADA  mover entre bolsillos: la pata de salida lleva el nombre del propio origen en vez del destino
+      -> 52_bolsillos: ERROR:  FAIL: MOVER A->B: BOLSO_MOVIMIENTO, BOLSILLO S de A (contraparte = nombre de B) y BOLSILLO E de B (contraparte = nombre de A); misma fecha y t
+M124  DETECTADA  mover un bolsillo a si mismo se deja pasar al libro (se quita la comprobacion D-E6-9)
+      -> 52_bolsillos: ERROR:  FAIL: D-E6-9 (PROVISIONAL): mover un bolsillo a si mismo (aunque el uuid cambie de mayusculas/espacios) = mensaje nuevo (esperado=("Los bolsil
+M125  DETECTADA  se quita la traduccion del bolsillo borrado en carrera (llega el texto interno del libro)
+      -> reales/43_bolsillos_conexiones: FAIL: D1 ...el ingreso recibe 'Recurso no encontrado' (P0001 traducido; no un error de FK ni 'Libro mayor') (el patron [ERROR:  Recurso no encontrado]
+M126  DETECTADA  se quita la traduccion del usuario borrado en carrera
+      -> reales/43_bolsillos_conexiones: FAIL: D3 el usuario se borra mientras el ingreso espera: 'Sesión inválida' (traducido, sin el texto interno 'Libro mayor') (el patron [ERROR:  Sesi�
+M127  DETECTADA  crear_bolsillo no recorta ni normaliza el nombre
+      -> 52_bolsillos: ERROR:  FAIL: nombre normalizado (recorte y colapso de espacios); el bolsillo nace con balance 0, en MI cuenta, ultimo_cobro = hoy del banco (esperado
+M128  DETECTADA  la longitud maxima del nombre pasa de 40 a 41 (valor centralizado)
+      -> 52_bolsillos: ERROR:  FAIL: _reglas_bolsillo: nombre 1..40 y los 2 mensajes nuevos, PROVISIONALES, en UN solo lugar (D-E6-8 / D-E6-9) (esperado={"msg_nombre": "Nomb
+M129  DETECTADA  crear_bolsillo deja escapar la violacion de FK (usuario borrado en carrera)
+      -> reales/43_bolsillos_conexiones: FAIL: D4 el usuario se borra mientras crear_bolsillo espera: 'Sesión inválida' (la FK se traduce; no un error 23503) (el patron [ERROR:  Sesión inv
+M130  DETECTADA  crear_bolsillo usa current_date en vez del hoy del banco (ultimo_cobro)
+      -> 52_bolsillos: ERROR:  FAIL: crear_bolsillo: su UNICA escritura es el INSERT de public.bolsillo (nace con balance 0); sin UPDATE/DELETE, sin libro y sin reloj del si
+M131  DETECTADA  mover_a_bolsillo usa la plantilla de RETIRO (ingresa al reves)
+      -> 52_bolsillos: ERROR:  FAIL: ingresar 300 a A (cuenta 1000 -> 700, A 300) (esperado=(OK,700.00,300.00), actual=("Saldo insuficiente",1000.00,0.00))
+M132  DETECTADA  mover_entre_bolsillos intercambia origen y destino
+      -> 52_bolsillos: ERROR:  Saldo insuficiente
+M133  DETECTADA  banco_app recibe EXECUTE de balance_total (helper interno)
+      -> 52_bolsillos: ERROR:  FAIL: integridad global en orden tras los movimientos (conservacion, cuadre, saldos = patas) (la condicion no se cumplio: f)
+M134  DETECTADA  banco_app pierde EXECUTE de vista_balance (el front no podria listar bolsillos)
+      -> 52_bolsillos: ERROR:  FAIL: integridad global en orden tras los movimientos (conservacion, cuadre, saldos = patas) (la condicion no se cumplio: f)
+M135  DETECTADA  banco_lector recibe EXECUTE de crear_bolsillo
+      -> 52_bolsillos: ERROR:  FAIL: integridad global en orden tras los movimientos (conservacion, cuadre, saldos = patas) (la condicion no se cumplio: f)
+M136  DETECTADA  crear_bolsillo pierde su SECURITY DEFINER
+      -> 52_bolsillos: ERROR:  FAIL: banco_app ejecuta las 5 publicas de E6 (no debia fallar; SQLSTATE 42501: permission denied for function _validar_cliente)
+
+RESUMEN: 23 de 23 mutaciones detectadas

@@ -1,0 +1,44 @@
+BEGIN
+NOTICE:  Hoy del banco: 2026-11-24. Ana tiene 8072805.00 en la cuenta (ingresos simulados + deposito de la demo)
+NOTICE:  1) productos_publicos (sin sesion, topes BASE): [{"id": "b5765495-1207-41ad-9ebb-6f1ab4404ed6", "tasa": 15.400, "nombre": "Demo Educacion", "monto_max": 100000000.00, "monto_min": 1000000.00, "plazo_max": 240, "plazo_min": 6, "descripcion": "Invierte en tu formacion"}, {"id": "6ab6bcac-2b7e-4701-8733-f5be7d8f1e9a", "tasa": 14.100, "nombre": "Demo Inmuebles", "monto_max": 2000000000.00, "monto_min": 1.00, "plazo_max": 360, "plazo_min": 12, "descripcion": "Tu casa"}, {"id": "43b67284-c749-455a-9fec-1934aa001eb8", "tasa": 18.000, "nombre": "Demo Libre inversion", "monto_max": 30000000.00, "monto_min": 1000000.00, "plazo_max": 24, "plazo_min": 6, "descripcion": "Dinero para lo que necesites"}, {"id": "9ff8abce-206c-40e6-924b-213425b1665c", "tasa": 18.900, "nombre": "Demo Vehiculo", "monto_max": 200000000.00, "monto_min": 5000000.00, "plazo_max": 120, "plazo_min": 12, "descripcion": "Estrena carro"}]
+NOTICE:     productos_disponibles de Ana (topes EFECTIVOS: Libre 30M por el tope fijo; Inmuebles = 100 x patrimonio): [{"id": "b5765495-1207-41ad-9ebb-6f1ab4404ed6", "tasa": 15.400, "nombre": "Demo Educacion", "monto_max": 100000000.00, "monto_min": 1000000.00, "plazo_max": 240, "plazo_min": 6}, {"id": "6ab6bcac-2b7e-4701-8733-f5be7d8f1e9a", "tasa": 14.100, "nombre": "Demo Inmuebles", "monto_max": 807280500.00, "monto_min": 1.00, "plazo_max": 360, "plazo_min": 12}, {"id": "43b67284-c749-455a-9fec-1934aa001eb8", "tasa": 18.000, "nombre": "Demo Libre inversion", "monto_max": 30000000.00, "monto_min": 1000000.00, "plazo_max": 24, "plazo_min": 6}, {"id": "9ff8abce-206c-40e6-924b-213425b1665c", "tasa": 18.900, "nombre": "Demo Vehiculo", "monto_max": 200000000.00, "monto_min": 5000000.00, "plazo_max": 120, "plazo_min": 12}]
+NOTICE:  2) simular_credito($10.000.000, 12 meses, 18 % E.A.): {"cuota_mensual": 910463.77, "total_a_pagar": 10925565.20, "intereses_totales": 925565.20}
+NOTICE:     (cuota fija 910.463,77 = P·i·q/(q-1) con i = 1,388843 % mensual; la ultima cuota absorbe el redondeo; total = suma de cuotas)
+NOTICE:  3) solicitar_credito devuelve: {"id": "0ba3c111-b287-4423-b17c-54117dba9b3c", "fecha": "2026-11-24T14:25:07.355758-05:00"}
+NOTICE:     cuenta: 8072805.00 -> 18072805.00 (+10.000.000); capital_pendiente = 10000000.00; estado ACTIVO
+NOTICE:     plan: 12 cuotas; suma de capital = 10000000.00; suma de cuotas = 10925565.20; suma de intereses = 925565.20
+NOTICE:       cuota 1: vence 2026-12-24  valor 910463.77  capital 771579.47  interes 138884.30
+NOTICE:       cuota 2: vence 2027-01-24  valor 910463.77  capital 782295.49  interes 128168.28
+NOTICE:       cuota 12: vence 2027-11-24  valor 910463.73  capital 897992.03  interes 12471.70
+NOTICE:       pata: CREDITO_DESEMBOLSO CREDITO E $10000000.00 (saldo 0.00 -> 10000000.00) contraparte=Demo Libre inversion
+NOTICE:       pata: CREDITO_DESEMBOLSO CUENTA E $10000000.00 (saldo 8072805.00 -> 18072805.00) contraparte=Demo Libre inversion
+NOTICE:     vista_creditos: [{"id": "0ba3c111-b287-4423-b17c-54117dba9b3c", "saldo": 10000000.00, "producto": "Demo Libre inversion", "interes_mes": 0.00, "cuotas_pagadas": 0, "cuotas_faltantes": 12}]
+NOTICE:     el tope de Inmuebles NO se infla con la deuda (patrimonio neto = balance_total - deuda): {"id": "6ab6bcac-2b7e-4701-8733-f5be7d8f1e9a", "tasa": 14.100, "nombre": "Demo Inmuebles", "monto_max": 807280500.00, "monto_min": 1.00, "plazo_max": 360, "plazo_min": 12}
+NOTICE:     (D6 PROVISIONAL: balance_total NO resta la deuda: 18072805.00; el patrimonio neto para el tope: 8072805.00)
+NOTICE:  4) segundo credito del mismo producto (Ana): Ya tienes un crédito vigente de este producto
+NOTICE:  4) Libre inversion 31.000.000, sobre el tope fijo de 30M (Beto): Monto fuera de rango
+NOTICE:  4) Vehiculo 4.000.000, bajo el minimo de 5M de la demo (Beto): Monto fuera de rango
+NOTICE:  4) plazo fraccionario (Beto): Plazo fuera de rango
+NOTICE:  4) plazo de 5 meses, bajo el minimo de 6 (Beto): Plazo fuera de rango
+NOTICE:  4) monto invalido (Beto): Monto inválido
+NOTICE:  4) producto mal formado (negocio, no error de driver): Recurso no encontrado
+NOTICE:  5) productos de Beto (edad 43): Inmuebles {"id": "6ab6bcac-2b7e-4701-8733-f5be7d8f1e9a", "tasa": 14.100, "nombre": "Demo Inmuebles", "monto_max": 689428800.00, "monto_min": 1.00, "plazo_max": 324, "plazo_min": 12}
+NOTICE:  5) Inmuebles a 340 meses (> 324): Plazo excede el límite de edad
+NOTICE:  5) Inmuebles a 400 meses (> 360, maximo del producto): Plazo fuera de rango
+NOTICE:  5) Inmuebles $500.000.000 a 324 meses (dentro del tope 100 x patrimonio): {"id": "d331d220-f231-47a9-a075-d38cabac3aa3", "fecha": "2026-11-24T14:25:07.384101-05:00"}
+NOTICE:  6) interes de la cuota 1: 138884.30 (periodo de 30 dias)
+NOTICE:     reloj +15 dias (hoy = 2026-12-09): interes_mes = 69442.15
+NOTICE:     reloj +45 dias (hoy = 2027-01-08): interes_mes = 138884.30 (tope: el interes completo de la cuota 1; no crece mas ni hay mora en E8)
+NOTICE:     patas de credito de Ana siguen siendo 2: leer no escribe en el libro
+NOTICE:  7) +30 dias con $1.000.000 en un bolsillo: interes escrito antes de leer = 0.00
+NOTICE:     tras productos_disponibles (devenga PRIMERO y luego calcula el tope): interes del bolsillo = 9358.20, grupos INTERES_BOLSO = 1, monto_max de Inmuebles = 808216320.00
+NOTICE:     (la segunda consulta no repite nada: sigue 1 solo grupo de interes)
+NOTICE:  8) plan descuadrado (capital de la cuota 1 + 1): Créditos: el plan del crédito 0ba3c111-b287-4423-b17c-54117dba9b3c no cuadra con su capital pendiente (capital_pendiente=10000000.00, capital de las cuotas impagas=10000001.00)
+NOTICE:  9) v_integridad_global.ok = t (defensas fallidas=0, grupos con error=0, cuentas con desvio=0, creditos con plan incoherente=0)
+DO
+ROLLBACK
+                                    resultado                                    
+---------------------------------------------------------------------------------
+ Demo terminada: ROLLBACK ejecutado (el reloj y los datos quedaron como estaban)
+(1 row)
+

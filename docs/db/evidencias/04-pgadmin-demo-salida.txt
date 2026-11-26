@@ -1,0 +1,41 @@
+Salida de docs/db/evidencias/04-pgadmin-demo.sql ejecutada por psql en la BD banco (recien reseteada, con 00-14 aplicados). Fecha: 2026-11-23 01:26
+BEGIN
+NOTICE:  1) registrar_usuario devuelve: {"username": "mnunez942", "usuario_id": "39836369-c275-4f48-b889-2ebe0cde0565"}
+NOTICE:     guardado normalizado: nombres=María del Pilar apellidos=Núñez Pérez cedula=1234567 correo=maria@mail.com telefono=3001234567
+NOTICE:     cuenta: 4059037912 con balance 1940164.00 = suma de 5 INGRESO_SIMULADO
+NOTICE:       ingreso simulado  2026-09-07 11:13 (fecha distinta y ascendente, dentro de los 90 dias previos)  $ 654344.00
+NOTICE:       ingreso simulado  2026-09-25 14:06 (fecha distinta y ascendente, dentro de los 90 dias previos)  $ 473984.00
+NOTICE:       ingreso simulado  2026-10-17 21:47 (fecha distinta y ascendente, dentro de los 90 dias previos)  $ 378614.00
+NOTICE:       ingreso simulado  2026-10-30 06:18 (fecha distinta y ascendente, dentro de los 90 dias previos)  $ 59430.00
+NOTICE:       ingreso simulado  2026-11-11 19:08 (fecha distinta y ascendente, dentro de los 90 dias previos)  $ 373792.00
+NOTICE:  2) nombre chino: guardado = 李明 王  username = uusuario486  telefono (+57 canonico) = 3017654321
+NOTICE:  3a) sin aceptar la politica RECHAZADO: Debe aceptar la política de datos
+NOTICE:  3b) hash que no es bcrypt (clave en claro) RECHAZADO: Datos de registro inválidos
+NOTICE:  3c) codigo de referido malformado = error de NEGOCIO (no de driver): Código de referido inválido
+NOTICE:  3d) fecha de nacimiento imposible RECHAZADA: Fecha de nacimiento inválida
+NOTICE:  3e) menor de edad RECHAZADO (regla provisional D-E4-12): Debes ser mayor de edad para registrarte
+NOTICE:  3f) intento de inyeccion SQL en el nombre RECHAZADO como formato: Nombre inválido
+NOTICE:  3g) cedula duplicada (con otro formato: 1234567 = 1.234.567) RECHAZADA: La cédula ya está registrada
+NOTICE:  3h) telefono duplicado (+57 300 123 4567 = (300) 123-4567) RECHAZADO: El teléfono ya está registrado
+NOTICE:  4) obtener_credenciales: usuario_id=39836369-c275-4f48-b889-2ebe0cde0565 rol=CLIENTE estado=ACTIVO (el hash de 60 caracteres solo sale por esta funcion)
+NOTICE:     usuario inexistente = 0 filas (el backend responde Credenciales invalidas)
+NOTICE:     validar_sesion: {"rol": "CLIENTE", "estado": "ACTIVO", "username": "mnunez942"}
+NOTICE:  4b) con la sesion abierta y el usuario BLOQUEADO, la siguiente peticion recibe: Tu cuenta ha sido restringida, contacte con el banco para desbloquearla
+NOTICE:     perfil: {"username": "mnunez942", "numero_cuenta": "4059037912", "codigo_referido": "b1a83a79-92ae-42b2-b272-c505c9fca1e6"}
+NOTICE:  5a) verificacion apagada: el referidor paso de 1940164.00 a 1990164.00 (+50000)
+NOTICE:  5b) verificacion encendida: el referidor sigue en 1990164.00 (el bono queda pendiente)
+NOTICE:  5c) tras verificar el correo TRES veces: el referidor tiene 2040164.00 (+50000 una sola vez); grupos de bono de Carla = 1
+NOTICE:      nota del bono: Bono por referir a Beto Blanco
+NOTICE:  6) integridad global ok=t  integridad de autenticacion: usuarios: todo CLIENTE tiene su cuenta y=true | referidos: bono_referido_pagado equivale=true
+NOTICE:  6a) banco_app NO lee la tabla usuario: permission denied for table usuario
+NOTICE:  6b) banco_app NO ejecuta las funciones internas: permission denied for function _pagar_bono_referido
+NOTICE:  6c) banco_lector NO ejecuta las funciones de autenticacion: permission denied for function validar_sesion
+NOTICE:  6d) banco_app SI ejecuta validar_sesion (y registrar_usuario, obtener_credenciales, verificar_correo, vista_perfil)
+NOTICE:     defensas de integridad en error: 0 (la lista blanca de banco_app esta en orden)
+DO
+ROLLBACK
+ usuarios_de_la_demo | controles_auth_fallidos 
+---------------------+-------------------------
+                   0 |                       0
+(1 row)
+

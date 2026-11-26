@@ -1,0 +1,3 @@
+# Respaldos locales de la BD (ctl backup): no se versionan
+*
+!.gitignore

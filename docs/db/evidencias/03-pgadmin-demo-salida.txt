@@ -1,0 +1,26 @@
+Salida de docs/db/evidencias/03-pgadmin-demo.sql ejecutada por psql en la BD banco (recien reseteada y con 00-12 aplicados, version corregida). Fecha: 2026-11-22 00:19
+BEGIN
+NOTICE:  1) Estado inicial del reloj: {"fecha_actual": "2026-11-22", "fecha_sistema": null, "usar_fecha_real": true}  (hoy_banco = 2026-11-22, fecha real de Colombia = 2026-11-22)
+NOTICE:  2) Ingreso de 1000 a Ana fechado con ahora_banco() = 2026-11-22 00:19:17.872823-05. banco_vacio = f
+NOTICE:  3) Adelantar el reloj 30 dias: {"fecha_actual": "2026-12-22", "fecha_sistema": "2026-12-22", "usar_fecha_real": false}
+NOTICE:     hoy_banco = 2026-12-22 (fecha real + 30)   ahora_banco = 2026-12-22 00:19:17.875737-05 (hora REAL de Bogota)
+NOTICE:  4) Retroceder de +30 a +10 RECHAZADO: El reloj no puede retroceder
+NOTICE:  5) Fecha invalida RECHAZADA (mensaje provisional hasta D13): Fecha inválida
+NOTICE:  6) Con el reloj en +30, un ingreso fechado con ahora_banco() entra (fecha de la pata: 2026-12-22)
+NOTICE:  7) Pata fechada un dia DESPUES del reloj RECHAZADA: Libro mayor: la fecha de la pata (2026-12-23) es posterior al reloj del banco (2026-12-22)
+NOTICE:  8) Volver a fecha real: {"fecha_actual": "2026-11-22", "fecha_sistema": null, "usar_fecha_real": true}
+NOTICE:     hoy_banco = 2026-11-22 (la fecha de Colombia)   fecha_sistema guardada = <NULL>  <- no queda desfase
+NOTICE:     La pata fechada en +30 PERMANECE (la simulacion no se revierte contablemente): 2 patas fechadas en el futuro (informativo, no es error); integridad ok=t
+NOTICE:  9) Con el reloj real, una pata NUEVA fechada en +30 ya no entra: Libro mayor: la fecha de la pata (2026-12-22) es posterior al reloj del banco (2026-11-22)
+NOTICE:  10) UPDATE directo que retrocede el reloj RECHAZADO (rige tambien para el superusuario): El reloj no puede retroceder
+NOTICE:  11) DELETE del reloj RECHAZADO: Reloj: el registro único del reloj no se puede borrar
+NOTICE:  12) TRUNCATE del reloj RECHAZADO: Reloj: la tabla del reloj no se puede vaciar (TRUNCATE rechazado)
+NOTICE:  13) Auditoria de esta demo (cada cambio efectivo del reloj): false/2026-12-22  ->  true/null  ->  false/2026-11-27
+NOTICE:  14) Estado final dentro de la demo (se revierte con el ROLLBACK): {"fecha_actual": "2026-11-22", "fecha_sistema": null, "usar_fecha_real": true}
+DO
+ROLLBACK
+ usar_fecha_real | fecha_sistema | hoy_banco  | cuentas_de_la_demo 
+-----------------+---------------+------------+--------------------
+ t               |               | 2026-11-22 |                  0
+(1 row)
+

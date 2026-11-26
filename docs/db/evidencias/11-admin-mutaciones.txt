@@ -1,0 +1,172 @@
+﻿# Mutaciones de E11 (M341-M400, 60). Primera corrida (2026-11-25): 58 de 60 por el runner; M355 y M373 quedaron NO DETECTADAS (M356 EQUIVALENTE). Abajo la corrida completa y despues la repeticion de M355/M373 tras corregir la prueba H6 (strpos > 0) y hacer M355 de doble capa.
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+M341  DETECTADA  admin_listar_usuarios NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M342  DETECTADA  admin_detalle_usuario NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M343  DETECTADA  admin_bloquear NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M344  DETECTADA  admin_desbloquear NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M345  DETECTADA  admin_borrar_usuario NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M346  DETECTADA  admin_ajustar_balance NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M347  DETECTADA  admin_get_reloj NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M348  DETECTADA  admin_set_reloj NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: A3 el cambio queda atribuido al ADMIN: RELOJ_CAMBIO (E3) con actor_username admin900 (esperado=(1,admin900), actual=(1,))
+M349  DETECTADA  admin_get_tasas NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M350  DETECTADA  admin_set_tasa_cdt NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D3 cada cambio escribe UN evento TASA_CAMBIO (actor admin, entidad, antes y despues) (esperado=(3,3,"(10.000,12.5)","(18.000,19.25)","(1
+M351  DETECTADA  admin_set_tasa_credito NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D3 cada cambio escribe UN evento TASA_CAMBIO (actor admin, entidad, antes y despues) (esperado=(3,3,"(10.000,12.5)","(18.000,19.25)","(1
+M352  DETECTADA  admin_set_tasa_mora NO valida al admin (un cliente, un desconocido o un admin bloqueado la ejecutaria)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D3 cada cambio escribe UN evento TASA_CAMBIO (actor admin, entidad, antes y despues) (esperado=(3,3,"(10.000,12.5)","(18.000,19.25)","(1
+M353  DETECTADA  admin_detalle_usuario valida al admin DESPUES de buscar al objetivo (un cliente sondearia ids)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G2 un CLIENTE (con sesion valida) llamando a CADA una de las 12 = "Acceso denegado" (esperado={"Acceso denegado"}, actual={"Acceso deneg
+M354  DETECTADA  _validar_admin deja pasar a un admin BLOQUEADO
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G4 un ADMIN BLOQUEADO tampoco puede usar ninguna de las 12 (el mensaje de bloqueo) (esperado={"Tu cuenta ha sido restringida, contacte c
+M355  *** NO DETECTADA ***  _cliente_objetivo acepta a un ADMIN por uuid (se podria bloquear o borrar a otro admin)
+M356  *** NO DETECTADA ***  la lista no filtra por rol CLIENTE
+      -> EQUIVALENTE (no observable, no es un hueco de pruebas): un ADMIN no tiene cuenta (FK compuesta de E1) y la lista hace JOIN con cuenta: el filtro de rol es una defensa redundante, no observable
+M357  DETECTADA  la busqueda ignora el numero de cuenta
+      -> 68_admin_usuarios: ERROR:  FAIL: A6 por CEDULA, por CORREO y por NUMERO DE CUENTA (parciales) (esperado=cli3|cli6|cli5, actual=cli3|cli6|)
+M358  DETECTADA  la busqueda distingue tildes (sin unaccent en el nombre)
+      -> 68_admin_usuarios: ERROR:  FAIL: A3 tipos: strings (id, nombre = nombres + apellidos, numero_cuenta de 10 digitos) (esperado=(string,"Álvaro Muñoz",t), actual=(,,))
+M359  DETECTADA  los comodines del usuario (% _) NO se escapan
+      -> 68_admin_usuarios: ERROR:  FAIL: A8 los comodines del usuario son LITERALES: "%" solo encuentra a 100%Real, "Ga_cia" no encuentra a Garcia, "_" solo a Ga_cia (esperado=c
+M360  DETECTADA  la lista no tiene tope (devuelve todos)
+      -> 68_admin_usuarios: ERROR:  FAIL: A14 con 213 clientes la lista devuelve EXACTAMENTE 200 (el tope de _reglas_admin) (esperado=200, actual=213)
+M361  DETECTADA  el detalle lista tambien los CDT CERRADOS
+      -> 68_admin_usuarios: ERROR:  FAIL: B10 el bolsillo tambien se devengo hasta hoy y el detalle solo lista CDT ACTIVOS: ya no hay ninguno (esperado=(t,t,0,t), actual=(t,t,1,t
+M362  DETECTADA  el detalle lista tambien los creditos PAGADOS
+      -> 68_admin_usuarios: ERROR:  FAIL: B11 un credito PAGADO no aparece en el detalle; el activo de otro usuario sigue en el suyo (esperado=(PAGADO,0,1), actual=(PAGADO,1,1))
+M363  DETECTADA  el detalle NO corre el motor sobre el consultado
+      -> 68_admin_usuarios: ERROR:  FAIL: B9 ANTES de consultarlo: CDT ACTIVO, sin cierre; DESPUES: CERRADO con su CDT_VENCIMIENTO (lo escribio el motor al mirar al usuario) (esp
+M364  DETECTADA  el historial del detalle es el de OTRA cuenta
+      -> 68_admin_usuarios: ERROR:  FAIL: B6 el historial es EXACTAMENTE el de vista_historial (mismo formateador, recientes primero) (esperado=[{"id": "5a21dbc9-c2e2-449e-9c06-1
+M365  DETECTADA  el total del detalle es solo la cuenta principal (no la funcion unica balance_total)
+      -> 68_admin_usuarios: ERROR:  FAIL: B5 el total es el MISMO de vista_balance (balance_total, D6 provisional) y los bolsillos coinciden (esperado=(t,t), actual=(f,t))
+M366  DETECTADA  el detalle toma la instantanea del reloj DOS veces
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: H2 las 12 (y los 4 helpers) no leen el reloj suelto: sin now(), current_date, hoy_banco, ahora_banco ni _ahora_real; solo detalle y ajus
+M367  DETECTADA  admin_bloquear en realidad desbloquea
+      -> 68_admin_usuarios: ERROR:  FAIL: C1 bloquear -> {id, estado: BLOQUEADO} y la fila cambia (esperado=(10000000-0000-4000-8000-000000000007,BLOQUEADO,BLOQUEADO), actual=(10
+M368  DETECTADA  admin_bloquear no es idempotente (audita y actualiza aunque ya estuviera bloqueado)
+      -> 68_admin_usuarios: ERROR:  FAIL: C4 idempotente: bloquear de nuevo no cambia nada ni agrega un segundo evento (esperado=(1,BLOQUEADO), actual=(2,BLOQUEADO))
+M369  DETECTADA  admin_bloquear escribe un evento con otro nombre (la auditoria no lo reconoce)
+      -> 68_admin_usuarios: ERROR:  FAIL: C3 audita USUARIO_BLOQUEADO: actor = el admin (id y username), antes ACTIVO, despues BLOQUEADO (esperado=(1,admin900,t,ACTIVO,BLOQUEADO)
+M370  DETECTADA  _auditar_admin no registra al actor (ni id ni username)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D3 cada cambio escribe UN evento TASA_CAMBIO (actor admin, entidad, antes y despues) (esperado=(3,3,"(10.000,12.5)","(18.000,19.25)","(1
+M371  DETECTADA  _auditar_admin no fija banco.actor (el CUENTA_BORRADA y el RELOJ_CAMBIO quedan sin atribucion)
+      -> 68_admin_usuarios: ERROR:  FAIL: E5 audita USUARIO_BORRADO (actor admin; username, estado y numero de cuenta) y el CUENTA_BORRADA de E2 con el admin como actor y los sal
+M372  DETECTADA  admin_borrar_usuario escribe el evento con otro nombre
+      -> 68_admin_usuarios: ERROR:  FAIL: E5 audita USUARIO_BORRADO (actor admin; username, estado y numero de cuenta) y el CUENTA_BORRADA de E2 con el admin como actor y los sal
+M373  *** NO DETECTADA ***  admin_borrar_usuario no bloquea la cuenta antes de borrar
+M374  DETECTADA  referido_por deja de ser SET NULL (borrar al referidor falla)
+      -> 68_admin_usuarios: ERROR:  update or delete on table "usuario" violates foreign key constraint "fk_usuario_referidor" on table "usuario"
+M375  DETECTADA  la cascada del borrado se rompe (bolsillo RESTRICT)
+      -> 68_admin_usuarios: ERROR:  update or delete on table "cuenta" violates foreign key constraint "fk_bolsillo_cuenta" on table "bolsillo"
+M376  DETECTADA  el ajuste invierte el signo (positivo resta, negativo suma)
+      -> 68_admin_usuarios: ERROR:  FAIL: C5 un bloqueado puede RECIBIR dinero (D-E5-9, equipo): se le puede ajustar y transferir (esperado=OK, actual=Saldo insuficiente)
+M377  DETECTADA  el ajuste NO corre el motor antes de escribir
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: H6 el borrado bloquea la cuenta ANTES de escribir el evento y de borrar; el ajuste: instantanea -> bloqueo -> motor -> libro -> auditori
+M378  DETECTADA  el ajuste no bloquea la cuenta antes del motor
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: H6 el borrado bloquea la cuenta ANTES de escribir el evento y de borrar; el ajuste: instantanea -> bloqueo -> motor -> libro -> auditori
+M379  DETECTADA  la nota del ajuste no tiene limite de longitud
+      -> 68_admin_usuarios: ERROR:  FAIL: D11 nota: 140 caracteres ok; 141 = "Nota inválida"; vacia, espacios o NULL = sin nota (esperado=OK|Nota inválida|OK|OK, actual=OK|OK|O
+M380  DETECTADA  el ajuste escribe el evento con otro nombre
+      -> 68_admin_usuarios: ERROR:  FAIL: D13 cada ajuste exitoso escribe UN evento AJUSTE_ADMIN (actor admin) con saldos antes/despues, monto con signo y el grupo del libro (esp
+M381  DETECTADA  el ajuste no valida el monto (acepta 3 decimales, 1e13, ...)
+      -> 68_admin_usuarios: ERROR:  FAIL: D8 monto invalido: 0, NULL, NaN, Infinity, 3 decimales, -0.001, 1e13 y -1e13 = "Monto inválido" (esperado={"Monto inválido"}, actual={
+M382  DETECTADA  el ajuste acepta como referencia solo el uuid (sin username ni numero de cuenta)
+      -> 68_admin_usuarios: ERROR:  Recurso no encontrado
+M383  DETECTADA  admin_set_reloj no atribuye el cambio al admin (el RELOJ_CAMBIO sale sin actor)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: A3 el cambio queda atribuido al ADMIN: RELOJ_CAMBIO (E3) con actor_username admin900 (esperado=(1,admin900), actual=(1,))
+M384  DETECTADA  admin_set_reloj ignora la fecha que manda el front (usa siempre la misma)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: A2 set a una fecha futura: devuelve la vista nueva (usar false, fecha_sistema y fecha_actual = hoy+5) y get la confirma (esperado=(false
+M385  DETECTADA  _parse_tasa acepta mas de 100
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: C3 invalidas = "Tasa inválida" (nunca un error de driver): vacia, NULL, texto, signos, exponente, coma, 0, 0.000, 100.001, 4 decimales,
+M386  DETECTADA  _parse_tasa acepta el 0 tambien fuera de la mora
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: C3 invalidas = "Tasa inválida" (nunca un error de driver): vacia, NULL, texto, signos, exponente, coma, 0, 0.000, 100.001, 4 decimales,
+M387  DETECTADA  _parse_tasa acepta mas de 3 decimales
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: C3 invalidas = "Tasa inválida" (nunca un error de driver): vacia, NULL, texto, signos, exponente, coma, 0, 0.000, 100.001, 4 decimales,
+M388  DETECTADA  admin_set_tasa_cdt ignora en silencio un id desconocido
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D4 guardar el MISMO valor (el front reenvia todo el formulario) no cambia nada ni agrega evento (esperado=3, actual=4)
+M389  DETECTADA  admin_set_tasa_cdt no toma el advisory lock de tasas (dos formularios se mezclan)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: H7 las 3 de tasas toman el MISMO advisory lock (una sola clave) antes de leer/escribir (esperado=(3,t,t), actual=(3,f,t))
+M390  DETECTADA  admin_set_tasa_mora no toma el advisory lock de tasas
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: H7 las 3 de tasas toman el MISMO advisory lock (una sola clave) antes de leer/escribir (esperado=(3,t,t), actual=(3,f,t))
+M391  DETECTADA  admin_set_tasa_credito escribe su evento con otro nombre
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D3 cada cambio escribe UN evento TASA_CAMBIO (actor admin, entidad, antes y despues) (esperado=(3,3,"(10.000,12.5)","(18.000,19.25)","(1
+M392  DETECTADA  la mora 0 se guarda como 0 y no como NULL (viola el dominio porcentaje)
+      -> 69_admin_reloj_tasas: ERROR:  value for domain porcentaje violates check constraint "ck_porcentaje_rango"
+M393  DETECTADA  admin_get_tasas devuelve la mora NULL (el formulario del front no se puede guardar)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: B1 forma del contrato (AdminTasas): {cdts, creditos, mora} (la clave "mora" es null y se esperaba number)
+M394  DETECTADA  admin_set_tasa_mora guarda tambien cuando el valor no cambia (un evento por cada reenvio del formulario)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: D6b repetir "0" no agrega otro evento (esperado=4, actual=5)
+M395  DETECTADA  banco_app recibe EXECUTE de _auditar_admin (escribiria eventos a su gusto)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G9 los 4 helpers (_reglas_admin, _parse_tasa, _cliente_objetivo, _auditar_admin): nadie salvo el dueño (ni banco_app, ni lector, ni dev
+M396  DETECTADA  PUBLIC recibe EXECUTE de admin_get_reloj
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G8 permisos: banco_app y banco_dev ejecutan las 12; PUBLIC y banco_lector ninguna (esperado=(12,12,0,0), actual=(12,12,1,1))
+M397  DETECTADA  admin_bloquear pasa a SECURITY INVOKER
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G7 las 12 son SECURITY DEFINER con search_path fijo, devuelven jsonb y ninguna usa SQL dinamico (EXECUTE) (esperado=(12,t,t,t,f), actual
+M398  DETECTADA  banco_lector recibe EXECUTE de admin_get_tasas
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G8 permisos: banco_app y banco_dev ejecutan las 12; PUBLIC y banco_lector ninguna (esperado=(12,12,0,0), actual=(12,12,1,0))
+M399  DETECTADA  banco_app recibe UPDATE sobre parametro (cambiaria la mora sin pasar por admin_set_tasa_mora)
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: G13 banco_app no puede tocar parametro ni las definiciones de tasas (se esperaba una excepcion y no ocurrio)
+M400  DETECTADA  banco_app recibe INSERT sobre audit.evento (falsificaria la auditoria)
+      -> 08_permisos: ERROR:  FAIL: banco_app: CERO privilegios de tabla en las 12 tablas (esperado=0, actual=1)
+
+RESUMEN: 58 de 60 mutaciones detectadas
+
+# --- Repeticion de M355 y M373 tras la correccion ---
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+M355  DETECTADA  ni _cliente_objetivo ni la relectura bajo bloqueo de admin_bloquear exigen rol CLIENTE (un admin podria bloquear a otro admin; cada capa por separado es redundante)
+      -> 68_admin_usuarios: ERROR:  FAIL: C8 solo CLIENTES: otro ADMIN, el propio admin, desconocido, mal formado, vacio y NULL = "Recurso no encontrado" (bloquear y desbloquear)
+M373  DETECTADA  admin_borrar_usuario no bloquea la cuenta antes de borrar
+      -> 69_admin_reloj_tasas: ERROR:  FAIL: H6 el borrado bloquea la cuenta ANTES de escribir el evento y de borrar; el ajuste: instantanea -> bloqueo -> motor -> libro -> auditori
+
+RESUMEN: 2 de 2 mutaciones detectadas
+

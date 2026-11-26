@@ -1,0 +1,19 @@
+== Apagon de la BD (runbook §4): stop db -> start db; los datos deben seguir y la integridad estar en orden
+2026-11-25 19:51:12 -0500
+-- antes:
+486a0f0b1463b7f8e1a065652f6939b4
+usuarios=12 patas=324 integridad_ok=true
+-- docker compose stop db
+ Container banco-db-db-1 Stopping 
+ Container banco-db-db-1 Stopped 
+-- con la BD detenida, una conexion falla (lo que el backend traduce a 503):
+service "db" is not running
+-- docker compose start db
+ Container banco-db-db-1 Starting 
+ Container banco-db-db-1 Started 
+-- pg_isready: /run/postgresql:5432 - accepting connections
+-- despues (sin ningun paso extra):
+486a0f0b1463b7f8e1a065652f6939b4
+usuarios=12 patas=324 integridad_ok=true
+-- volumen persistente conservado:
+banco-db_pgdata

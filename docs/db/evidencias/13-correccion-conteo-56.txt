@@ -1,0 +1,98 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-25 18:25:52 -0500
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+Filtro    : pruebas que empiezan por '56'
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   aplicado 13_auth_utilidades.sql
+   aplicado 14_auth_funciones.sql
+   aplicado 15_transferencias.sql
+   aplicado 16_bolsillos.sql
+   aplicado 17_motor_devengo.sql
+   aplicado 18_cdt.sql
+   aplicado 19_creditos_calculo.sql
+   aplicado 20_creditos.sql
+   aplicado 21_pagos_calculo.sql
+   aplicado 22_pagos.sql
+   aplicado 23_vistas.sql
+   aplicado 24_admin.sql
+   aplicado 25_control.sql
+   aplicado 26_mantenimiento.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 56_motor_aleatorio.test.sql
+   ok    modelo = BD en el punto de control 20 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 40 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 60 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 80 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 100 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 120 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 140 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 160 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 180 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 200 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD en el punto de control 220 (cuentas, bolsillos y CDT, +-5 centavos)
+   ok    modelo = BD tras tocar a todos los clientes (+-5 centavos)
+   ok    cobertura: el recorrido ejecuto al menos 8 ingresos, 4 retiros, 4 movimientos, 5 transferencias de cada clase, 8 CDT y muchos saltos de reloj
+   ok    se devengaron intereses de bolsillo y de CDT, y se cerraron CDT (CDT_VENCIMIENTO > 0)
+   ok    CONSERVACION: la suma de los 4 totales (cuenta + bolsillos + CDT activos) = 12.000.000 de capital + los intereses de bolsillo y de CDT devengados
+   ok    todos los CDT cerrados tienen inversion 0 y los activos monto + generado (ct_cdt_inversion); ultimo_cobro de cada producto <= hoy
+   ok    v_integridad_global OK (partida doble, I1, I5u, defensas) tras el recorrido
+   ok    no hay saldos negativos ni desviaciones de saldo (v_integridad_saldos y v_integridad_usuario sin filas fallidas)
+   ok    tras el ROLLBACK el reloj vuelve a modo real
+== reales/56_mantenimiento.sh
+   ok    A1 antes del cierre hay trabajo pendiente en los 8 clientes (intereses de bolsillo vencidos y CDT activos que ya vencieron)
+   ok    A2 el resumen cuenta lo que se escribio de verdad: grupos del resumen = grupos nuevos del libro
+   ok    A3 todas las cuentas del banco procesadas, sin omitidas ni errores; hoy_desde = hoy_hasta = el hoy del reloj
+   ok    A4 con_cambios = EXACTAMENTE las cuentas en las que se escribio algo (oraculo: cuentas con patas nuevas del libro, >= 7: B ya estaba al dia por la ruta perezosa) y procesadas = cuentas
+   ok    A5 los 8 clientes quedan AL DIA: sin intereses pendientes, 8 CDT cerrados y la cuota 1 cobrada por descuento automatico en los 8
+   ok    A6 EQUIVALENCIA: el cliente puesto al dia por sp_avanzar_todos (1700) quedo EXACTAMENTE igual que el de la ruta perezosa (1701): saldo, bolsillo, CDT, credito, cuotas y el multiconjunto de movimientos
+   ok    A7 ...y los 6 restantes (1702..1707) tambien son identicos a 1701
+   ok    A8 hay UN evento MANTENIMIENTO_AVANZAR por corrida: actor = el usuario de la sesion, el resumen SIN la lista de errores y con los mismos grupos
+   ok    B1 IDEMPOTENTE: la 2.a corrida no escribe nada (0 grupos, 0 con cambios, el libro igual) y deja su propio evento
+   ok    B2 sp_verificar_integridad tras el cierre (CALL en autocommit por una conexion real): ok = true y ningun desvio
+   ok    C1 una falla inyectada en UNA cuenta (1711): con_error = 1, la lista de errores trae SU cuenta y el mensaje, la corrida SIGUE y no hay omitidas
+   ok    C1b ...y el RESUMEN no cuenta lo revertido: grupos = EXACTAMENTE los grupos que quedaron CONFIRMADOS en el libro en esta corrida, con_cambios = las cuentas con patas confirmadas (>= 2: la anterior 1710 y la posterior 1712 tenian trabajo), y la fallida (1711) NO esta entre ellas ni dejo ni una pata
+   ok    C2 ...las cuentas ANTERIOR (1710) y POSTERIOR (1712) quedaron AL DIA y CONFIRMADAS (su COMMIT es independiente) y la fallida (1711) quedo EXACTAMENTE como estaba (se revirtio sola)
+   ok    C3 el evento de la corrida con falla existe y cuenta el error (con_error = 1, sin la lista)
+   ok    C4 sin la falla, la siguiente corrida pone al dia la que fallo (con_error = 0) y queda igual que sus vecinas
+   ok    C5 el CORTE de la conexion a mitad de la corrida (en la cuenta 1721) deja CONFIRMADA la anterior (1720), SIN TOCAR la cortada (1721) ni la posterior (1722), y NO escribe el evento de la corrida
+   ok    C6 re-ejecutar TERMINA el trabajo: las 3 al dia, sin errores, y ahora si hay evento
+   ok    C7 ninguna sesion quedo colgada ni transaccion abierta tras el corte
+   ok    D1 una CUENTA tomada por otra sesion mas alla del lock_timeout: queda omitida por timeout de bloqueo (1), sin error, la corrida SIGUE (la vecina 1731 queda al dia) y esperó ~2 s por ella
+   ok    D2 libre el bloqueo, la siguiente corrida la pone al dia (omitidas = 0)
+   ok    D5 un timeout de bloqueo DESPUES de una cuenta con cambios (1734 se procesa, 1735 esta tomada): 1735 omitida (1), sin errores, 1734 al dia y 1735 sigue pendiente
+   ok    D6 ...y el resumen NO arrastra a la omitida: grupos = grupos confirmados en el libro en esa corrida, con_cambios = cuentas con patas confirmadas (>= 1), 1735 sin ninguna pata nueva
+   ok    D7 libre el bloqueo, la siguiente corrida pone al dia a la omitida (omitidas = 0)
+   ok    D3 el RELOJ tomado por otra sesion (el admin cambiandolo) tambien es un 55P03: cuentas omitidas por timeout de bloqueo (>= 1) SIN contarse como error y sin asumir que la cuenta estaba ocupada; procesadas + omitidas = cuentas
+   ok    D4 y la corrida siguiente deja a todos al dia: 1732 y 1733 sin pendientes, omitidas = 0
+   ok    E1 4 sesiones x 20 transferencias cruzadas mientras corre el cierre: ninguna falla (ni deadlock, ni timeout, ni error) y las 80 salen
+   ok    E2 el cierre concurrente termino sin errores (con_error = 0) y el banco queda en orden tras todo (v_integridad_global y 2.a corrida sin grupos nuevos)
+   ok    F1 dentro de BEGIN ... COMMIT el CALL falla con 'invalid transaction termination'
+   ok    F2 con otra sentencia en el mismo -c (transaccion implicita) tambien
+   ok    F3 ...y esos intentos no dejaron nada (ni evento ni cambios)
+   ok    F4 permisos EFECTIVOS: banco_app, banco_lector y banco_dev (sin superusuario) reciben 'permission denied' en los 2 procedimientos y en el helper (9 de 9)
+   ok    F5 con mas de 300 cuentas (sin trabajo pendiente) el cierre termina en pocos segundos (< 30 s), sin errores y las procesa todas
+   ok    F6 integridad global y defensas en orden tras todo
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+54 passed, 0 failed

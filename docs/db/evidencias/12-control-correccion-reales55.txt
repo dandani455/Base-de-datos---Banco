@@ -1,0 +1,132 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-25 14:48:54 -0500
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+Filtro    : pruebas que empiezan por '55'
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   aplicado 13_auth_utilidades.sql
+   aplicado 14_auth_funciones.sql
+   aplicado 15_transferencias.sql
+   aplicado 16_bolsillos.sql
+   aplicado 17_motor_devengo.sql
+   aplicado 18_cdt.sql
+   aplicado 19_creditos_calculo.sql
+   aplicado 20_creditos.sql
+   aplicado 21_pagos_calculo.sql
+   aplicado 22_pagos.sql
+   aplicado 23_vistas.sql
+   aplicado 24_admin.sql
+   aplicado 25_control.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 55_cdt.test.sql
+   ok    sin definiciones (el catalogo real es D11, del equipo): listar devuelve []
+   ok    listar: [{id, nombre, tasa, plazo_dias, monto_min}] ordenado por plazo y nombre
+   ok    simular_cdt devuelve {generado_mes, generado_dia, generado_vencimiento} numericos
+   ok    simular $1.000.000 al 10 % a 360 dias: vencimiento = $98.564,76; dia y mes coinciden con la referencia independiente (+-1 centavo)
+   ok    plazo menor que un mes (20 dias): generado_mes = generado_vencimiento (el mes de 30 dias se topa en el plazo)
+   ok    monto EXACTAMENTE igual al minimo: se acepta; un centavo por debajo: Monto por debajo del mínimo del CDT
+   ok    orden de validacion: monto ANTES que definicion (monto 0 con definicion mala = Monto inválido); definicion mal formada/inexistente/NULL = Recurso no encontrado ANTES que el minimo
+   ok    las 4 funciones exigen sesion viva ANTES de todo (inexistente = Sesión inválida, ADMIN = Acceso denegado, BLOQUEADO = mensaje de bloqueo)
+   ok    listar y simular no escriben: la huella de saldos y el numero de patas no cambian
+   ok    crear_cdt devuelve {id, fecha}
+   ok    el CDT COPIA nombre, monto, tasa y plazo; fecha_inicio = ultimo_cobro = hoy; fecha_fin = hoy + plazo; generado 0; ACTIVO; enlaza la definicion
+   ok    el grupo CDT_CREACION: 2 patas (CUENTA S + CDT E) por el monto, UNA sola fecha = la que devuelve crear_cdt, contraparte = nombre del CDT
+   ok    la cuenta baja a 4.000.000 y el TOTAL no cambia al crear el CDT (D-E7-5: el total incluye los CDT activos)
+   ok    vista_balance().total tambien incluye el CDT (cuenta + bolsillos + CDT activos)
+   ok    Monto por debajo del minimo de la definicion: error y NO queda CDT ni patas
+   ok    monto invalido, definicion inexistente y mal formada: sus mensajes y nada escrito
+   ok    Saldo insuficiente (el CDT supera la cuenta): atomico, no queda el CDT ni patas
+   ok    un fallo en CADA pata de CDT_CREACION revierte el CDT y el asiento: no queda un CDT sin su grupo ni un grupo sin CDT
+   ok    dia 7: generado = round(monto * factor(7 dias)); 1 grupo; 7 dias cobrados
+   ok    dia 7 OTRA VEZ (misma fecha): objetivo acumulado = lo ya generado; sigue 1 grupo (sin duplicar)
+   ok    dia 30: 2 grupos (uno por avance), generado = objetivo(30)
+   ok    dia 31: 3 grupos, generado = objetivo(31) (sin deriva de redondeo entre puntos de control)
+   ok    vista_cdts a los 31 dias: [{id, monto, generado_hasta_hoy, tiempo_restante "59 dias", fecha_cierre = inicio + 90}]
+   ok    dia 89: 4 grupos, generado = objetivo(89); tiempo_restante = "1 dia"
+   ok    INDEPENDENCIA DEL CAMINO EXACTA: el CDT consultado 4 veces (A) y el consultado UNA vez (B) tienen EXACTAMENTE el mismo generado a los 89 dias
+   ok    el TOTAL con un CDT activo = cuenta + monto + generado (la cuenta no cambia con el devengo)
+   ok    ultimo_cobro del CDT no retrocede (guardia monotonica, D-E7-8)
+   ok    ...pero un valor IGUAL se acepta
+   ok    5 dias despues de fecha_fin: CERRADO, ultimo_cobro = fecha_fin, generado = objetivo(90) (el interes NO pasa de fecha_fin)
+   ok    la simulacion hecha al crear coincide EXACTAMENTE con lo realmente generado al vencimiento (misma formula y redondeo)
+   ok    la cuenta recibe monto + generado: antes + 1.000.000 + generado final (y el total ya no cuenta el CDT cerrado)
+   ok    CDT_VENCIMIENTO: 2 patas (CDT S + CUENTA E) por monto + generado, fechadas en fecha_fin 00:00 de Bogota; el ultimo INTERES_CDT tiene la MISMA fecha
+   ok    vista_cdts muestra el CDT CERRADO: tiempo_restante "Cerrado", fecha_cierre, generado final
+   ok    400 dias despues de cerrado NO se devenga ni se acredita nada mas (huella igual salvo el CDT B, que tambien cerro)
+   ok    un CDT cerrado nunca se reabre (guardia de E2)
+   ok    tras editar la definicion: el CDT viejo conserva (10 %, 360 d) y el nuevo copia (50 %, 30 d)
+   ok    borrar la definicion deja los CDT ACTIVOS con definicion_id NULL (FK SET NULL)
+   ok    a los 10 dias cada CDT devenga segun SU copia (10 % y 50 %), no segun la definicion editada o borrada
+   ok    ...y los dos generan algo distinto (la tasa copiada importa)
+   ok    10 anos despues (3.650 dias): 1 grupo INTERES_CDT + 1 CDT_VENCIMIENTO; generado = objetivo del PLAZO (90 dias), no de 3.650
+   ok    un solo vista_cdts cierra los DOS; el de 20 dias se cierra ANTES (orden fecha_fin, id) aunque se creo despues
+   ok    la cuenta queda en 0 al invertirlo todo
+   ok    hacer_transferencia por monto + generado (el CDT vencio hace 5 dias): el motor cierra y acredita ANTES del libro, y el envio funciona
+   ok    origen en 0 y destino con el monto
+   ok    v_integridad_global OK tras todo (partida doble, inversion del CDT, generado = suma de patas, I5u)
+   ok    _reglas_cdt: mes de 30 dias (D-E7-7, PROVISIONAL) y el mensaje exacto del contrato, en UN solo lugar
+   ok    _texto_tiempo_restante: 45 dias, 1 dia, Cerrado y el caso defensivo (0 dias)
+   ok    banco_app ejecuta las 4 publicas de CDT
+   ok    banco_dev (hereda de banco_app) tambien: vista_cdts
+   ok    banco_lector NO ejecuta las 4 publicas, y las 8 internas dan permission denied a banco_app, banco_lector y banco_dev
+   ok    ACL: las 4 publicas solo banco_owner y banco_app; los 3 helpers de CDT solo banco_owner
+   ok    las 4 publicas son SECURITY DEFINER (simular/listar STABLE); los 3 helpers y las 6 internas del motor no; todas con search_path fijo y COMMENT
+   ok    banco_app NO inserta CDT ni toca saldos a mano (permission denied)
+   ok    REVOKE de crear_cdt a banco_app (el front no podria abrir CDT) lo detecta la lista blanca de v_integridad_defensas
+   ok    GRANT EXECUTE de _avanzar_hasta (interna) a banco_app lo detecta la lista blanca
+   ok    la lista blanca de banco_app tiene EXACTAMENTE 40 funciones (E4-E12) y esta en orden
+   ok    crear_cdt: 1 lectura (instantanea) + 2 patas de CDT_CREACION = 3; ambas patas con el ahora de la instantanea (T+1s) y el mismo que devuelve la funcion
+   ok    vista_cdts con interes pendiente: 1 + 2 patas de INTERES_CDT = 3 lecturas
+   ok    vista_cdts sin nada pendiente: 1 lectura (solo la instantanea)
+   ok    vista_cdts que CIERRA el CDT: 1 + 2 (ultimo interes) + 2 (vencimiento) = 5 lecturas
+   ok    un rechazo de validacion (monto bajo el minimo) no lee el reloj ni devenga
+   ok    tras el ROLLBACK _ahora_real() es otra vez el reloj de pared (la sustitucion no sobrevive)
+   ok    tras el ROLLBACK el reloj vuelve a modo real (los saltos de fecha no sobreviven)
+== reales/55_control_conexiones.sh
+   ok    A1 admin_esquema('<admin>') por TCP: objeto con las 11 tablas (nombre, columnas, fks), cada columna con tipo y banderas
+   ok    A2 el esquema trae la FK propia usuario.referido_por -> usuario.id y NINGUNA de audit
+   ok    A3 admin_tabla por TCP responde {columnas, filas, pagina, total_paginas} para las 11 tablas
+   ok    A4 el hash REAL de la BD no viaja: usuario sale con "••••" en todas las filas y 'REALHASH' no aparece en ninguna parte de la respuesta
+   ok    A5 ...y el hash real SI esta en la BD (la prueba no es vacia): 6 usuarios con REALHASH
+   ok    A6 una tabla fuera de la lista (audit.evento) = Tabla no permitida
+   ok    A6 ...y una con comillas e inyeccion
+   ok    A7 el error de tabla llega con SQLSTATE P0001 (el backend lo convierte en 400)
+   ok    A8 la pagina llega como texto del query-string ('2', 'abc', '') sin error de driver: las 3 responden una pagina valida
+   ok    B1 banco_app ejecuta EXACTAMENTE admin_esquema y admin_tabla entre las funciones de E12 y NO _reglas_control
+   ok    B2 un CLIENTE REAL con su usuario_id: las 2 = Acceso denegado; un ADMIN BLOQUEADO: las 2 = mensaje de bloqueo; un uuid desconocido: las 2 = Acceso denegado
+   ok    B3 banco_lector NO ejecuta admin_esquema
+   ok    B3 banco_lector NO ejecuta admin_tabla
+   ok    B3 banco_app NO ejecuta _reglas_control
+   ok    B3 banco_dev NO ejecuta _reglas_control (aunque hereda de banco_app)
+   ok    B4 banco_dev hereda de banco_app: ejecuta admin_esquema
+   ok    B5 banco_app NO lee las tablas directamente (el visor es la unica via)
+   ok    B5 banco_app NO lee audit.evento
+   ok    C1 100 llamadas seguidas a admin_esquema (el ping de 5 s) responden bien y tardan menos de 5 s en total
+   ok    C2 con el reloj y una cuenta TOMADOS por otra sesion (3 s) el visor responde igual y SIN esperar (< 2 s): no bloquea ni lo bloquean
+   ok    D1 4 sesiones transfieren (60 transferencias) mientras 6 pings y 6 lecturas de transaccion (15 llamadas cada una): ninguna falla (ni deadlock, ni timeout, ni error)
+   ok    D2 los 6 pings (90) devolvieron las 11 tablas y las 6 lecturas (90) devolvieron una pagina de 50 filas
+   ok    D3 las 60 transferencias salieron una vez cada una (ids) y los dos saldos siguen sumando 10.000.000
+   ok    D4 integridad global y defensas en orden tras todo
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+89 passed, 0 failed

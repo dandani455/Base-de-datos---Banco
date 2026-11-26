@@ -1,0 +1,1234 @@
+=== Banco Digital - pruebas de la capa de base de datos ===
+Fecha     : 2026-11-21 23:28:10 -05:00
+Docker    : Docker version 29.9.3, build 5457199
+PostgreSQL: PostgreSQL 16.16 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+Rama git  : feat/db-core
+
+== Preparando banco_test
+   aplicado 00_extensiones.sql
+   aplicado 01_roles.sql
+   aplicado 02_tipos_dominios.sql
+   aplicado 03_schema.sql
+   aplicado 04_indices.sql
+   aplicado 05_permisos.sql
+   aplicado 06_libro_mayor_estructura.sql
+   aplicado 07_libro_mayor_funciones.sql
+   aplicado 08_libro_mayor_triggers.sql
+   aplicado 09_integridad.sql
+   aplicado 10_reloj_estructura.sql
+   aplicado 11_reloj_funciones.sql
+   aplicado 12_reloj_triggers.sql
+   cargado helpers.sql (solo en banco_test)
+   cargado harness.sql (funciones arnes, solo en banco_test)
+
+== 00_smoke.test.sql
+   ok    smoke: 1 = 1
+   ok    assert_eq: texto
+   ok    assert_eq: NULL = NULL (NULL-safe)
+   ok    assert_true: condicion verdadera
+   ok    assert_eq falla si los valores difieren
+   ok    assert_true falla con FALSE
+   ok    assert_raises falla si NO hay excepcion
+   ok    division por cero es 22012
+   ok    RAISE EXCEPTION por defecto es P0001 con el mensaje exacto
+   ok    assert_ok pasa con una sentencia valida
+   ok    assert_ok falla si la sentencia lanza error
+   ok    assert_violates reconoce la restriccion exacta
+   ok    assert_violates falla si la restriccion es otra
+   ok    json: forma correcta
+   ok    json: clave faltante
+   ok    json: tipo incorrecto (numero llegando como string)
+== 01_entorno.test.sql
+   ok    PostgreSQL 16.x
+   ok    extension unaccent instalada
+   ok    extension pg_trgm instalada
+   ok    unaccent quita tildes (busqueda de usuarios)
+   ok    pg_trgm: texto identico = similitud 1
+   ok    gen_random_uuid() genera 36 caracteres
+   ok    TimeZone de la BD
+   ok    offset de now() es -05:00
+   ok    timestamptz se serializa a JSON con offset -05:00 (contrato: ISO 8601 con zona)
+   ok    02:00 UTC del 21-nov es el 20-nov en Bogota
+   ok    hoy en Bogota = current_date de una sesion Bogota
+   ok    NUMERIC(18,2) a jsonb conserva los 2 decimales
+   ok    NUMERIC(18,2) en jsonb es de tipo number
+   ok    date en jsonb es texto ISO
+   ok    esquema tests presente en banco_test
+   ok    la BD de pruebas es banco_test
+== 02_roles.test.sql
+   ok    los 5 roles del banco existen
+   ok    banco_owner no inicia sesion
+   ok    banco_ledger no inicia sesion
+   ok    banco_app inicia sesion
+   ok    banco_lector inicia sesion
+   ok    banco_dev inicia sesion
+   ok    ningun rol del banco es superusuario ni puede crear roles/BD ni saltarse RLS ni replicar
+   ok    los roles con login tienen contrasena SCRAM (no vacia)
+   ok    los roles sin login no tienen contrasena
+   ok    banco_app: statement_timeout, lock_timeout e idle_in_transaction
+   ok    banco_lector: solo lectura por defecto y statement_timeout
+   ok    banco_dev: statement_timeout 30s
+   ok    banco_dev es miembro de banco_lector y banco_app (y de nadie mas)
+   ok    nadie mas es miembro de un rol del banco
+   ok    banco_app NO hereda de banco_owner (no puede ser dueno)
+   ok    banco_lector NO hereda de banco_app
+   ok    CONNECT: banco_app, banco_lector y banco_dev si
+   ok    CONNECT: banco_ledger y banco_owner no (nadie inicia sesion con ellos)
+   ok    PUBLIC no tiene ningun privilegio sobre la base de datos
+   ok    solo banco_owner puede crear esquemas en la base de datos
+   ok    nadie (salvo superusuario) puede crear tablas temporales
+   ok    existe un privilegio por defecto de funciones de banco_owner sin PUBLIC
+   ok    una funcion nueva de banco_owner NO es ejecutable por banco_app, banco_lector ni banco_dev
+   ok    ...y si por banco_owner
+   ok    ...y PUBLIC no figura en su lista de privilegios
+== 03_schema.test.sql
+   ok    public tiene EXACTAMENTE estas 11 tablas
+   ok    public tiene 11 tablas (conteo)
+   ok    audit tiene SOLO la tabla evento
+   ok    en public hay EXACTAMENTE las 29 funciones del libro mayor (E2) y del reloj (E3); ninguna de negocio todavia
+   ok    hay EXACTAMENTE 16 triggers de usuario (12 del libro mayor y sus guardias, 4 del reloj)
+   ok    las unicas vistas de public son las 5 v_integridad_* y v_reloj_estado
+   ok    todas las tablas, esquemas, tipos y dominios son de banco_owner
+   ok    toda tabla y toda columna tiene COMMENT (diccionario en la propia BD)
+   ok    audit.evento no tiene ninguna FK (ni hacia ni desde ella)
+   ok    ninguna tabla de public referencia al esquema audit
+   ok    dinero acepta el maximo 9999999999999.99 y el minimo negativo equivalente
+   ok    dinero rechaza 10^13
+   ok    dinero rechaza -10^13
+   ok    dinero conserva los 2 decimales
+   ok    porcentaje acepta 0.001, 12, 13.5 y 100
+   ok    porcentaje rechaza 0
+   ok    porcentaje rechaza 100.001
+   ok    porcentaje rechaza negativos
+   ok    enum rol_usuario
+   ok    enum estado_usuario
+   ok    enum estado_cdt
+   ok    enum estado_credito
+   ok    enum contenedor_contable
+   ok    enum sentido_asiento
+   ok    enum tipo_transaccion tiene los 17 tipos del contrato
+   ok    un valor fuera del enum de rol se rechaza
+== 04_restricciones.test.sql
+   ok    usuario: los datos base entraron (4 usuarios)
+   ok    usuario: defaults (CLIENTE, ACTIVO, sin verificar, sin bono, codigo_referido generado)
+   ok    usuario: un ADMIN valido entra (rol ADMIN, sin referidor)
+   ok    usuario: un CLIENTE referido y con bono pagado es valido
+   ok    usuario: username duplicado
+   ok    usuario: cedula duplicada
+   ok    usuario: correo duplicado
+   ok    usuario: telefono duplicado
+   ok    usuario: codigo_referido duplicado
+   ok    usuario: id duplicado (PK)
+   ok    usuario: username con mayusculas
+   ok    usuario: username demasiado corto (2)
+   ok    usuario: username que empieza por digito
+   ok    usuario: username con guion bajo
+   ok    usuario: username demasiado largo (31)
+   ok    usuario: username de 3 y de 30 caracteres
+   ok    usuario: correo sin arroba
+   ok    usuario: correo sin punto en el dominio
+   ok    usuario: correo con espacio
+   ok    usuario: correo con mayusculas (el UNIQUE debe ser insensible a mayusculas)
+   ok    usuario: cedula con letras
+   ok    usuario: telefono con guion
+   ok    usuario: nombres en blanco
+   ok    usuario: apellidos vacios
+   ok    usuario: nacimiento anterior a 1900
+   ok    usuario: password_hash en blanco
+   ok    usuario: username es NOT NULL
+   ok    usuario: un ADMIN no puede tener referidor (subtipo)
+   ok    usuario: un ADMIN no puede tener bono de referido pagado (subtipo)
+   ok    usuario: nadie se refiere a si mismo
+   ok    usuario: referido_por debe existir (FK recursiva)
+   ok    usuario: rol/estado fuera de los enumerados se rechazan
+   ok    cuenta: un CLIENTE puede tener cuenta (positiva)
+   ok    cuenta: el balance conserva 2 decimales
+   ok    cuenta: NO se puede crear una cuenta para un ADMIN (FK compuesta, rol por defecto)
+   ok    cuenta: NO se puede forzar rol ADMIN en cuenta (CHECK)
+   ok    cuenta: NO se puede cambiar a ADMIN el rol de un cliente que ya tiene cuenta
+   ok    cuenta: el esquema NO obliga a que un CLIENTE tenga cuenta (eso lo garantiza registrar_usuario, E4)
+   ok    cuenta: como MAXIMO una por usuario
+   ok    cuenta: numero de cuenta unico
+   ok    cuenta: numero de 9 digitos
+   ok    cuenta: numero de 11 digitos
+   ok    cuenta: numero con letras
+   ok    cuenta: balance negativo
+   ok    cuenta: balance fuera del dominio dinero (10^13)
+   ok    cuenta: el usuario debe existir
+   ok    bolsillo: DOS bolsillos con el mismo nombre en la misma cuenta SI se permiten
+   ok    bolsillo: bolsillo valido con saldo
+   ok    bolsillo: nombre en blanco
+   ok    bolsillo: balance negativo
+   ok    bolsillo: la cuenta debe existir
+   ok    bolsillo: ultimo_cobro es NOT NULL (lo fija la funcion al crear)
+   ok    cdt_definicion: definicion valida (tasa 0.001 y 100 son los extremos)
+   ok    cdt_definicion: nombre unico
+   ok    cdt_definicion: nombre en blanco
+   ok    cdt_definicion: plazo 0
+   ok    cdt_definicion: monto minimo 0
+   ok    cdt_definicion: tasa 0
+   ok    cdt_definicion: tasa 100.001
+   ok    cdt: CDT valido con fin = inicio + plazo
+   ok    cdt: fecha_fin distinta de inicio + plazo
+   ok    cdt: monto 0
+   ok    cdt: plazo 0
+   ok    cdt: generado negativo
+   ok    cdt: ultimo_cobro anterior al inicio
+   ok    cdt: nombre en blanco
+   ok    cdt: la cuenta debe existir
+   ok    cdt: la definicion, si se indica, debe existir
+   ok    cdt: puede existir sin definicion (definicion_id NULL)
+   ok    cdt: estado fuera del enum
+   ok    credito_producto: producto con tope absoluto, multiplicador y regla de edad
+   ok    credito_producto: nombre unico
+   ok    credito_producto: nombre en blanco
+   ok    credito_producto: monto minimo 0
+   ok    credito_producto: monto minimo mayor que el maximo
+   ok    credito_producto: plazo minimo 0
+   ok    credito_producto: plazo minimo mayor que el maximo
+   ok    credito_producto: tope absoluto 0
+   ok    credito_producto: multiplicador 0
+   ok    credito_producto: tasa 101
+   ok    credito: segundo credito ACTIVO del mismo producto en la misma cuenta
+   ok    credito: un credito ACTIVO de OTRO producto en la misma cuenta si
+   ok    credito: el mismo producto en OTRA cuenta si
+   ok    credito: dos creditos PAGADOS del mismo producto conviven con el ACTIVO
+   ok    credito: capital pendiente mayor que el monto
+   ok    credito: capital pendiente negativo
+   ok    credito: PAGADO con deuda pendiente
+   ok    credito: monto 0
+   ok    credito: plazo 0
+   ok    credito: mora negativa
+   ok    credito: el producto debe existir
+   ok    credito: la cuenta debe existir
+   ok    cuota: cuota valida (capital + interes = valor)
+   ok    cuota: cuota pagada con fecha de pago
+   ok    cuota: (credito_id, numero) unico (clave real de la entidad debil)
+   ok    cuota: numero 0
+   ok    cuota: valor 0
+   ok    cuota: capital + interes distinto del valor
+   ok    cuota: capital programado negativo
+   ok    cuota: pagada sin fecha de pago
+   ok    cuota: fecha de pago sin estar pagada
+   ok    cuota: pagos negativos
+   ok    cuota: el credito debe existir
+   ok    reloj: una sola fila, modo real, sin fecha manual
+   ok    reloj: no admite una segunda fila (id <> 1)
+   ok    reloj: no admite repetir el id 1
+   ok    reloj: modo manual exige fecha_sistema
+   ok    reloj: modo manual con fecha es valido
+   ok    parametro: una sola fila con los valores del spec y sin tasa de mora
+   ok    parametro: no admite una segunda fila
+   ok    parametro: no admite repetir el id 1
+   ok    parametro: tasa de mora valida
+   ok    parametro: tasa de mora 0
+   ok    parametro: tasa de mora 100.001
+   ok    parametro: bono 0
+   ok    parametro: ingreso simulado minimo mayor que el maximo
+   ok    parametro: monto maximo fuera del dominio dinero
+   ok    audit.evento: evento con actor que NO existe en usuario (sin FK)
+   ok    audit.evento: evento del sistema (sin actor)
+   ok    audit.evento: accion en blanco
+   ok    audit.evento: orden es creciente
+   ok    audit.evento: orden no se puede fijar a mano (GENERATED ALWAYS)
+== 05_libro_mayor.test.sql
+   ok    la lista independiente de permitidas tiene 37 combinaciones
+   ok    matriz: las 37 combinaciones permitidas entran
+   ok    matriz: las 133 combinaciones prohibidas se rechazan (check_violation)
+   ok    matriz: ninguna combinacion se comporto al reves
+   ok    matriz: el lado D/C generado coincide con la tabla contable en las 37 permitidas
+   ok    las 37 filas de la matriz quedaron en el libro (orden creciente sin huecos de logica)
+   ok    RECIBO solo es una ENTRADA de la cuenta (RECIBO/CUENTA/S)
+   ok    DEPOSITO_BANCO solo aumenta el resultado (DEPOSITO_BANCO/RESULTADO/S)
+   ok    un ENVIO no puede afectar al CDT
+   ok    lado no se puede insertar (GENERATED ALWAYS)
+   ok    orden no se puede insertar (GENERATED ALWAYS identity)
+   ok    orden crece con cada insercion
+   ok    fila valida: RECIBO a la cuenta
+   ok    monto 0
+   ok    monto negativo (el signo lo dan sentido/lado, nunca el monto)
+   ok    monto fuera del dominio dinero
+   ok    BOLSO_INGRESO exige bolsillo_id
+   ok    INTERES_BOLSO exige bolsillo_id
+   ok    ENVIO desde la cuenta no lleva bolsillo_id
+   ok    ENVIO desde un bolsillo exige bolsillo_id
+   ok    RECIBO no lleva bolsillo_id
+   ok    CDT_CREACION exige cdt_id
+   ok    RECIBO no lleva cdt_id
+   ok    CREDITO_CUOTA exige credito_id
+   ok    RECIBO no lleva credito_id
+   ok    contenedor almacenado (CUENTA) sin saldos
+   ok    saldo posterior incoherente con previo + monto
+   ok    saldo posterior incoherente con previo - monto
+   ok    una salida no puede dejar saldo negativo
+   ok    saldo previo negativo
+   ok    contenedor derivado (RESULTADO) no lleva saldos
+   ok    contenedor derivado (CDT) no lleva saldos
+   ok    el pasivo (CREDITO) lleva saldos como los activos: E suma deuda
+   ok    la cuenta propietaria debe existir
+   ok    el bolsillo debe existir
+   ok    el cdt debe existir
+   ok    el credito debe existir
+   ok    con los triggers de E2 apagados, los CHECK aceptan una pata sola (un grupo descuadrado): el cuadre es del trigger diferido
+   ok    ...y ese grupo queda descuadrado (ΣD - ΣC = 100): lo detecta v_integridad_grupos
+== 06_borrados.test.sql
+   ok    escenario: 8 patas del libro (7 de A y 1 de B)
+   ok    NO se puede borrar un BOLSILLO que tiene movimientos
+   ok    NO se puede borrar un CDT que tiene movimientos
+   ok    NO se puede borrar un CREDITO que tiene movimientos
+   ok    ...y el rechazo fue completo: sus cuotas siguen ahi
+   ok    un bolsillo SIN movimientos si se puede borrar
+   ok    NO se puede borrar un producto de credito con creditos
+   ok    borrar la plantilla de CDT deja el CDT vivo con definicion_id NULL
+   ok    ...el CDT conserva sus copias y definicion_id es NULL
+   ok    antes: A tiene 1 cuenta, 1 bolsillo, 1 CDT, 1 credito, 2 cuotas y 7 patas
+   ok    antes: B tiene el RECIBO de A y es su referido
+   ok    DELETE del usuario A (con cuenta, bolsillos, CDT, credito, cuotas y movimientos) tiene exito
+   ok    despues: de A no queda NADA (usuario, cuenta, bolsillos, CDT, creditos, cuotas, movimientos)
+   ok    B sigue existiendo y su referido_por quedo en NULL (SET NULL)
+   ok    el RECIBO de B sobrevive y la contraparte (A) queda guardada como TEXTO, sin FK huerfana
+   ok    el bolsillo de B y su cuenta siguen intactos
+   ok    el catalogo (producto de credito) no se toca
+   ok    la auditoria SOBREVIVE al borrado del usuario (sin FK, con snapshot)
+   ok    borrar la cuenta de B por si sola tambien cascadea a sus movimientos
+   ok    ...y no quedan patas ni bolsillos huerfanos
+== 07_indices.test.sql
+   ok    indices de aplicacion (ix_*): exactamente los 14 previstos
+   ok    historial: ix_transaccion_cuenta_orden es (cuenta_id, orden DESC)
+   ok    ix_transaccion_grupo es (grupo_id)
+   ok    ix_transaccion_bolsillo es parcial (bolsillo_id IS NOT NULL)
+   ok    ix_transaccion_cdt es parcial (cdt_id IS NOT NULL)
+   ok    ix_transaccion_credito es parcial (credito_id IS NOT NULL)
+   ok    ix_cdt_cuenta_estado es (cuenta_id, estado)
+   ok    ix_credito_cuenta_estado es (cuenta_id, estado)
+   ok    ix_cuota_pendiente es parcial (NOT pagada)
+   ok    ix_usuario_referidor es parcial (referido_por IS NOT NULL)
+   ok    ix_evento_fecha ordena por fecha DESC
+   ok    uq_credito_vivo_por_producto es UNICO y parcial (estado = ACTIVO)
+   ok    toda FK del banco tiene un indice de soporte (primera columna) para joins y borrados en cascada
+   ok    todos los indices son validos y pertenecen a banco_owner
+   ok    cada tabla de public y audit tiene clave primaria
+   ok    todos los ids de entidad son uuid con gen_random_uuid() por defecto
+== 08_permisos.test.sql
+   ok    banco_lector NO tiene SELECT a nivel de TABLA sobre usuario (solo por columna)
+   ok    banco_lector NO tiene SELECT sobre password_hash
+   ok    banco_lector SI tiene SELECT sobre las otras 15 columnas de usuario
+   ok    usuario tiene 16 columnas (15 legibles + password_hash)
+   ok    ninguna columna de usuario es legible por banco_lector salvo las 15 permitidas (lista exacta)
+   ok    banco_lector no puede escribir ninguna columna de usuario
+   ok    POSITIVA: banco_lector lee username, nombres, cedula y estado
+   ok    POSITIVA: banco_lector lee las 15 columnas permitidas de una vez
+   ok    POSITIVA: banco_lector puede contar usuarios y filtrar por columnas permitidas
+   ok    NEGATIVA: banco_lector NO puede leer password_hash
+   ok    NEGATIVA: banco_lector NO puede hacer SELECT * (incluye password_hash)
+   ok    NEGATIVA: banco_lector NO puede filtrar por password_hash (WHERE)
+   ok    NEGATIVA: banco_lector NO puede ordenar por password_hash
+   ok    NEGATIVA: banco_lector NO puede obtener la fila completa con row(u.*) / to_jsonb(u)
+   ok    NEGATIVA: banco_lector NO puede alcanzar password_hash por un JOIN ni una subconsulta
+   ok    NEGATIVA: banco_lector NO puede leer password_hash ni siquiera de su propia sesion (banco_dev hereda lo mismo)
+   ok    POSITIVA: banco_dev (via banco_lector) lee las columnas permitidas
+   ok    NEGATIVA: banco_app no lee NI las columnas permitidas de usuario
+   ok    NEGATIVA: banco_lector NO puede cambiar password_hash
+   ok    hay 12 tablas inspeccionadas (11 public + 1 audit)
+   ok    banco_app: CERO privilegios de tabla en las 12 tablas
+   ok    banco_app: ningun privilegio de columna en ninguna tabla (ni SELECT)
+   ok    banco_lector: solo SELECT, y solo en 11 tablas (todas menos usuario, que es por columna)
+   ok    banco_lector: ninguna columna escribible en ninguna tabla
+   ok    banco_dev: ningun privilegio propio de escritura (hereda solo lectura de banco_lector)
+   ok    banco_dev: lee lo mismo que banco_lector
+   ok    banco_owner es dueno y tiene todo en las 12 tablas, salvo lo que E2 le quita a proposito
+   ok    PUBLIC no tiene NINGUN privilegio sobre ninguna tabla, esquema ni secuencia
+   ok    esquema public: USAGE para app, lector, dev y ledger
+   ok    esquema public: solo banco_owner puede CREAR objetos
+   ok    esquema audit: USAGE solo para banco_lector y banco_dev (heredado); NADA para banco_app ni banco_ledger
+   ok    banco_app NO puede leer cuenta
+   ok    banco_app NO puede insertar en cuenta
+   ok    banco_app NO puede actualizar el balance
+   ok    banco_app NO puede borrar usuarios
+   ok    banco_app NO puede vaciar transaccion (TRUNCATE)
+   ok    banco_app NO puede entrar al esquema audit
+   ok    banco_app NO puede crear tablas en public
+   ok    banco_app NO puede crear tablas temporales
+   ok    banco_lector lee cuenta, transaccion, parametro y audit.evento
+   ok    banco_lector NO puede insertar
+   ok    banco_lector NO puede actualizar
+   ok    banco_lector NO puede borrar
+   ok    banco_lector NO puede vaciar tablas
+   ok    banco_lector NO puede escribir en la auditoria
+   ok    banco_dev NO puede escribir (ni siquiera con banco_app heredado)
+   ok    banco_ledger puede actualizar EXACTAMENTE estas 4 columnas y ninguna otra
+   ok    ningun otro rol de acceso puede actualizar esas columnas
+   ok    banco_ledger no puede insertar, borrar ni vaciar nada
+   ok    banco_ledger no tiene SELECT de TABLA sobre ninguna tabla (solo por columna)
+   ok    banco_ledger lee EXACTAMENTE id, el propietario y el acumulador de cuenta, bolsillo, cdt y credito
+   ok    banco_ledger SI puede actualizar cuenta.balance, bolsillo.balance, cdt.generado_acumulado y credito.capital_pendiente
+   ok    banco_ledger NO puede cambiar el numero de cuenta
+   ok    banco_ledger NO puede cambiar el monto de un CDT (inmutable)
+   ok    banco_ledger NO puede cambiar el monto de un credito
+   ok    banco_ledger NO puede leer usuario
+   ok    banco_ledger NO puede insertar en el libro
+   ok    ningun rol de acceso es dueno de tablas, esquemas ni tipos
+   ok    banco_app NO puede darse permisos (GRANT)
+   ok    banco_lector NO puede alterar la estructura
+== 09_idempotencia.test.sql
+   ok    la huella del catalogo no es vacia
+   ok    2a aplicacion: el catalogo no cambia (misma huella)
+   ok    3a aplicacion: el catalogo sigue igual
+   ok    las filas unicas de reloj y parametro no se duplican
+   ok    reaplicar 03_schema.sql conserva los datos existentes
+   ok    ...y reaplicar los permisos tampoco los toca
+   ok    despues de reaplicar permisos el catalogo es identico (incluye las vistas de integridad y los permisos de banco_ledger)
+   ok    desviacion provocada: banco_app tiene UPDATE sobre cuenta
+   ok    05_permisos.sql corrige la desviacion (banco_app vuelve a no tener UPDATE)
+   ok    ...y el catalogo vuelve a ser identico
+== 10_libro_triggers.test.sql
+   ok    transaccion.registrado_en: timestamptz NOT NULL con default clock_timestamp()
+   ok    transaccion.tx_id: xid8 NOT NULL con default pg_current_xact_id()
+   ok    public sigue teniendo EXACTAMENTE 11 tablas (E2 no agrega tablas)
+   ok    las dos columnas nuevas tienen COMMENT
+   ok    los 16 triggers de usuario son EXACTAMENTE estos
+   ok    todos estan habilitados (tgenabled = O)
+   ok    los 3 triggers ct_* son de restriccion, DEFERRABLE e INITIALLY DEFERRED
+   ok    ningun otro trigger es diferible
+   ok    BEFORE INSERT FOR EACH ROW en transaccion, en orden de disparo (alfabetico): validar y luego aplicar
+   ok    en cada tabla de acumuladores el guardia es el ULTIMO BEFORE ROW (trg_zz_)
+   ok    trg_transaccion_truncate es BEFORE TRUNCATE por sentencia
+   ok    trg_cuenta_auditar_borrado es BEFORE DELETE por fila
+   ok    todo trigger de usuario tiene COMMENT
+   ok    hay 2 event triggers habilitados: ALTER TABLE y DROP TRIGGER
+   ok    las funciones del libro son de banco_owner, salvo trg_transaccion_b_aplicar que es de banco_ledger
+   ok    el resto de las 28 funciones es de banco_owner
+   ok    SECURITY DEFINER: _asentar_grupo, los 2 triggers diferidos (se disparan al COMMIT con el usuario de la sesion), la de aplicar, la auditoria del borrado, las 2 de event triggers y las del reloj
+   ok    los 4 guardias son SECURITY INVOKER (si fueran DEFINER verian al dueño y no a quien actualiza)
+   ok    TODAS las funciones del banco tienen search_path fijo (public, pg_temp) (se excluyen las de extensiones)
+   ok    TODAS las funciones tienen COMMENT
+   ok    ninguna funcion es ejecutable por PUBLIC ni por banco_app; ni por banco_lector/banco_dev salvo _plantillas_validas, hoy_banco y ahora_banco (las usan las vistas)
+   ok    _plantillas_validas: EXECUTE para banco_lector y banco_dev (heredado), no para banco_app ni PUBLIC
+   ok    trg_transaccion_b_aplicar: EXECUTE solo para su dueño banco_ledger y para banco_owner
+   ok    un trigger-function no se puede llamar a mano (aunque seas superusuario)
+   ok    hay 15 plantillas, todas de 2 patas y distintas entre si
+   ok    las plantillas usan 29 combinaciones (tipo|contenedor|sentido) distintas de la matriz de 37: faltan las 8 de CUOTA, ABONO y MORA (D7)
+   ok    ...y NINGUNA plantilla usa CREDITO_CUOTA, CREDITO_ABONO ni CREDITO_MORA
+   ok    banco_owner y banco_ledger: NOLOGIN, sin superusuario ni ningun atributo especial
+   ok    NADIE (salvo superusuarios) es miembro de banco_owner ni de banco_ledger
+   ok    ningun rol de aplicacion (app, dev, lector) es miembro, hereda ni puede hacer SET ROLE de banco_owner ni banco_ledger
+   ok    ni banco_owner ni banco_ledger pueden asumir al otro
+   ok    un rol de aplicacion no puede usar session_replication_role
+   ok    un rol de aplicacion no puede desactivar triggers del libro
+   ok    ni siquiera banco_ledger puede desactivar triggers
+   ok    las 6 vistas (5 v_integridad_* y v_reloj_estado) son de banco_owner y tienen COMMENT
+   ok    banco_lector y banco_dev leen las 6 vistas; banco_app no lee ninguna
+   ok    banco_lector puede consultar las vistas
+   ok    banco_app NO puede consultar las vistas
+   ok    v_integridad_defensas tiene al menos 20 controles y TODOS estan en orden
+   ok    v_integridad_global en base vacia: ok y todo en cero
+== 11_libro_guardias.test.sql
+   ok    cuenta con balance inicial > 0
+   ok    bolsillo con balance inicial > 0
+   ok    CDT con generado_acumulado inicial > 0
+   ok    credito con capital_pendiente inicial > 0 (lo sube CREDITO_DESEMBOLSO)
+   ok    superusuario: UPDATE cuenta.balance
+   ok    superusuario: UPDATE bolsillo.balance
+   ok    superusuario: UPDATE cdt.generado_acumulado
+   ok    superusuario: UPDATE credito.capital_pendiente
+   ok    banco_ledger fuera del trigger: UPDATE cuenta.balance
+   ok    banco_ledger fuera del trigger: UPDATE bolsillo.balance
+   ok    banco_ledger fuera del trigger: UPDATE cdt.generado_acumulado
+   ok    banco_ledger fuera del trigger: UPDATE credito.capital_pendiente
+   ok    banco_owner: UPDATE cuenta.balance (sin privilegio)
+   ok    banco_owner: UPDATE bolsillo.balance (sin privilegio)
+   ok    banco_owner: UPDATE cdt.generado_acumulado (sin privilegio)
+   ok    banco_owner: UPDATE credito.capital_pendiente (sin privilegio)
+   ok    banco_app: UPDATE cuenta.balance
+   ok    banco_dev: UPDATE cuenta.balance
+   ok    banco_lector: UPDATE cuenta.balance
+   ok    despues de todos los intentos, el saldo sigue siendo el del libro (500.00)
+   ok    banco_ledger: UPDATE que deja el acumulador igual (balance = balance) pasa
+   ok    cuenta.numero_cuenta es inmutable
+   ok    cuenta.usuario_id es inmutable
+   ok    cuenta.creado_en es inmutable
+   ok    cuenta.id es inmutable
+   ok    bolsillo.cuenta_id es inmutable
+   ok    cdt.monto es inmutable
+   ok    cdt.tasa_anual es inmutable
+   ok    cdt.plazo_dias y fechas son inmutables
+   ok    cdt.cuenta_id es inmutable
+   ok    cdt.nombre es inmutable
+   ok    credito.monto es inmutable
+   ok    credito.tasa_anual es inmutable
+   ok    credito.plazo_meses es inmutable
+   ok    credito.fecha_desembolso es inmutable
+   ok    credito.producto_id es inmutable
+   ok    cdt.definicion_id no puede pasar a otro valor, solo a NULL
+   ok    cdt ACTIVO -> CERRADO se permite al guardia (la coherencia contable la exige el trigger diferido)
+   ok    un CDT cerrado no se reabre
+   ok    credito ACTIVO -> PAGADO (capital 0)
+   ok    un credito pagado no se reabre
+   ok    banco_owner actualiza bolsillo.nombre y ultimo_cobro
+   ok    banco_owner actualiza cdt.ultimo_cobro
+   ok    banco_owner actualiza credito.descuento_automatico, mora_acumulada y fecha_interes
+   ok    banco_owner NO actualiza cuenta.numero_cuenta (sin privilegio)
+   ok    banco_owner NO actualiza cdt.monto (sin privilegio)
+   ok    banco_owner NO actualiza credito.monto (sin privilegio)
+   ok    las FK siguen funcionando con los permisos reducidos del dueño: insertar un bolsillo exige bloquear la cuenta (FOR KEY SHARE)
+   ok    ...y borrar la plantilla de un CDT (FK SET NULL) funciona con el dueño
+   ok    ...y la FK dejo definicion_id en NULL (el guardia permite el paso a NULL)
+== 12_libro_asentar.test.sql
+   ok    INGRESO_SIMULADO 10000
+   ok    cuenta 10000.00
+   ok    pata CUENTA: saldo previo 0 y posterior 10000 (los fija el libro)
+   ok    pata RESULTADO (contenedor derivado): sin saldos
+   ok    BONO_REFERIDO 50
+   ok    DEPOSITO_BANCO 100
+   ok    AJUSTE_ADMIN positivo 500
+   ok    AJUSTE_ADMIN negativo 200
+   ok    cuenta 10450.00 = 10000 + 50 + 100 + 500 - 200
+   ok    BOLSO_INGRESO 1000 (cuenta -> bolsillo 1)
+   ok    cuenta 9450.00 y bolsillo 1: 1000.00
+   ok    pata BOLSILLO: saldo previo 0 y posterior 1000
+   ok    BOLSO_RETIRO 400 (bolsillo 1 -> cuenta)
+   ok    cuenta 9850.00 y bolsillo 1: 600.00
+   ok    BOLSO_MOVIMIENTO 100 (bolsillo 1 -> bolsillo 2)
+   ok    bolsillo 1: 500.00 y bolsillo 2: 100.00 (la cuenta no cambia)
+   ok    INTERES_BOLSO 5 (bolsillo 2 y resultado)
+   ok    bolsillo 2: 105.00
+   ok    CDT_CREACION 2000
+   ok    cuenta 7850.00 y la inversion vigente del CDT en el libro es 2000.00
+   ok    INTERES_CDT 50 (generado_acumulado)
+   ok    cdt.generado_acumulado = 50.00 (lo movio el libro) y la inversion vale 2050.00
+   ok    el contenedor CDT no tiene saldos previo/posterior
+   ok    CDT_VENCIMIENTO 2050 (devuelve monto + generado)
+   ok    cuenta 9900.00 y inversion del CDT 0.00
+   ok    CREDITO_DESEMBOLSO 5000: sube el capital pendiente (el credito nacio en 0)
+   ok    cuenta 14900.00 y capital pendiente 5000.00
+   ok    pata CREDITO: saldo previo 0 y posterior 5000
+   ok    CREDITO_CUOTA: cuenta -1100, capital -1000, resultado (gasto) -100
+   ok    cuenta 13800.00 y capital 4000.00
+   ok    CREDITO_ABONO: cuenta -520, capital -500, resultado -20
+   ok    CREDITO_MORA: cuenta -30, resultado -30
+   ok    cuenta 13250.00 y capital 3500.00
+   ok    ENVIO 250 de la cuenta 1 a la cuenta 2
+   ok    cuenta 1: 13000.00 y cuenta 2: 250.00
+   ok    ENVIO 100 desde el bolsillo 1 a la cuenta 2
+   ok    bolsillo 1: 400.00, cuenta 1 igual y cuenta 2: 350.00
+   ok    la pata RECIBO guarda la contraparte como TEXTO (nombre y numero de cuenta del emisor)
+   ok    18 grupos y 38 patas en el libro
+   ok    las 15 plantillas aparecen en v_integridad_grupos
+   ok    ...y los 3 grupos de CUOTA/ABONO/MORA se clasifican SIN_PLANTILLA_CREDITO
+   ok    las vistas de integridad estan en orden tras el recorrido completo
+   ok    cada pata lleva el tx_id de ESTA transaccion
+   ok    registrado_en (hora real) es posterior a fecha (now() del inicio de la transaccion) en todas las patas
+   ok    las patas de un grupo comparten fecha, y cada grupo tiene un solo tx_id
+   ok    ENVIO 10 de la cuenta 2 a la cuenta 1
+   ok    orden ascendente por id de cuenta: en 1->2 el ENVIO (cuenta 1) va primero; en 2->1 el RECIBO (cuenta 1) va primero
+   ok    saldo insuficiente en la cuenta (BOLSO_INGRESO de 99.999.999)
+   ok    saldo insuficiente en el bolsillo (BOLSO_RETIRO de 99.999)
+   ok    ENVIO por mas de lo que hay
+   ok    un abono mayor al capital pendiente deja el capital negativo: rechazado
+   ok    bolsillo de OTRA cuenta en una pata
+   ok    CDT de OTRA cuenta en una pata
+   ok    credito de OTRA cuenta en una pata
+   ok    cuenta inexistente
+   ok    tipo desconocido
+   ok    contenedor desconocido
+   ok    sentido desconocido
+   ok    combinacion fuera de la matriz contable (RECIBO solo es una ENTRADA de la cuenta)
+   ok    un CDT sin cdt_id en la pata: lo detecta el libro antes que la CHECK
+   ok    BOLSO_INGRESO: la pata de CUENTA sin bolsillo_id viola la CHECK de familia
+   ok    BOLSO_INGRESO: la pata de BOLSILLO sin bolsillo_id la rechaza el libro (contenedor sin producto)
+   ok    monto 0
+   ok    monto negativo
+   ok    monto con 3 decimales
+   ok    monto ausente
+   ok    pata sin cuenta_id
+   ok    cuenta_id que no es un uuid
+   ok    una sola pata
+   ok    arreglo vacio
+   ok    las patas no son un arreglo
+   ok    patas NULL
+   ok    fecha NULL
+   ok    grupo descuadrado (1000 contra 999)
+   ok    fallo a MITAD de grupo (2a pata con credito_id en un ingreso): se revierte todo
+   ok    ningun rechazo dejo rastro: mismos saldos, mismos contenedores y mismo numero de patas
+   ok    insercion directa de un grupo valido con saldos FALSOS del llamador y luego cuadre inmediato
+   ok    ...el libro ignoro los saldos del llamador y fijo los reales (previo 340, posterior 380)
+   ok    ...y fijo registrado_en y tx_id (no los del llamador)
+   ok    ...y el saldo de la cuenta 2 es 380.00
+== 13_libro_cuadre.test.sql
+   ok    valido: transferencia (par ENVIO/RECIBO de dos cuentas)
+   ok    valido: ingreso simulado
+   ok    valido (credito sin plantilla): CUOTA con cuadre, un credito y una cuenta
+   ok    valido (credito sin plantilla): ABONO con cuadre
+   ok    valido (credito sin plantilla): MORA con cuadre
+   ok    una pata sola
+   ok    descuadrado: debitos 100 contra creditos 99
+   ok    descuadrado por 1 centavo
+   ok    dos patas del mismo lado: ΣC = 0
+   ok    credito: cuota descuadrada (cuenta -100, capital -90)
+   ok    credito: una sola pata
+   ok    fechas distintas entre las patas de un grupo
+   ok    credito: fechas distintas
+   ok    tipos mezclados que cuadran pero no forman una plantilla (INGRESO_SIMULADO + DEPOSITO_BANCO)
+   ok    tres patas en una plantilla de dos (cuadra: 100 = 60 + 40)
+   ok    un solo contenedor repetido (dos RESULTADO), cuadre imposible de otra forma: sin plantilla
+   ok    ingreso con la pata de CUENTA en una cuenta y la de RESULTADO en otra
+   ok    ENVIO y RECIBO en la MISMA cuenta (un auto-envio no es una transferencia)
+   ok    ENVIO con contraparte_cuenta que no es la cuenta del receptor
+   ok    RECIBO con contraparte_cuenta que no es la cuenta del emisor
+   ok    ENVIO sin contraparte_nombre
+   ok    credito (sin plantilla): una pata en cada cuenta
+   ok    BOLSO_INGRESO con las dos patas en bolsillos distintos
+   ok    BOLSO_RETIRO con las dos patas en bolsillos distintos
+   ok    BOLSO_MOVIMIENTO del bolsillo a si mismo
+   ok    INTERES_BOLSO con el RESULTADO apuntando a otro bolsillo
+   ok    CREDITO_DESEMBOLSO con la pata de CUENTA en un credito y la de CREDITO en otro
+   ok    credito: patas de crédito mezcladas con otra familia (cuadra: C 100 = D 100)
+   ok    credito: dos creditos distintos de la misma cuenta en un grupo (cuenta -100, capital del credito 2 -100)
+   ok    credito: el credito pertenece a OTRA cuenta distinta de la pata (lo detecta el libro)
+   ok    credito: transferencia entre cuentas disfrazada de MORA (CUENTA E con tipo CREDITO_MORA no esta en la matriz)
+   ok    los grupos validos aceptados: 3 de credito sin plantilla (OK en la vista) y el resto con plantilla
+   ok    el estado global sigue en orden despues de tantos rechazos
+== 14_libro_cdt.test.sql
+   ok    un CDT creado SIN su pata de apertura es incoherente (inversion 0, esperada 1000)
+   ok    con su grupo CDT_CREACION el CDT es coherente
+   ok    apertura por un monto distinto al del CDT (900 de 1000)
+   ok    apertura duplicada (el libro ya tiene 1000 y se agregan otros 1000)
+   ok    INTERES_CDT 40: generado_acumulado 40 y la inversion vale 1040
+   ok    generado 40.00
+   ok    la vista confirma I1 para el CDT (generado e inversion)
+   ok    generado_acumulado manipulado a mano: rechazado por el guardia
+   ok    interes sin su contrapartida RESULTADO (una pata): no cuadra
+   ok    vencimiento SIN cerrar el CDT (estado sigue ACTIVO): la inversion deberia seguir siendo 1040 y es 0
+   ok    vencimiento devolviendo solo el principal (1000) cuando hay 40 de intereses
+   ok    vencimiento devolviendo de mas (1100)
+   ok    cerrar el CDT sin devolver nada (estado CERRADO con la inversion aun en el libro)
+   ok    tras los rechazos el CDT sigue ACTIVO y con el libro intacto
+   ok    vencimiento correcto: CERRADO y devuelve 1040 (monto + generado)
+   ok    cuenta 20000 - 1000 + 1040 = 20040.00
+   ok    un CDT ya cerrado no admite mas interes (la inversion dejaria de ser 0)
+   ok    un CDT cerrado no se reabre
+   ok    una pata CDT de otra cuenta se rechaza
+   ok    las vistas de integridad siguen en orden
+== 15_libro_inmutable.test.sql
+   ok    escenario: 9 grupos, 19 patas y el estado global en orden
+   ok    superusuario: UPDATE de nota
+   ok    superusuario: UPDATE de monto
+   ok    superusuario: UPDATE de saldo_posterior
+   ok    superusuario: UPDATE de cuenta_id (reasignar una pata)
+   ok    superusuario: UPDATE de grupo_id (mover una pata a otro grupo)
+   ok    banco_owner: UPDATE de monto (sin privilegio)
+   ok    banco_owner: UPDATE de nota (sin privilegio)
+   ok    banco_owner: la unica columna que puede tocar (registrado_en, solo por las FK) la rechaza el trigger
+   ok    banco_ledger: UPDATE de una pata (sin privilegio)
+   ok    banco_app: UPDATE de una pata
+   ok    superusuario: DELETE de todo el libro
+   ok    superusuario: DELETE de una pata
+   ok    banco_owner TIENE el privilegio DELETE (lo exige la cascada) pero el trigger lo rechaza
+   ok    banco_ledger: DELETE de una pata (sin privilegio)
+   ok    banco_app: DELETE de una pata
+   ok    el libro sigue con 19 patas
+   ok    superusuario: TRUNCATE transaccion
+   ok    superusuario: TRUNCATE cuenta CASCADE arrastraria al libro
+   ok    superusuario: TRUNCATE usuario CASCADE arrastraria al libro
+   ok    banco_owner: TRUNCATE transaccion (sin privilegio)
+   ok    banco_app: TRUNCATE transaccion
+   ok    NO se puede borrar un BOLSILLO con movimientos (FK), tambien como banco_owner
+   ok    NO se puede borrar un CDT con movimientos (FK)
+   ok    NO se puede borrar un CREDITO con movimientos (FK)
+   ok    antes: A tiene 5970 en cuenta, 500 en bolsillos, CDT vigente 1030, pasivo 2700, resultado 5000 (el ingreso), transferencias netas -200 y 15 patas
+   ok    DELETE del usuario A (cuenta, bolsillo, CDT, credito, cuota y 15 patas) como banco_owner, con el libro activo
+   ok    despues: de A no queda NADA (cuenta, bolsillo, cdt, credito, cuota, patas)
+   ok    lo de B y C queda intacto: 1 pata de B (RECIBO) y 2 de C (ingreso: CUENTA y RESULTADO) + 1 de C (ENVIO) = 4 patas
+   ok    la contraparte de A en la pata de B queda guardada como TEXTO (nombre y numero), sin FK
+   ok    auditoria: UN evento CUENTA_BORRADA con la entidad y el actor (atribucion)
+   ok    auditoria: el evento guarda EXACTAMENTE lo que se destruyo (balance, bolsillos, CDT, pasivos, resultado, transferencias, patas)
+   ok    las 2 transferencias de A quedan con UNA sola pata y se clasifican HUERFANO_POR_BORRADO (esperado, no un error)
+   ok    estado global en orden, 1 cuenta borrada auditada y la conservacion de transferencias (vivas + borradas) = 0
+   ok    DELETE de la cuenta de B directamente (como superusuario)
+   ok    ...2 eventos CUENTA_BORRADA y ya no quedan patas de B
+   ok    ...y la conservacion sigue en 0 (cuentas vivas: solo C; borradas: A y B)
+== 16_integridad_vistas.test.sql
+   ok    sano: v_integridad_global ok, sin desvios ni defensas caidas
+   ok    sano: ninguna fila de v_integridad_saldos, grupos ni usuario falla
+   ok    sano: v_integridad_saldos cubre cuenta x2, bolsillo, CDT (generado e inversion) y credito = 6 filas
+   ok    sano: I5u por cuenta con diferencia 0
+   ok    un balance de cuenta alterado (+1) se detecta en I1 y en I5u
+   ok    dinero creado de la nada en la cuenta (+1.000.000) se detecta
+   ok    un balance de bolsillo alterado se detecta
+   ok    un generado_acumulado de CDT alterado se detecta (generado e inversion)
+   ok    un capital_pendiente de credito alterado se detecta (I1 y I5u)
+   ok    un CDT cerrado sin devolver el dinero se detecta (inversion esperada 0, libro 1000)
+   ok    una pata suelta (grupo de una sola pata) se detecta como ERROR
+   ok    un grupo descuadrado (100 contra 99) se detecta
+   ok    un grupo con fechas distintas se detecta
+   ok    un grupo cuadrado pero SIN plantilla (tipos mezclados) se detecta
+   ok    dinero entre dos cuentas FUERA de un par ENVIO/RECIBO se detecta
+   ok    un ENVIO que perdio a su RECIBO estando la cuenta contraria VIVA es un ERROR real
+   ok    ...mientras que el mismo ENVIO suelto cuya contraparte NO existe es HUERFANO_POR_BORRADO (esperado, ok)
+   ok    un grupo de credito con dos creditos distintos se detecta; uno coherente es SIN_PLANTILLA_CREDITO (ok)
+   ok    session_replication_role = replica (que apaga los triggers) tampoco evita que los DATOS malos se detecten
+   ok    trigger de aplicar de saldos DESACTIVADO
+   ok    trigger de cuadre ELIMINADO
+   ok    trigger de cuadre recreado NO diferido (se evaluaria fila a fila, no al COMMIT)
+   ok    guardia de cuenta DESACTIVADO
+   ok    TODOS los triggers de usuario del libro desactivados de una vez
+   ok    trigger de auditoria del borrado de cuentas desactivado
+   ok    event trigger de DDL desactivado
+   ok    event trigger de DROP TRIGGER eliminado
+   ok    el dueño recupera UPDATE sobre un acumulador
+   ok    el dueño recupera UPDATE de tabla sobre transaccion
+   ok    el dueño recupera TRUNCATE sobre transaccion
+   ok    banco_app recibe UPDATE de un acumulador
+   ok    banco_ledger recibe SELECT de TABLA completa
+   ok    banco_ledger recibe INSERT sobre el libro
+   ok    banco_ledger recibe UPDATE de otra columna
+   ok    banco_app pasa a poder asumir banco_ledger
+   ok    banco_dev pasa a poder asumir banco_owner
+   ok    banco_owner pasa a poder iniciar sesion (LOGIN)
+   ok    banco_ledger pasa a poder iniciar sesion (LOGIN)
+   ok    un guardia pasa a SECURITY DEFINER (veria al dueño y no a quien actualiza)
+   ok    la funcion de aplicar pasa a SECURITY INVOKER
+   ok    la funcion de aplicar cambia de dueño a banco_owner
+   ok    _asentar_grupo pasa a ser ejecutable por banco_app
+   ok    _asentar_grupo pasa a ser ejecutable por PUBLIC
+   ok    el trigger de aplicar pasa a ser ejecutable por banco_lector
+   ok    ALTER TABLE ... DISABLE TRIGGER queda registrado en audit.evento (accion DDL)
+   ok    DROP TRIGGER sobre una tabla protegida queda registrado en audit.evento
+   ok    DDL sobre una tabla NO protegida (parametro) no se registra
+   ok    despues de deshacer todos los sabotajes el estado global esta sano otra vez
+== 17_libro_aleatorio.test.sql
+   ok    se asentaron al menos el 60 % de las iteraciones como operaciones validas
+   ok    se probaron mas de 500 grupos mutados invalidos
+   ok    NINGUN grupo mutado invalido fue aceptado
+   ok    TODOS los grupos mutados fueron rechazados
+   ok    NINGUN rechazo dejo rastro (saldos, contenedores y numero de patas intactos)
+   ok    las 14 clases de operacion se ejercitaron al menos una vez
+   ok    v_integridad_global.ok tras todas las operaciones
+   ok    0 contenedores con desvio, 0 grupos con error, 0 cuentas con desvio I5u
+   ok    conservacion del dinero entre clientes: transferencias netas = 0
+   ok    ningun saldo negativo en ningun contenedor
+   ok    cada saldo de cuenta coincide con la suma de sus patas (recomputado por fuera de la vista)
+   ok    el resumen queda en NOTICE para la evidencia
+== 18_libro_aislamiento.test.sql
+   ok    REPEATABLE READ se rechaza con un mensaje claro (P0001, no un 40001 que el backend veria como 503)
+   ok    SERIALIZABLE se rechaza con un mensaje claro (P0001)
+   ok    READ COMMITTED pasa la validacion de aislamiento (falla despues, por el JSON vacio)
+   ok    se asentaron 3000 grupos (6000 patas) mas el ingreso inicial (2 patas)
+   ok    3000 grupos de 2 patas, cada uno en su transaccion, se asientan en menos de 60 s (todos los triggers, bloqueos y el cuadre inmediato)
+   ok    saldos exactos tras 3000 transferencias cruzadas: 1.000.000 en la cuenta 801 y 0 en la 802
+   ok    v_integridad_global ok tras 6.000 patas
+   ok    el cuadre de un grupo (WHERE grupo_id = ?) usa ix_transaccion_grupo, no un barrido de la tabla
+   ok    el historial de una cuenta con pocas patas (WHERE cuenta_id = ? ORDER BY orden DESC) usa ix_transaccion_cuenta_orden
+   ok    el historial de una cuenta con miles de patas (las 50 ultimas) se resuelve con un indice, sin barrer la tabla (Seq Scan)
+   ok    la inversion de un CDT (WHERE cdt_id = ?) usa el indice parcial ix_transaccion_cdt
+   ok    limpieza: ya no queda ninguna pata de la prueba de rendimiento
+== 30_reloj_funciones.test.sql
+   ok    real: 31-dic 23:59:59 en Bogotá es 31-dic
+   ok    real: 1-ene 00:00:00 en Bogotá es 1-ene
+   ok    real: 04:59:59 UTC (23:59:59 en Bogotá) sigue siendo 31-dic
+   ok    real: 05:00:00 UTC (00:00:00 en Bogotá) ya es 1-ene
+   ok    real: 29-feb de un año bisiesto
+   ok    real: 1-mar tras el 29-feb
+   ok    real: la fecha_sistema guardada se IGNORA en modo real
+   ok    modo real y manual dan el MISMO resultado con la TimeZone de la sesion en UTC, Tokio, Los Angeles, Kiritimati, Pago Pago, Bogota y Madrid
+   ok    manual: el hoy es fecha_sistema, sin importar el instante
+   ok    manual: ...ni siquiera con un instante anterior
+   ok    ahora real = el propio instante (hoy + hora real de Bogotá)
+   ok    ahora manual = fecha manual + hora REAL de Bogotá (conserva microsegundos)
+   ok    ahora manual: el instante en UTC no cambia la hora local (19:30 UTC = 14:30 en Bogotá)
+   ok    la fecha de bogota de ahora_de coincide con hoy_de (manual)
+   ok    manual: ahora NO es monotonico (a las 23:59:59 real da una hora MAYOR que a las 00:00:01 del dia siguiente con la misma fecha manual)
+   ok    ...y en modo real SI es monotonico
+   ok    estado inicial: modo real y sin fecha manual
+   ok    hoy_banco() = fecha actual de America/Bogota
+   ok    ahora_banco() = now() en modo real (hoy + hora real de Bogota)
+   ok    hoy_banco() es la fecha de Bogota de ahora_banco()
+   ok    hoy_banco()/ahora_banco() reales no dependen de la TimeZone de la sesion (5 zonas extremas)
+   ok    dentro de una transaccion el hoy es ESTABLE (misma respuesta en dos lecturas)
+   ok    manual: hoy_banco() = fecha_sistema
+   ok    manual: ahora_banco() = fecha manual + hora real de Bogota
+   ok    manual: la FECHA de Bogota de ahora_banco() es la fecha manual
+   ok    modo manual: tampoco depende de la TimeZone de la sesion
+   ok    _reloj_instantanea() devuelve el mismo (hoy, ahora) que hoy_banco()/ahora_banco()
+   ok    de vuelta a real: hoy_banco() = fecha de Bogota
+   ok    vista en modo real: tres campos y fecha_sistema null
+   ok    vista real: fecha_actual = hoy_banco() en YYYY-MM-DD
+   ok    vista en modo manual: fecha_sistema es texto
+   ok    vista manual: fecha_sistema = fecha_actual (el hoy ES la fecha manual)
+   ok    vista: ambas fechas con formato YYYY-MM-DD
+   ok    banco_lector ejecuta hoy_banco() y ahora_banco()
+   ok    banco_dev (hereda de banco_lector) tambien
+   ok    banco_app NO ejecuta hoy_banco()
+   ok    banco_app NO ejecuta ahora_banco()
+   ok    banco_lector NO ejecuta las internas (_reloj_actualizar)
+   ok    banco_lector NO ejecuta _hoy_de (la usan las funciones DEFINER, no las vistas)
+   ok    _dias_por_cobrar (2026-11-20, 2026-11-23]: 3 dias, desde el dia siguiente al ultimo cobro
+   ok    hoy = ultimo_cobro: NADA que cobrar
+   ok    hoy < ultimo_cobro (volvio a fecha real tras una simulacion): rango vacio, NO negativo
+   ok    hoy 1 dia despues: un solo dia
+   ok    NULL en cualquier extremo: nada
+   ok    +30 años (salto del reloj): 10958 dias, sin repetir ninguno
+   ok    el rango nunca incluye el dia del ultimo cobro ni mas alla de hoy
+   ok    cuota NO pagada con fecha anterior a hoy: vencida
+   ok    cuota NO pagada que vence HOY: todavia no esta vencida (fecha < hoy)
+   ok    cuota NO pagada con fecha futura: no vencida
+   ok    cuota PAGADA con fecha anterior: nunca vencida
+   ok    la misma cuota deja de estar vencida si el hoy vuelve a una fecha anterior (dinamica, sin estado guardado)
+   ok    NULL: nunca vencida
+   ok    el esquema NO guarda ninguna bandera de vencimiento (ni en cuota ni en credito)
+== 31_reloj_trigger.test.sql
+   ok    punto de partida: modo real, fecha_sistema NULL, hoy = fecha real
+   ok    el banco NO esta vacio (hay patas): rige la regla completa
+   ok    1) real -> manual(+30): permitido y el hoy pasa a ser R+30
+   ok    estado: manual, fecha_sistema = R+30
+   ok    2) manual(+30) -> manual(+60): permitido
+   ok    manual(+60) -> manual(+60): repetir la misma fecha es un no-op permitido
+   ok    manual(+60) -> manual(+59): RETROCESO rechazado con el mensaje exacto del contrato
+   ok    manual(+60) -> manual(R): RETROCESO a la fecha real, tambien rechazado (sigue en modo manual)
+   ok    manual(+60) -> manual(ayer): rechazado
+   ok    el rechazo no cambio nada: sigue manual en R+60
+   ok    3) manual(+60) -> REAL: SIEMPRE permitido aunque la fecha real (R) sea anterior a la simulada (R+60)
+   ok    vuelve inmediatamente a la fecha real de Colombia y NO queda ningun desfase ni fecha guardada
+   ok    el contrato devuelve fecha_sistema null en modo real
+   ok    4) real -> manual(+10): permitido aunque +10 sea anterior a la simulada anterior (+60)
+   ok    ...y desde ahi, retroceder a +9 se rechaza (el retroceso se compara con el hoy ACTUAL, no con el historial de simulaciones)
+   ok    adelantar a +11 si se puede
+   ok    (volver a real para el siguiente caso)
+   ok    real -> manual(ayer): una fecha anterior a hoy_banco() se rechaza
+   ok    real -> manual(hoy): igual al hoy real es valido (no retrocede)
+   ok    manual(hoy) -> real: no-op de fecha, permitido
+   ok    real -> real: idempotente (el front manda fecha_sistema aunque sea real: se ignora)
+   ok    ...y esa fecha basura NO se guardo
+   ok    60 ciclos adelanto/retorno: ninguna discrepancia con el modelo (retroceso rechazado solo dentro del modo manual; todo lo demas aceptado)
+   ok    ...hubo rechazos de retroceso (162) y aceptaciones (198)
+   ok    ...y las 60 salidas de la simulacion volvieron a la fecha real aunque retrocedieran (todas permitidas)
+   ok    tras los ciclos: modo real, sin fecha guardada, hoy = fecha real
+   ok    fecha vacia en modo manual
+   ok    fecha NULL en modo manual
+   ok    texto que no es fecha
+   ok    formato incorrecto (dd-mm-aaaa)
+   ok    fecha inexistente (30 de febrero)
+   ok    mes 13
+   ok    con hora (no es solo fecha)
+   ok    anterior a 2000-01-01
+   ok    posterior a 2100-12-31
+   ok    el limite superior 2100-12-31 es valido
+   ok    ...y desde ahi cualquier fecha menor retrocede
+   ok    (volver a real)
+   ok    usar_fecha_real NULL
+   ok    modo real con fecha invalida: se ignora la fecha y es valido
+   ok    espacios alrededor de una fecha valida se toleran
+   ok    (volver a real)
+   ok    superusuario: UPDATE directo a manual(+20)
+   ok    superusuario: UPDATE directo que retrocede a +10
+   ok    banco_owner: UPDATE directo que retrocede (aunque tenga el privilegio de columna)
+   ok    banco_owner: UPDATE directo que adelanta
+   ok    superusuario: UPDATE directo a modo real con una fecha: la fecha se fuerza a NULL (sin desfase)
+   ok    ...y quedo NULL
+   ok    UPDATE a manual sin fecha
+   ok    fecha fuera de rango por UPDATE directo (CHECK de rango)
+   ok    fecha anterior a 2000 por UPDATE directo: con el banco no vacio es antes que nada un retroceso (con el banco vacio la ataja el CHECK: ver 32)
+   ok    el id es inmutable
+   ok    banco_owner NO puede cambiar el id (sin privilegio de columna)
+   ok    banco_app: UPDATE del reloj
+   ok    banco_app: ni siquiera lee el reloj
+   ok    banco_lector: UPDATE del reloj
+   ok    banco_dev: UPDATE del reloj
+   ok    banco_lector lee el reloj
+   ok    banco_ledger no toca el reloj
+   ok    DELETE del reloj (superusuario)
+   ok    DELETE del reloj (banco_owner tiene el privilegio, el trigger lo rechaza)
+   ok    TRUNCATE del reloj
+   ok    TRUNCATE ... CASCADE desde otra tabla no vacia el reloj
+   ok    una segunda fila (id 2)
+   ok    repetir el id 1
+   ok    INSERT ... ON CONFLICT DO NOTHING (la siembra idempotente de 03_schema.sql) sigue siendo un no-op
+   ok    sigue habiendo UNA sola fila
+   ok    real -> real (sin cambio) NO audita
+   ok    un cambio real -> manual audita UN evento
+   ok    ...con el actor (atribucion), el estado y el hoy del banco antes y despues
+   ok    un retroceso rechazado
+   ok    ...NO deja evento (el rechazo es atomico con la auditoria)
+   ok    manual -> real audita otro evento: el hoy baja de R+40 a R y queda registrado
+   ok    el estado final es real
+== 32_reloj_banco_vacio.test.sql
+   ok    banco vacio: ninguna fila en transaccion
+   ok    v_reloj_estado: banco_vacio = true
+   ok    vacio: real -> manual(R-120) (arrancar el seed 120 dias atras)
+   ok    el hoy del banco es R-120
+   ok    vacio: manual(R-120) -> manual(R-200) (hacia atras)
+   ok    vacio: manual -> manual(R+10) (hacia adelante)
+   ok    vacio: manual(R+10) -> manual(R-5)
+   ok    vacio: manual -> real
+   ok    vacio: real -> manual(R-30) (anterior al hoy real)
+   ok    vacio: el rango 2000-2100 sigue rigiendo en UPDATE directo (anterior a 2000)
+   ok    vacio: y la funcion rechaza fechas fuera de rango con Fecha inválida
+   ok    (el reloj queda en R-120)
+   ok    un ingreso fechado con ahora_banco() (R-120) es VALIDO: la fecha de la pata no es posterior al hoy del banco
+   ok    la pata quedo fechada en R-120 (fecha de negocio) y registrada hoy (registrado_en real)
+   ok    banco NO vacio desde la primera pata
+   ok    con patas: manual(R-120) -> manual(R-121) es un retroceso
+   ok    con patas: adelantar si se puede (R-100)
+   ok    con patas: ya no se puede retroceder a R-110
+   ok    con patas: volver a real sigue permitido (el hoy pasa de R-100 a R: adelanta)
+   ok    con patas: real -> manual(R-1) es una fecha anterior a hoy_banco()
+   ok    con patas: real -> manual(R+50)
+   ok    con patas: manual(R+50) -> real (retrocede de R+50 a R, siempre permitido)
+   ok    tras borrar al unico cliente el banco vuelve a estar vacio
+   ok    ...y el reloj puede otra vez moverse hacia atras (real -> manual(R-90))
+   ok    ...y manual(R-90) -> manual(R-95)
+   ok    (reloj a R-120 con el banco vacio)
+   ok    seed: de R-120 a R en 11 etapas con operaciones reales fechadas en cada dia simulado, sin retrocesos ni errores
+   ok    ...las patas quedaron fechadas desde R-120 hasta R, todas con fecha <= hoy
+   ok    ...y al terminar se puede volver a la fecha real (R): no cambia nada del historial
+   ok    ...sin patas fechadas en el futuro (el seed termino en R)
+   ok    ...y la integridad esta en orden
+== 33_reloj_libro.test.sql
+   ok    una pata fechada ahora
+   ok    fechada ayer a mediodia (pasado)
+   ok    fechada hace 400 dias (el cobro lazy y el seed fechan en el pasado)
+   ok    fechada hoy a las 00:00:00 de Bogota
+   ok    fechada HOY a las 23:59:59.999999 de Bogota: es la misma FECHA que hoy_banco() (se compara fecha, no hora)
+   ok    fechada manana a las 00:00:00 de Bogota: posterior al reloj
+   ok    fechada manana a mediodia
+   ok    fechada dentro de un año
+   ok    el mensaje trae ambas fechas (la de la pata y el hoy del banco)
+   ok    la regla da el mismo resultado con la TimeZone de la sesion en UTC, Tokio, Los Angeles, Kiritimati y Pago Pago
+   ok    manual(R+30): una pata fechada con ahora_banco() pasa
+   ok    manual(R+30): una pata fechada R+30 a las 23:59 pasa (misma fecha que el hoy del banco)
+   ok    manual(R+30): una pata con la fecha REAL de hoy es pasada para el banco: pasa
+   ok    manual(R+30): R+31 es posterior al reloj
+   ok    manual(R+30): una operacion de varias patas (transferencia) fechada con ahora_banco()
+   ok    manual: la pata quedo fechada R+30 (fecha de negocio) y registrada hoy (hora real)
+   ok    antes de volver: 6 patas fechadas en R+30 (2 ingresos y 1 transferencia, de 2 patas cada uno)
+   ok    de vuelta a real: hoy_banco() = fecha de Colombia
+   ok    las 6 patas fechadas en R+30 PERMANECEN (no se borran, revierten ni recalculan)
+   ok    v_reloj_estado cuenta las patas fechadas en el futuro del reloj actual (informativo)
+   ok    ...y eso NO es un error: v_integridad_global.ok sigue en true
+   ok    ...ni los grupos fechados en el futuro estan en error
+   ok    una pata NUEVA fechada R+30 ya no se acepta (es futuro para el reloj real)
+   ok    ...pero una fechada hoy si
+   ok    saldos intactos y exactos: 10000 + 19 ingresos de 1 peso aceptados - 5 de la transferencia
+   ok    una pata insertada con los triggers apagados y fechada en el futuro se cuenta en v_reloj_estado
+== 34_reloj_retorno_simulacion.test.sql
+   ok    punto de partida: modo real, hoy = fecha real, bolsillo 1000, ultimo_cobro = hoy
+   ok    hoy ninguna cuota esta vencida (la primera vence en R+15)
+   ok    cobro de prueba en modo real con ultimo_cobro = hoy: no hay nada que cobrar
+   ok    adelantar el reloj a R+60
+   ok    el cobro de prueba procesa exactamente los 60 dias (R+1 .. R+60)
+   ok    60 dias cobrados, todos distintos (R+1..R+60)
+   ok    ultimo_cobro del bolsillo avanzo a R+60 y el saldo a 1060
+   ok    con el reloj en R+60 la cuota 1 (R+15) esta vencida; la 2 (pagada) y la 3 (R+75) no
+   ok    volver a fecha real (permitido aunque retroceda de R+60 a R)
+   ok    hoy_banco() = fecha real de Colombia y no queda ningun desfase ni fecha guardada
+   ok    1) TODAS las transacciones de la simulacion permanecen y NO se modificaron (huella del libro completo identica)
+   ok    no se elimino ni se agrego ninguna pata
+   ok    2) cuentas, bolsillos, CDT, creditos y cuotas intactos (huella de todas las filas identica)
+   ok    saldos y acumuladores conservados (cuenta, bolsillo, capital pendiente, CDT generado)
+   ok    ultimo_cobro NO retrocede: bolsillo, CDT y credito conservan su fecha (el del bolsillo sigue en R+60 > hoy)
+   ok    5) la mora ya acumulada y registrada se CONSERVA (5.00) aunque la cuota deje de verse vencida
+   ok    4) las cuotas vencidas se calculan al consultar: con el hoy real ya no hay ninguna (no quedo bandera obsoleta)
+   ok    ...porque no se guarda ninguna bandera de vencimiento en el esquema
+   ok    la cuota 1 sigue sin pagar y con su fecha original (solo cambia como se interpreta contra hoy)
+   ok    las operaciones historicas quedan "en el futuro" del reloj actual y v_reloj_estado lo informa (60 dias x 2 patas = 120)
+   ok    ...pero eso NO es un error: v_integridad_global.ok = true
+   ok    I1: cada saldo coincide con la suma de sus patas
+   ok    3) sin movimientos con rangos negativos: con hoy < ultimo_cobro el rango por cobrar esta VACIO
+   ok    el cobro de prueba con el hoy real (R < ultimo_cobro R+60) no hace NADA
+   ok    ...y deja el libro y los productos exactamente igual
+   ok    adelantar a R+30 (anterior al ultimo_cobro R+60)
+   ok    6) con la nueva fecha <= ultimo_cobro NO se genera ningun cobro
+   ok    libro y productos identicos
+   ok    la cuota 1 (R+15 < R+30) vuelve a calcularse vencida (dinamico) y la mora registrada sigue en 5
+   ok    adelantar a R+60 exacto (= ultimo_cobro)
+   ok    hoy = ultimo_cobro: tampoco se cobra nada
+   ok    adelantar a R+70
+   ok    solo se cobran los 10 dias NUEVOS (R+61 .. R+70)
+   ok    70 dias cobrados en total, todos distintos: NINGUN dia duplicado
+   ok    lo anterior no se toco: las patas de la primera simulacion siguen identicas (huella del prefijo del libro)
+   ok    ultimo_cobro = R+70 y el saldo del bolsillo 1070
+   ok    8 ciclos (adelantar + cobrar + volver a real + cobrar): solo dias nuevos, ultimo_cobro nunca retrocede, historial intacto, ningun cobro duplicado
+   ok    ...y el bolsillo suma 1 peso por cada dia cobrado (1000 + dias)
+   ok    al final: modo real y cobrado hasta mucho mas alla del hoy real
+   ok    v_integridad_global.ok tras todos los ciclos
+   ok    ...con I1, I3 e I5u en orden (0 desvios, 0 grupos con error)
+   ok    cada salida de la simulacion quedo auditada (RELOJ_CAMBIO) con el estado antes y despues
+== 35_reloj_viaje_tiempo.test.sql
+   ok    la sustitucion funciona: hoy_banco() sigue el tiempo inyectado (2026-11-21 10:00 en Bogota)
+   ok    ...y cambia a la medianoche de Bogota (00:00:01 del 22)
+   ok    ...04:59:59 UTC del 22 todavia es el 21 en Bogota
+   ok    4000 pasos aleatorios: ninguna discrepancia con el modelo (hoy, ahora, aceptacion y rechazo de cada cambio, regla del libro)
+   ok    ...hubo de todo: 1755 cambios aceptados, 333 retrocesos rechazados, 412 salidas de simulacion
+   ok    ...387 de las salidas a fecha real RETROCEDIERON respecto a la simulacion y todas se permitieron
+   ok    ...el paso del tiempo no movio el hoy en modo manual (844 veces) y paso de medianoche en modo real
+   ok    ...330 operaciones del libro con el reloj del banco aceptadas y 330 fechadas despues rechazadas
+   ok    v_integridad_global.ok tras 4000 pasos con tiempo inyectado
+   ok    cada cambio de reloj efectivo quedo auditado (mas de 500 eventos RELOJ_CAMBIO)
+   ok    en toda la bitacora RELOJ_CAMBIO, ningun cambio manual -> manual retrocedio
+   ok    ...y ninguna salida a real dejo fecha_sistema guardada
+   ok    tras el ROLLBACK _ahora_real() es otra vez now() (la sustitucion no sobrevive)
+   ok    ...y hoy_banco() = fecha actual de America/Bogota
+== reales/19_conexion_app.sh
+   ok    banco_app: la conexion real es banco_app y NO es superusuario
+   ok    banco_app NO puede leer cuenta
+   ok    banco_app NO puede leer password_hash
+   ok    banco_app NO puede leer el libro
+   ok    banco_app NO puede actualizar balances
+   ok    banco_app NO puede actualizar el acumulador de bolsillo
+   ok    banco_app NO puede insertar en el libro
+   ok    banco_app NO puede borrar patas
+   ok    banco_app NO puede vaciar el libro
+   ok    banco_app NO puede leer la auditoria
+   ok    banco_app NO puede leer las vistas de integridad
+   ok    banco_app NO puede crear tablas
+   ok    banco_app NO puede crear funciones
+   ok    banco_app NO puede ejecutar _asentar_grupo
+   ok    banco_app NO puede ejecutar la funcion de trigger del libro
+   ok    banco_app NO puede asumir banco_owner
+   ok    banco_app NO puede asumir banco_ledger
+   ok    banco_app NO puede desactivar triggers
+   ok    banco_app NO puede borrar triggers
+   ok    banco_app NO puede apagar los event triggers
+   ok    banco_app NO puede usar session_replication_role
+   ok    banco_app NO puede conceder permisos
+   ok    banco_owner (NOLOGIN) no puede iniciar sesion
+   ok    banco_ledger (NOLOGIN) no puede iniciar sesion
+   ok    banco_app: fondear una cuenta via funcion definer devuelve el grupo
+   ok    ...y el saldo lo movio el libro (1000.00)
+   ok    banco_app: transferencia A->B via funcion definer
+   ok    ...origen 700.00 y destino 300.00
+   ok    ...con 4 patas en el libro (2 del ingreso, 2 de la transferencia)
+   ok    banco_app: mover a un bolsillo via funcion definer
+   ok    ...cuenta 500.00 y bolsillo 200.00
+   ok    las vistas de integridad (como superusuario) siguen en orden
+   ok    forjado: grupo descuadrado
+   ok    forjado: dinero de una cuenta a otra fuera de un par ENVIO/RECIBO
+   ok    forjado: bolsillo de otra cuenta
+   ok    forjado: monto negativo
+   ok    forjado: monto con 3 decimales
+   ok    forjado: saldo insuficiente
+   ok    forjado: tipo inexistente
+   ok    forjado: una sola pata
+   ok    forjado: combinacion fuera de la matriz contable
+   ok    forjado: transferencia con contraparte falsa
+   ok    saldos y registrado_en enviados por el llamador se ignoran (grupo aceptado)
+   ok    ...el libro fijo el saldo real (500.00 -> 550.00)
+   ok    ...y registrado_en es reciente, no el del llamador
+   ok    funcion defectuosa: UPDATE directo de balance (el dueno no tiene el privilegio)
+   ok    funcion defectuosa: DELETE del libro (trigger de inmutabilidad)
+   ok    funcion defectuosa: pata suelta (falla al COMMIT por el cuadre diferido)
+   ok    ROLLBACK explicito: ninguna pata ni saldo cambio
+   ok    conexion cortada antes del COMMIT: ninguna pata ni saldo cambio
+   ok    al final de todo, las vistas de integridad siguen en orden
+== reales/20_conexion_ledger.sh
+   ok    se creo el rol-sonda ledger_probe (LOGIN, NOINHERIT, miembro de banco_ledger)
+   ok    la conexion real es ledger_probe (sin privilegios propios)
+   ok    sin SET ROLE, la sonda no lee ni cuenta (NOINHERIT)
+   ok    tras SET ROLE banco_ledger, current_user es banco_ledger y session_user sigue siendo la sonda
+   ok    banco_ledger lee id y balance de cuenta
+   ok    banco_ledger lee id, cuenta_id y balance de bolsillo
+   ok    banco_ledger lee id, cuenta_id y generado_acumulado de cdt
+   ok    banco_ledger lee id, cuenta_id y capital_pendiente de credito
+   ok    banco_ledger puede bloquear la fila (SELECT ... FOR NO KEY UPDATE)
+   ok    no lee numero_cuenta
+   ok    no lee la fila completa de cuenta (SELECT *)
+   ok    no lee el monto de un CDT
+   ok    no lee usuario
+   ok    no lee el libro
+   ok    no lee la auditoria
+   ok    no inserta en el libro
+   ok    no borra patas
+   ok    no vacia el libro
+   ok    no cambia numero_cuenta
+   ok    no cambia el monto de un CDT
+   ok    no crea objetos
+   ok    UPDATE directo de cuenta.balance: tiene el privilegio PERO el guardia lo frena (profundidad 1)
+   ok    UPDATE directo de bolsillo.balance frenado por el guardia
+   ok    UPDATE directo de cdt.generado_acumulado frenado por el guardia
+   ok    UPDATE directo de credito.capital_pendiente frenado por el guardia
+   ok    un UPDATE que NO cambia el acumulador si pasa (el guardia bloquea cambios, no sentencias)
+   ok    la funcion de trigger no se puede llamar a mano (aunque banco_ledger sea su dueno)
+   ok    no puede ejecutar _asentar_grupo
+   ok    banco_ledger no puede asumir banco_owner
+   ok    la sonda no puede asumir banco_owner
+   ok    la sonda no puede asumir un superusuario
+   ok    la sonda no puede apagar triggers
+   ok    el unico camino (grupo -> trigger de banco_ledger) mueve el saldo: 500 + 25
+   ok    v_integridad_defensas DETECTA un miembro de banco_ledger (la sonda)
+   ok    la sonda se elimino (to_regrole es NULL)
+   ok    ...y ya nadie (salvo superusuarios) puede asumir banco_ledger ni banco_owner
+   ok    ...y la conexion con la sonda ya no es posible
+== reales/21_conexion_lector_dev.sh
+   ok    banco_lector: conexion real, solo lectura por defecto
+   ok    banco_lector lee v_integridad_global (todo en orden)
+   ok    banco_lector: v_integridad_defensas sin controles fallidos
+   ok    banco_lector: v_integridad_saldos / grupos / usuario sin desvios
+   ok    banco_lector NO lee password_hash
+   ok    banco_lector NO actualiza balances (aun forzando lectura-escritura)
+   ok    banco_lector NO inserta en el libro
+   ok    banco_lector NO ejecuta _asentar_grupo
+   ok    banco_lector NO asume banco_owner
+   ok    banco_lector NO asume banco_ledger
+   ok    banco_dev: conexion real
+   ok    banco_dev lee v_integridad_global
+   ok    banco_dev NO lee password_hash
+   ok    banco_dev NO actualiza balances
+   ok    banco_dev NO borra patas
+   ok    banco_dev NO ejecuta _asentar_grupo
+   ok    banco_dev NO asume banco_owner
+   ok    banco_dev NO asume banco_ledger
+   ok    banco_dev NO desactiva triggers
+   ok    ningun rol (salvo superusuarios) es miembro de banco_owner ni de banco_ledger
+   ok    banco_owner y banco_ledger: NOLOGIN y sin atributos especiales
+== reales/22_concurrencia_retiros.sh
+   ok    exactamente 1 de las 6 sesiones concurrentes logro el movimiento
+   ok    las otras 5 recibieron 'Saldo insuficiente'
+   ok    ningun otro error (ni deadlock, ni timeout de bloqueo)
+   ok    saldos finales exactos: cuenta 200.00 y bolsillo 800.00
+   ok    el saldo de la cuenta nunca queda negativo y las vistas de integridad estan en orden
+== reales/23_concurrencia_cruzadas.sh
+   ok    las 400 transferencias terminaron (200 + 200 grupos)
+   ok    ningun deadlock
+   ok    ningun error de ningun tipo
+   ok    saldos finales exactos (lo enviado = lo recibido): 100000.00 y 100000.00
+   ok    el libro tiene 800 patas nuevas (400 grupos x 2)
+   ok    las vistas de integridad estan en orden
+== reales/24_concurrencia_carga.sh
+   ok    punto de partida: 6 cuentas con 100000.00 (600000.00 en total)
+   ok    las 2000 transferencias se resolvieron (exitosas + 'Saldo insuficiente' legitimas)
+   ok    ningun error distinto de 'Saldo insuficiente' (ni deadlock ni timeout)
+   ok    ningun deadlock
+   ok    conservacion: la suma de saldos sigue siendo 600000.00
+   ok    el verificador concurrente dio 25 respuestas, todas 0 desvios (sin falsos positivos)
+   ok    ningun saldo negativo
+   ok    las vistas de integridad estan en orden tras la carga
+== reales/25_concurrencia_directa.sh
+   info: deadlocks resueltos por PostgreSQL en el camino no sancionado = 0
+   ok    ningun error que no sea un deadlock resuelto
+   ok    sin grupos incompletos ni descuadrados (v_integridad_grupos)
+   ok    cada saldo coincide con la suma de sus patas (v_integridad_saldos)
+   ok    conservacion: 20000.00 en las dos cuentas
+   ok    las vistas de integridad estan en orden
+== reales/26_atomicidad_sellado.sh
+   ok    una pata suelta con COMMIT directo falla (grupo con una sola pata)
+   ok    ...y el saldo y el libro quedaron intactos (el trigger de saldos tambien se revirtio)
+   ok    otro intento suelto tambien falla al COMMIT
+   ok    ...sin cambios
+   ok    agregar una pata a un grupo ya confirmado se rechaza (sellado por tx_id)
+   ok    ...y nada cambio
+   ok    el grupo confirmado tiene un solo tx_id
+   ok    conexion cortada a mitad de un grupo: no queda ninguna pata ni saldo movido
+   ok    la sesion 2 (banco_app) logro su operacion despues de esperar el bloqueo de la cuenta
+   ok    ...esperó al menos 1 s a la sesion 1 (serializacion por bloqueo de fila)
+   ok    ambas operaciones quedaron aplicadas: 1000 + 10 + 1 + 1 = 1012.00
+   ok    las vistas de integridad estan en orden
+== reales/36_reloj_conexiones.sh
+   ok    el banco tiene patas (la regla de no retroceso aplica)
+   ok    banco_app NO puede leer la tabla reloj
+   ok    banco_app NO puede actualizar la tabla reloj
+   ok    banco_app NO puede volver a fecha real por UPDATE
+   ok    banco_app NO puede borrar el reloj
+   ok    banco_app NO puede vaciar el reloj
+   ok    banco_app NO puede insertar en el reloj
+   ok    banco_app NO puede leer v_reloj_estado
+   ok    banco_app NO ejecuta hoy_banco() directamente
+   ok    banco_app NO ejecuta ahora_banco() directamente
+   ok    banco_app NO ejecuta _reloj_actualizar
+   ok    banco_app NO ejecuta _reloj_instantanea
+   ok    banco_app NO ejecuta _reloj_vista
+   ok    banco_app NO ejecuta _ahora_real
+   ok    banco_app NO ejecuta las funciones del trigger del reloj
+   ok    banco_app NO puede apagar los triggers del reloj
+   ok    banco_app NO puede cambiar la restriccion de rango
+   ok    tras todos esos intentos el reloj sigue en modo real
+   ok    banco_app via funcion definer: lee el hoy del banco (fecha de Colombia)
+   ok    banco_app via definer: adelantar 10 dias devuelve el contrato (usar_fecha_real=false, fecha_sistema)
+   ok    ...con fecha_actual = R+10
+   ok    ...y el hoy del banco es R+10
+   ok    retroceder a R+5 desde R+10 se rechaza con el mensaje exacto
+   ok    ...y el hoy sigue siendo R+10
+   ok    una fecha mal formada se rechaza con 'Fecha inválida'
+   ok    una fecha vacia en modo manual se rechaza con 'Fecha inválida'
+   ok    una fecha de texto libre se rechaza (no llega un 503 por 22007)
+   ok    usar_fecha_real nulo se rechaza
+   ok    volver a fecha real (retrocede de R+10 a R): permitido, devuelve fecha_sistema null
+   ok    ...el hoy del banco vuelve a ser R (la simulacion no es contablemente reversible, pero el reloj si vuelve)
+   ok    ...y no queda fecha guardada ni desfase
+   ok    TimeZone de la conexion = UTC: el hoy del banco sigue siendo el de Colombia
+   ok    TimeZone de la conexion = Asia/Tokyo: el hoy del banco sigue siendo el de Colombia
+   ok    TimeZone de la conexion = America/Los_Angeles: el hoy del banco sigue siendo el de Colombia
+   ok    TimeZone de la conexion = Pacific/Kiritimati: el hoy del banco sigue siendo el de Colombia
+   ok    TimeZone de la conexion = Pacific/Pago_Pago: el hoy del banco sigue siendo el de Colombia
+   ok    TimeZone de la conexion = America/Bogota: el hoy del banco sigue siendo el de Colombia
+   ok    modo manual R+3 con TimeZone=Kiritimati: el hoy es R+3 (no depende de la zona)
+   ok    banco_lector: lee la tabla reloj (modo real, sin fecha guardada)
+   ok    banco_lector: hoy_banco() es la fecha de Colombia
+   ok    banco_lector: ahora_banco() devuelve un instante
+   ok    banco_lector: v_reloj_estado informa modo real y hoy
+   ok    banco_lector NO puede actualizar el reloj
+   ok    banco_lector NO puede volver a real por UPDATE
+   ok    banco_lector NO puede borrar ni vaciar el reloj
+   ok    banco_lector NO ejecuta _reloj_actualizar
+   ok    banco_lector NO ejecuta _reloj_instantanea
+   ok    banco_lector NO ejecuta _ahora_real
+   ok    banco_lector NO puede apagar los triggers del reloj
+   ok    banco_dev: lee la tabla reloj (modo real, sin fecha guardada)
+   ok    banco_dev: hoy_banco() es la fecha de Colombia
+   ok    banco_dev: ahora_banco() devuelve un instante
+   ok    banco_dev: v_reloj_estado informa modo real y hoy
+   ok    banco_dev NO puede actualizar el reloj
+   ok    banco_dev NO puede volver a real por UPDATE
+   ok    banco_dev NO puede borrar ni vaciar el reloj
+   ok    banco_dev NO ejecuta _reloj_actualizar
+   ok    banco_dev NO ejecuta _reloj_instantanea
+   ok    banco_dev NO ejecuta _ahora_real
+   ok    banco_dev NO puede apagar los triggers del reloj
+   ok    tras los intentos de lector y dev el reloj sigue en modo real sin fecha
+   ok    con el reloj en R+20: una operacion de banco_app (fechada con ahora_banco()) se acepta
+   ok    ...la pata quedo fechada en R+20 y registrada hoy (hora real)
+   ok    de vuelta a real: la pata de R+20 permanece en el libro (no se revierte)
+   ok    ...se cuenta como pata fechada en el futuro (informativo)
+   ok    ...y la integridad global sigue en orden
+   ok    una operacion NUEVA fechada en R+20 ya no entra (el hoy real es R)
+   ok    la auditoria registro cambios de reloj (RELOJ_CAMBIO)
+   ok    ...y ninguno es un cambio manual->manual hacia atras
+   ok    al final el reloj esta en modo real y las vistas de integridad en orden
+== reales/37_reloj_concurrencia.sh
+   ok    A: la operacion en vuelo vio UNA sola fecha (la de antes del cambio) en sus dos lecturas
+   ok    A: el cambio del admin ESPERO a la operacion (tardo mas de 1 segundo)
+   ok    A: ...y el cambio se aplico (fecha_actual = R+10)
+   ok    A: despues del COMMIT la fecha nueva rige: una operacion nueva ve R+10 las dos veces
+   ok    B: la operacion en vuelo (reloj manual R+10) vio R+10 en sus dos lecturas
+   ok    B: volver a real tambien espero a la operacion
+   ok    B: ...y despues las operaciones nuevas usan la fecha de Colombia (2026-11-21)
+   ok    A2: tres operaciones lentas concurrentes terminan sin errores y con una sola fecha cada una
+   ok    A2: ...en paralelo (no se serializan: menos de 4 segundos en total)
+   ok    C: las 120 operaciones de las 3 sesiones asentaron TODAS (el reloj no cambia en medio de una operacion)
+   ok    C: ...ninguna recibio error (ni 'posterior al reloj del banco', ni deadlock, ni timeout de bloqueo)
+   ok    C: las 120 peticiones de cambio de reloj se resolvieron: aceptadas o 'El reloj no puede retroceder'
+   ok    C: ...ningun otro error en los cambios de reloj (sin deadlocks ni timeouts)
+   ok    C: la tormenta ejercito los dos caminos (hubo retrocesos rechazados y salidas a fecha real)
+   ok    C: cada cambio aceptado efectivo quedo auditado (RELOJ_CAMBIO nuevos entre 1 y los aceptados)
+   ok    C: ningun cambio manual->manual hacia atras fue aceptado (bitacora de auditoria)
+   ok    C: saldo exacto de la cuenta (1000 + 120 operaciones de 1 peso)
+   ok    C: v_integridad_global.ok (el libro cuadra, las patas futuras no son error)
+   ok    C: ninguna sesion quedo bloqueada esperando (sin transacciones colgadas de banco_app)
+   ok    D: tras la tormenta el admin vuelve a fecha real (siempre permitido) y el hoy es el de Colombia
+   ok    D: ...sin fecha guardada
+   ok    D: ...las patas fechadas en el futuro de la tormenta permanecen y solo se informan, no son error
+== reales/99_integridad_final.sh
+   ok    v_integridad_global.ok tras las pruebas reales
+   ok    contenedores con desvio
+   ok    grupos con error
+   ok    cuentas con desvio I5u
+   ok    defensas fallidas
+   ok    conservacion de transferencias (vivas + borradas) = 0
+   ok    hay mas de 4000 patas (las pruebas reales dejaron actividad)
+   info: cuentas=17 grupos=2666 patas=5332
+
+== aislamiento
+   ok    el rol-sonda ledger_probe NO existe tras las pruebas reales
+   ok    los helpers (esquema tests) NO existen en la BD banco
+
+1168 passed, 0 failed
+Duracion  : 140,1 s

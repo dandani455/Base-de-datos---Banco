@@ -1,0 +1,107 @@
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+M01  DETECTADA  se desactiva el guardia de cuenta.balance (trg_zz_proteger_cuenta)
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=1)
+M02  DETECTADA  se desactiva el trigger que aplica los saldos (trg_transaccion_b_aplicar)
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=1)
+M03  DETECTADA  se elimina el trigger de cuadre (ct_transaccion_cuadre)
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M04  DETECTADA  se quita el sellado del grupo (patas agregadas despues de confirmar)
+      -> reales/26_atomicidad_sellado: FAIL: agregar una pata a un grupo ya confirmado se rechaza (sellado por tx_id) (el patron [ya fue confirmado] no aparece en: ERROR:  Libro mayor: el g
+M05  DETECTADA  el dueño recupera UPDATE sobre cuenta.balance
+      -> 10_libro_triggers: ERROR:  FAIL: v_integridad_defensas tiene al menos 20 controles y TODOS estan en orden (la condicion no se cumplio: f)
+M06  DETECTADA  el guardia confia en pg_trigger_depth() > 0 (banco_ledger podria actualizar a mano)
+      -> 11_libro_guardias: ERROR:  FAIL: banco_ledger fuera del trigger: UPDATE cuenta.balance (se esperaba una excepcion y no ocurrio)
+M07  DETECTADA  el guardia pasa a SECURITY DEFINER (veria al dueño, no a quien actualiza)
+      -> 10_libro_triggers: ERROR:  FAIL: SECURITY DEFINER: _asentar_grupo, los 2 triggers diferidos (se disparan al COMMIT con el usuario de la sesion), la de aplicar, la audito
+M08  DETECTADA  se permite el DELETE directo de patas
+      -> 15_libro_inmutable: ERROR:  FAIL: superusuario: DELETE de todo el libro (se esperaba una excepcion y no ocurrio)
+M09  DETECTADA  se permite el UPDATE de patas
+      -> 15_libro_inmutable: ERROR:  FAIL: superusuario: UPDATE de nota (mensaje esperado "%inmutables%", recibido "Libro mayor: las patas no se pueden borrar (solo caen con la cu
+M10  DETECTADA  se elimina el trigger contra TRUNCATE del libro
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M11  DETECTADA  el dueño recupera UPDATE de tabla sobre transaccion
+      -> 08_permisos: ERROR:  FAIL: banco_owner es dueno y tiene todo en las 12 tablas, salvo lo que E2 le quita a proposito (esperado={bolsillo:UPDATE,cdt:UPDATE,credito:U
+M12  DETECTADA  banco_app recibe EXECUTE sobre _asentar_grupo
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC ni por banco_app; ni por banco_lector/banco_dev salvo _plantillas_validas, hoy_banco y ahora_ba
+M13  DETECTADA  banco_app pasa a ser miembro de banco_ledger
+      -> 08_permisos: ERROR:  FAIL: banco_app: ningun privilegio de columna en ninguna tabla (ni SELECT) (esperado=0, actual=4)
+M14  DETECTADA  banco_owner pasa a poder iniciar sesion (LOGIN)
+      -> 10_libro_triggers: ERROR:  FAIL: banco_owner y banco_ledger: NOLOGIN, sin superusuario ni ningun atributo especial (esperado=2, actual=1)
+M15  DETECTADA  se altera la plantilla BONO_REFERIDO (RESULTADO con sentido S)
+      -> 12_libro_asentar: ERROR:  FAIL: BONO_REFERIDO 50 (no debia fallar; SQLSTATE P0001: Libro mayor: el grupo 19fcb83c-8b07-4aba-abd2-f43c98199eec no corresponde a ninguna f
+M16  DETECTADA  el cuadre deja de comparar debitos con creditos
+      -> 12_libro_asentar: ERROR:  FAIL: grupo descuadrado (1000 contra 999) (se esperaba una excepcion y no ocurrio)
+M17  DETECTADA  se eliminan los triggers de invariantes del CDT
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M18  DETECTADA  el libro deja de rechazar saldos negativos (Saldo insuficiente)
+      -> 12_libro_asentar: ERROR:  FAIL: saldo insuficiente en la cuenta (BOLSO_INGRESO de 99.999.999) (mensaje esperado "Saldo insuficiente", recibido "Libro mayor: pata invál
+M19  DETECTADA  banco_ledger recibe SELECT de TABLA completa sobre cuenta
+      -> 08_permisos: ERROR:  FAIL: banco_ledger no tiene SELECT de TABLA sobre ninguna tabla (solo por columna) (esperado=0, actual=1)
+M20  DETECTADA  se desactiva la auditoria del borrado de cuentas
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=1)
+M21  DETECTADA  sin bloqueo ordenado de cuentas ni insercion ordenada (deadlock en transferencias cruzadas)
+      -> 12_libro_asentar: ERROR:  FAIL: orden ascendente por id de cuenta: en 1->2 el ENVIO (cuenta 1) va primero; en 2->1 el RECIBO (cuenta 1) va primero (esperado=(t,t), actu
+M22  DETECTADA  banco_ledger recibe UPDATE sobre cuenta.numero_cuenta
+      -> 08_permisos: ERROR:  FAIL: banco_ledger puede actualizar EXACTAMENTE estas 4 columnas y ninguna otra (esperado={bolsillo.balance,cdt.generado_acumulado,credito.cap
+M23  DETECTADA  se elimina el guardia de cdt (trg_zz_proteger_cdt)
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M24  DETECTADA  la funcion de aplicar cambia de dueño a banco_owner
+      -> 10_libro_triggers: ERROR:  FAIL: las funciones del libro son de banco_owner, salvo trg_transaccion_b_aplicar que es de banco_ledger (esperado={trg_transaccion_b_aplicar}
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+M25  DETECTADA  se desactiva el trigger de validacion del reloj (trg_reloj_a_validar)
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=1)
+M26  DETECTADA  el reloj manual puede retroceder (se quita la regla de no retroceso)
+      -> 31_reloj_trigger: ERROR:  FAIL:    manual(+60) -> manual(+59): RETROCESO rechazado con el mensaje exacto del contrato (se esperaba una excepcion y no ocurrio)
+M27  DETECTADA  se bloquea volver a fecha real (el modo real cae en la validacion manual)
+      -> 31_reloj_trigger: ERROR:  Fecha inválida
+M28  DETECTADA  al volver a real se conserva la fecha manual (desfase oculto)
+      -> 31_reloj_trigger: ERROR:  FAIL:    vuelve inmediatamente a la fecha real de Colombia y NO queda ningun desfase ni fecha guardada (esperado=(t,t,t), actual=(t,f,t))
+M29  DETECTADA  se elimina el CHECK de rango de fecha_sistema
+      -> 31_reloj_trigger: ERROR:  FAIL: fecha fuera de rango por UPDATE directo (CHECK de rango) (se esperaba violar "ck_reloj_fecha_rango" y la sentencia tuvo exito)
+M30  DETECTADA  se elimina el trigger de auditoria del reloj
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M31  DETECTADA  banco_app recibe EXECUTE sobre hoy_banco()
+      -> 10_libro_triggers: ERROR:  FAIL: ninguna funcion es ejecutable por PUBLIC ni por banco_app; ni por banco_lector/banco_dev salvo _plantillas_validas, hoy_banco y ahora_ba
+M32  DETECTADA  hoy_banco() usa current_date (zona de la sesion) en vez de America/Bogota
+      -> 30_reloj_funciones: ERROR:  FAIL: hoy_banco()/ahora_banco() reales no dependen de la TimeZone de la sesion (5 zonas extremas) (esperado=0, actual=2)
+M33  DETECTADA  ahora_banco() descarta la hora real (medianoche de la sesion)
+      -> 30_reloj_funciones: ERROR:  FAIL: ahora_banco() es el instante de pared en modo real (hoy + hora real de Bogota): entre now() y clock_timestamp() (la condicion no se cump
+M34  DETECTADA  el libro deja de rechazar patas fechadas despues del reloj
+      -> 33_reloj_libro: ERROR:  FAIL: fechada manana a las 00:00:00 de Bogota: posterior al reloj (se esperaba una excepcion y no ocurrio)
+M35  DETECTADA  el libro compara instantes (timestamptz) en vez de fechas con el reloj
+      -> 33_reloj_libro: ERROR:  FAIL: fechada HOY a las 23:59:59.999999 de Bogota: es la misma FECHA que hoy_banco() (se compara fecha, no hora) (no debia fallar; SQLSTATE P0
+M36  DETECTADA  _dias_por_cobrar genera dias con rangos negativos
+      -> 30_reloj_funciones: ERROR:  FAIL: hoy < ultimo_cobro (volvio a fecha real tras una simulacion): rango vacio, NO negativo (esperado=0, actual=60)
+M37  DETECTADA  _cuota_vencida cuenta como vencida la cuota que vence HOY
+      -> 30_reloj_funciones: ERROR:  FAIL: cuota NO pagada que vence HOY: todavia no esta vencida (fecha < hoy) (esperado=f, actual=t)
+M38  DETECTADA  el dueño recupera UPDATE de tabla completa sobre reloj
+      -> 08_permisos: ERROR:  FAIL: banco_owner es dueno y tiene todo en las 12 tablas, salvo lo que E2 le quita a proposito (esperado={bolsillo:UPDATE,cdt:UPDATE,credito:U
+M39  DETECTADA  la instantanea del reloj ya no toma FOR SHARE (el reloj cambia en medio de una operacion)
+      -> reales/37_reloj_concurrencia: FAIL: A: la operacion en vuelo vio UNA sola fecha (la de antes del cambio) en sus dos lecturas (esperado=[2026-11-22|2026-11-22] actual=[2026-11-22|20
+M40  DETECTADA  el modo real toma la fecha de UTC/sesion en vez de America/Bogota
+      -> 30_reloj_funciones: ERROR:  FAIL: modo real y manual dan el MISMO resultado con la TimeZone de la sesion en UTC, Tokio, Los Angeles, Kiritimati, Pago Pago, Bogota y Madri
+M41  DETECTADA  se elimina la proteccion contra DELETE del reloj
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M42  DETECTADA  se elimina la proteccion contra TRUNCATE del reloj
+      -> 10_libro_triggers: ERROR:  FAIL: los 16 triggers de usuario son EXACTAMENTE estos (esperado={bolsillo.trg_zz_proteger_bolsillo,cdt.ct_cdt_inversion,cdt.trg_zz_proteger_c
+M43  DETECTADA  se quita la clausula de banco vacio (el seed no podria arrancar en el pasado)
+      -> 32_reloj_banco_vacio: ERROR:  FAIL: vacio: real -> manual(R-120) (arrancar el seed 120 dias atras) (no debia fallar; SQLSTATE P0001: El reloj no puede retroceder)
+M44  DETECTADA  el retroceso se mide contra la fecha guardada y no contra el hoy real
+      -> 31_reloj_trigger: ERROR:  FAIL:    real -> manual(ayer): una fecha anterior a hoy_banco() se rechaza (se esperaba una excepcion y no ocurrio)
+M45  DETECTADA  hoy_banco() deja de ser SECURITY DEFINER
+      -> 10_libro_triggers: ERROR:  FAIL: SECURITY DEFINER: _asentar_grupo, los 2 triggers diferidos (se disparan al COMMIT con el usuario de la sesion), la de aplicar, la audito
+M46  DETECTADA  banco_app recibe UPDATE de columnas sobre reloj
+      -> 08_permisos: ERROR:  FAIL: banco_app: ningun privilegio de columna en ninguna tabla (ni SELECT) (esperado=0, actual=1)
+M47  DETECTADA  se desactivan TODOS los triggers de usuario del reloj
+      -> 10_libro_triggers: ERROR:  FAIL: todos estan habilitados (tgenabled = O) (esperado=0, actual=4)
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+M48  DETECTADA  el instante se captura ANTES de esperar el bloqueo (el defecto original: una espera cruzando la medianoche deja el dia viejo)
+      -> reales/38_reloj_instantanea: FAIL: B1: ...su instante es POSTERIOR a la espera (no el inicio de la transaccion): al menos 1,5 s despues de empezar (esperado=[t] actual=[f])
+M49  DETECTADA  _ahora_real() vuelve a now() (inicio de la transaccion): el instante queda obsoleto tras una espera
+      -> 30_reloj_funciones: ERROR:  FAIL: _ahora_real() NO es now(): usa clock_timestamp() y es VOLATILE (la instantanea del reloj no puede quedar obsoleta por una espera) (la co
+M50  DETECTADA  hoy_banco() deja de usar _ahora_real() (no se puede inyectar tiempo y se separa de la instantanea)
+      -> 35_reloj_viaje_tiempo: ERROR:  FAIL: la sustitucion funciona: hoy_banco() sigue el tiempo inyectado (2026-11-21 10:00 en Bogota) (esperado=2026-11-21, actual=2026-11-22)
+
+RESUMEN: 50 de 50 mutaciones detectadas

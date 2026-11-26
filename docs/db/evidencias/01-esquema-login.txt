@@ -1,0 +1,8 @@
+Autenticacion por contrasena (conexion TCP por el nombre de host 'db' => regla scram-sha-256 de pg_hba; la de 127.0.0.1 dentro del contenedor es 'trust')
+[OK ] banco_app     contrasena correcta           -> banco_app
+[OK ] banco_dev     contrasena correcta           -> banco_dev
+[OK ] banco_lector  contrasena correcta           -> banco_lector
+[OK ] banco_app     contrasena INCORRECTA         -> psql: error: connection to server at "db" (172.18.0.2), port 5432 failed: FATAL:  password authentication fail
+[OK ] banco_lector  contrasena INCORRECTA         -> psql: error: connection to server at "db" (172.18.0.2), port 5432 failed: FATAL:  password authentication fail
+[OK ] banco_owner   contrasena INCORRECTA         -> psql: error: connection to server at "db" (172.18.0.2), port 5432 failed: FATAL:  password authentication fail
+[OK ] banco_ledger  contrasena INCORRECTA         -> psql: error: connection to server at "db" (172.18.0.2), port 5432 failed: FATAL:  password authentication fail

@@ -1,0 +1,59 @@
+﻿=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+
+=== Mutaciones de E13 (mantenimiento: COMMIT por cuenta, search_path en cada transaccion, 55P03, motor, resumen, evento, informe de integridad y permisos) ===
+
+=== Mutaciones de E14 (seed y QA: catalogo, identidades fijas, clave, historia, estado final, limpieza del esquema seed, reproducibilidad y respaldo/restauracion protegidos) ===
+M494  DETECTADA  backup deja de rechazar una BD con v_integridad_global.ok = false
+      -> reales/58_respaldo: FAIL: E1 backup RECHAZA una BD con integridad en false, con un mensaje que lo dice, y no deja archivos ni temporales (esperado=[t|t|f|f|f] actual=[f|f
+M495  DETECTADA  restore no exige integridad verdadera en la BD restaurada (acepta lo que diga el manifiesto)
+      -> reales/58_respaldo: FAIL: E3 restore EXIGE integridad verdadera en la BD restaurada aunque el manifiesto (falsificado con integridad_ok = t y las huellas correctas) coinc
+M496  DETECTADA  restore acepta un manifiesto que declara integridad_ok = f
+      -> reales/58_respaldo: FAIL: E2 restore RECHAZA un manifiesto que declara integridad_ok = f (antes de restaurar nada) y la BD no cambia (esperado=[t|t|a417d928458ff5baa0dbef
+M497  DETECTADA  la huella solo cuenta filas (no incluye el contenido de las columnas)
+      -> reales/58_respaldo: FAIL: E4 backup RECHAZA una BD que CAMBIA mientras se respalda (el manifiesto ya no describiria el volcado): error claro y sin archivos ni temporales 
+M498  DETECTADA  la huella no incluye el esquema (permisos de funciones y estado de triggers)
+      -> reales/58_respaldo: FAIL: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas,
+M499  DETECTADA  la huella no incluye audit.evento
+      -> reales/58_respaldo: FAIL: F1 la huella DETECTA cada una de las 20 alteraciones de datos o permisos (usuarios, cuentas, bolsillos, libro, CDT y catalogo, creditos, cuotas,
+M500  DETECTADA  restore elimina el _previo ANTERIOR antes de completar el intercambio
+      -> reales/58_respaldo: FAIL: G1 un FALLO entre los dos renombrados: el restore termina con error, banco_rs VUELVE a existir con su estado B, el _previo ANTERIOR sigue intact
+M501  DETECTADA  recuperar no devuelve la BD anterior cuando el corte fue entre los dos renombrados
+      -> reales/58_respaldo: FAIL: G1 un FALLO entre los dos renombrados: el restore termina con error, banco_rs VUELVE a existir con su estado B, el _previo ANTERIOR sigue intact
+M502  DETECTADA  restore no se auto-recupera de un intercambio interrumpido antes de empezar
+      -> reales/58_respaldo: FAIL: G6 tras un corte duro, repetir el restore se AUTO-RECUPERA y termina bien: banco_rs = respaldo, el _previo es ahora el estado B (la BD retirada)
+M503  DETECTADA  restore no atiende la senal TERM (sin trap: queda entre los dos renombrados)
+      -> reales/58_respaldo: FAIL: G2 una senal TERM entre los dos renombrados (interrupcion controlable): codigo 143, banco_rs recuperada con su estado B, _previo intacto y sin r
+M504  DETECTADA  recuperar no cierra un intercambio ya hecho pero sin terminar
+      -> reales/58_respaldo: FAIL: G8 'recuperar' CIERRA el intercambio: banco_rs sigue siendo el respaldo, el _previo es la BD anterior (estado C) y no sobra la retirada (esperad
+M505  DETECTADA  backup no detecta una BD que cambia mientras se respalda
+      -> reales/58_respaldo: FAIL: E4 backup RECHAZA una BD que CAMBIA mientras se respalda (el manifiesto ya no describiria el volcado): error claro y sin archivos ni temporales 
+M506  DETECTADA  sembrar.sh no atiende HUP (el esquema seed queda tras la interrupcion)
+      -> reales/57_seed: FAIL: C11 una senal HUP durante la historia (con el esquema seed YA creado): el script termina con codigo 129 en menos de 20 s, el esquema seed queda 
+M507  DETECTADA  la limpieza de sembrar.sh no cierra la sesion del seed
+      -> reales/57_seed: FAIL: C11 una senal HUP durante la historia (con el esquema seed YA creado): el script termina con codigo 129 en menos de 20 s, el esquema seed queda 
+M508  DETECTADA  sembrar.sh ejecuta psql en primer plano (la senal espera a que termine la historia)
+      -> reales/57_seed: FAIL: C11 una senal HUP durante la historia (con el esquema seed YA creado): el script termina con codigo 129 en menos de 20 s, el esquema seed queda 
+
+RESUMEN: 15 de 15 mutaciones detectadas

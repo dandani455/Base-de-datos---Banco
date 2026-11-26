@@ -1,0 +1,41 @@
+# Plan del historial en banco_test tras la suite completa (cuenta con mas patas: 20000000-0000-4000-8000-000000001300); enable_seqscan = off para ver el camino por indice. Consulta de vista_historial/_json_transacciones (sin el formateo JSON).
+SET
+                                                                                                                                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.13..295.08 rows=8 width=195)
+   ->  Nested Loop Left Join  (cost=1.13..47032.89 rows=1280 width=195)
+         ->  Nested Loop Left Join  (cost=0.97..46961.71 rows=1280 width=183)
+               ->  Nested Loop Left Join  (cost=0.84..46751.34 rows=1280 width=183)
+                     ->  Nested Loop Left Join  (cost=0.70..46529.73 rows=1280 width=167)
+                           ->  Nested Loop  (cost=0.56..46260.93 rows=1280 width=174)
+                                 ->  Index Scan using ix_transaccion_cuenta_orden on transaccion t  (cost=0.29..46236.64 rows=1280 width=158)
+                                       Index Cond: (cuenta_id = '20000000-0000-4000-8000-000000001300'::uuid)
+                                       Filter: ((contenedor = ANY ('{CUENTA,BOLSILLO,CDT}'::contenedor_contable[])) AND ((contenedor = 'CUENTA'::contenedor_contable) OR ((contenedor = 'BOLSI
+                                       SubPlan 1
+                                         ->  Bitmap Heap Scan on transaccion x  (cost=4.30..11.78 rows=1 width=0)
+                                               Recheck Cond: (grupo_id = t.grupo_id)
+                                               Filter: ((cuenta_id = t.cuenta_id) AND (contenedor = 'CUENTA'::contenedor_contable))
+                                               ->  Bitmap Index Scan on ix_transaccion_grupo  (cost=0.00..4.30 rows=2 width=0)
+                                                     Index Cond: (grupo_id = t.grupo_id)
+                                       SubPlan 3
+                                         ->  Bitmap Heap Scan on transaccion x_1  (cost=4.30..11.78 rows=1 width=0)
+                                               Recheck Cond: (grupo_id = t.grupo_id)
+                                               Filter: ((contenedor = ANY ('{CUENTA,BOLSILLO}'::contenedor_contable[])) AND (cuenta_id = t.cuenta_id))
+                                               ->  Bitmap Index Scan on ix_transaccion_grupo  (cost=0.00..4.30 rows=2 width=0)
+                                                     Index Cond: (grupo_id = t.grupo_id)
+                                 ->  Materialize  (cost=0.27..8.29 rows=1 width=32)
+                                       ->  Index Scan using pk_cuenta on cuenta c  (cost=0.27..8.29 rows=1 width=32)
+                                             Index Cond: (id = '20000000-0000-4000-8000-000000001300'::uuid)
+                           ->  Index Scan using pk_bolsillo on bolsillo b  (cost=0.14..0.21 rows=1 width=25)
+                                 Index Cond: (id = t.bolsillo_id)
+                     ->  Index Scan using pk_cdt on cdt d  (cost=0.14..0.17 rows=1 width=48)
+                           Index Cond: (id = t.cdt_id)
+               ->  Index Scan using pk_credito on credito k  (cost=0.14..0.16 rows=1 width=32)
+                     Index Cond: (id = t.credito_id)
+         ->  Memoize  (cost=0.16..2.02 rows=1 width=48)
+               Cache Key: k.producto_id
+               Cache Mode: logical
+               ->  Index Scan using pk_credito_producto on credito_producto pr  (cost=0.15..2.01 rows=1 width=48)
+                     Index Cond: (id = k.producto_id)
+(35 rows)
+

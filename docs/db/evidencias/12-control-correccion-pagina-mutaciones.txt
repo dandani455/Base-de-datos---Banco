@@ -1,0 +1,41 @@
+﻿# Correccion de auditoria (p_pagina de mas de 9 digitos): regresion estrictamente necesaria = las mutaciones de paginacion existentes (M408-M411) y las 3 nuevas (M431-M433). 2026-11-25
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+M408  DETECTADA  50 por pagina pasa a 49
+      -> 71_control: ERROR:  FAIL: B3 50 por pagina: >= 122 usuarios (120 clientes + 2 admin) = ceil(n/50) paginas (>= 3); las dos primeras traen 50 y la ultima el resto (
+M409  DETECTADA  sin recorte superior de la pagina (la pagina 99 devuelve vacio)
+      -> 71_control: ERROR:  integer out of range
+M410  DETECTADA  total_paginas redondea hacia abajo (la ultima pagina parcial no cuenta)
+      -> 71_control: ERROR:  FAIL: B3 50 por pagina: >= 122 usuarios (120 clientes + 2 admin) = ceil(n/50) paginas (>= 3); las dos primeras traen 50 y la ultima el resto (
+M431  DETECTADA  un entero de mas de 9 digitos (1000000000) vuelve a la pagina 1 en vez de la ultima (caso limite de la auditoria)
+      -> 71_control: ERROR:  FAIL: B5b enteros positivos de cualquier longitud mayores que el total = la ULTIMA pagina y NUNCA un error: 10 digitos (1000000000), mas que u
+M432  DETECTADA  sin la guarda de longitud: un entero de mas de 18 digitos desborda el bigint (error en vez de la ultima pagina)
+      -> 71_control: ERROR:  value "9223372036854775808" is out of range for type bigint
+M433  DETECTADA  un entero de mas de 18 digitos da la pagina 1 en vez de la ultima
+      -> 71_control: ERROR:  FAIL: B5b enteros positivos de cualquier longitud mayores que el total = la ULTIMA pagina y NUNCA un error: 10 digitos (1000000000), mas que u
+M411  DETECTADA  una pagina no numerica da la pagina 0 (offset negativo)
+      -> 71_control: ERROR:  OFFSET must not be negative
+
+RESUMEN: 7 de 7 mutaciones detectadas
+

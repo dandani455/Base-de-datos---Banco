@@ -1,0 +1,752 @@
+Banco Digital - Etapa 1 - verificacion de permisos por rol (psql dentro del contenedor, conexion TCP con contrasena)
+Fecha: 2026-11-21 14:49   Rama: feat/db-core   Base: banco   Script: docs/db/evidencias/01-verificacion-roles.sql
+Cada rol se conecta con su propia contrasena de desarrollo (host 'db', puerto 5432 dentro de la red de Compose).
+La base 'banco' esta vacia en E1 (sin datos): las lecturas permitidas devuelven 0 filas; las denegadas fallan al ANALIZAR la consulta, con o sin filas.
+
+################################################################################
+## ROL: postgres
+################################################################################
+
+===== [T1] Quien soy =====
+SELECT current_user AS rol,
+       (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS superusuario,
+       current_database() AS base_de_datos,
+       current_setting('default_transaction_read_only') AS solo_lectura_por_defecto;
+   rol    | superusuario | base_de_datos | solo_lectura_por_defecto 
+----------+--------------+---------------+--------------------------
+ postgres | t            | banco         | off
+(1 row)
+
+
+===== [T2] Privilegios sobre las 11 tablas de public (+ audit.evento) =====
+SELECT priv AS privilegio,
+       count(*) FILTER (WHERE has_table_privilege(current_user, t.oid, priv)) AS tablas_con_privilegio,
+       count(*) AS tablas_totales
+  FROM pg_class t
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+ CROSS JOIN unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) AS priv
+ WHERE t.relkind = 'r' AND (n.nspname = 'public' OR (n.nspname = 'audit' AND t.relname = 'evento'))
+ GROUP BY priv
+ ORDER BY array_position(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'], priv);
+ privilegio | tablas_con_privilegio | tablas_totales 
+------------+-----------------------+----------------
+ SELECT     |                    12 |             12
+ INSERT     |                    12 |             12
+ UPDATE     |                    12 |             12
+ DELETE     |                    12 |             12
+ TRUNCATE   |                    12 |             12
+ REFERENCES |                    12 |             12
+ TRIGGER    |                    12 |             12
+(7 rows)
+
+
+===== [T3] Lectura directa de una tabla de dinero: SELECT * FROM public.cuenta =====
+SELECT * FROM public.cuenta;
+ id | usuario_id | rol | numero_cuenta | balance | creado_en 
+----+------------+-----+---------------+---------+-----------
+(0 rows)
+
+
+===== [T4] Lectura de otra tabla: SELECT count(*) FROM public.transaccion =====
+SELECT count(*) FROM public.transaccion;
+ count 
+-------
+     0
+(1 row)
+
+
+===== [T5] password_hash directo: SELECT password_hash FROM public.usuario =====
+SELECT password_hash FROM public.usuario;
+ password_hash 
+---------------
+(0 rows)
+
+
+===== [T6] SELECT * FROM public.usuario (incluye password_hash) =====
+SELECT * FROM public.usuario;
+ id | username | password_hash | nombres | apellidos | cedula | correo | telefono | fecha_nacimiento | rol | estado | correoverificado | codigo_referido | referido_por | bono_referido_pagado | creado_en 
+----+----------+---------------+---------+-----------+--------+--------+----------+------------------+-----+--------+------------------+-----------------+--------------+----------------------+-----------
+(0 rows)
+
+
+===== [T7] Evasion: to_jsonb(u) sobre la fila completa =====
+SELECT to_jsonb(u) FROM public.usuario u;
+ to_jsonb 
+----------
+(0 rows)
+
+
+===== [T8] Columnas permitidas de usuario (todas menos password_hash) =====
+SELECT id, username, nombres, apellidos, cedula, correo, telefono, rol, estado FROM public.usuario;
+ id | username | nombres | apellidos | cedula | correo | telefono | rol | estado 
+----+----------+---------+-----------+--------+--------+----------+-----+--------
+(0 rows)
+
+
+===== [T9] Por columna: que columnas de usuario puede leer este rol =====
+SELECT a.attname AS columna,
+       has_column_privilege(current_user, 'public.usuario'::regclass, a.attnum, 'SELECT') AS puede_leer
+  FROM pg_attribute a
+ WHERE a.attrelid = 'public.usuario'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+   AND a.attname IN ('username', 'password_hash', 'correo', 'cedula')
+ ORDER BY a.attname;
+    columna    | puede_leer 
+---------------+------------
+ cedula        | t
+ correo        | t
+ password_hash | t
+ username      | t
+(4 rows)
+
+
+===== [T10] Auditoria: SELECT count(*) FROM audit.evento =====
+SELECT count(*) FROM audit.evento;
+ count 
+-------
+     0
+(1 row)
+
+
+===== [T11] Escrituras directas (dentro de BEGIN ... ROLLBACK) =====
+BEGIN READ WRITE;
+BEGIN
+-- [T11a] UPDATE public.cuenta SET balance = balance + 1000000;
+UPDATE public.cuenta SET balance = balance + 1000000;
+UPDATE 0
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11b] INSERT INTO public.transaccion DEFAULT VALUES;
+INSERT INTO public.transaccion DEFAULT VALUES;
+ROLLBACK;
+ERROR:  null value in column "grupo_id" of relation "transaccion" violates not-null constraint
+DETAIL:  Failing row contains (89399e58-b152-47e7-a974-848f7b878523, 3, null, null, null, null, null, D, null, null, null, null, null, null, null, null, null, null).
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11c] DELETE FROM public.usuario;
+DELETE FROM public.usuario;
+DELETE 0
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11d] TRUNCATE public.transaccion;
+TRUNCATE public.transaccion;
+TRUNCATE TABLE
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11e] UPDATE public.parametro SET tasa_mora_anual = 99;
+UPDATE public.parametro SET tasa_mora_anual = 99;
+UPDATE 1
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11f] CREATE TABLE public.intruso (i int);
+CREATE TABLE public.intruso (i int);
+CREATE TABLE
+ROLLBACK;
+ROLLBACK
+
+===== [T12] Matriz resumen (cada sentencia en su propio sub-bloque; SQLSTATE 42501 = permission denied) =====
+BEGIN READ WRITE;
+BEGIN
+DO $$
+DECLARE
+  s text;
+  sentencias text[] := ARRAY[
+    'SELECT * FROM public.cuenta',
+    'SELECT * FROM public.usuario',
+    'SELECT password_hash FROM public.usuario',
+    'SELECT username FROM public.usuario',
+    'SELECT count(*) FROM audit.evento',
+    'UPDATE public.cuenta SET balance = balance + 1000000',
+    'INSERT INTO public.transaccion DEFAULT VALUES',
+    'DELETE FROM public.usuario',
+    'TRUNCATE public.transaccion',
+    'UPDATE public.parametro SET tasa_mora_anual = 99',
+    'CREATE TABLE public.intruso (i int)'
+  ];
+BEGIN
+  FOREACH s IN ARRAY sentencias LOOP
+    BEGIN
+      EXECUTE s;
+      RAISE NOTICE '% | %  ->  PERMITIDO', current_user, s;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE '% | %  ->  DENEGADO (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    WHEN OTHERS THEN
+      RAISE NOTICE '% | %  ->  OTRO ERROR (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    END;
+  END LOOP;
+END
+$$;
+NOTICE:  postgres | SELECT * FROM public.cuenta  ->  PERMITIDO
+NOTICE:  postgres | SELECT * FROM public.usuario  ->  PERMITIDO
+NOTICE:  postgres | SELECT password_hash FROM public.usuario  ->  PERMITIDO
+NOTICE:  postgres | SELECT username FROM public.usuario  ->  PERMITIDO
+NOTICE:  postgres | SELECT count(*) FROM audit.evento  ->  PERMITIDO
+NOTICE:  postgres | UPDATE public.cuenta SET balance = balance + 1000000  ->  PERMITIDO
+NOTICE:  postgres | INSERT INTO public.transaccion DEFAULT VALUES  ->  OTRO ERROR (SQLSTATE 23502: null value in column "grupo_id" of relation "transaccion" violates not-null constraint)
+NOTICE:  postgres | DELETE FROM public.usuario  ->  PERMITIDO
+NOTICE:  postgres | TRUNCATE public.transaccion  ->  PERMITIDO
+NOTICE:  postgres | UPDATE public.parametro SET tasa_mora_anual = 99  ->  PERMITIDO
+NOTICE:  postgres | CREATE TABLE public.intruso (i int)  ->  PERMITIDO
+DO
+ROLLBACK;
+ROLLBACK
+
+################################################################################
+## ROL: banco_dev
+################################################################################
+
+===== [T1] Quien soy =====
+SELECT current_user AS rol,
+       (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS superusuario,
+       current_database() AS base_de_datos,
+       current_setting('default_transaction_read_only') AS solo_lectura_por_defecto;
+    rol    | superusuario | base_de_datos | solo_lectura_por_defecto 
+-----------+--------------+---------------+--------------------------
+ banco_dev | f            | banco         | off
+(1 row)
+
+
+===== [T2] Privilegios sobre las 11 tablas de public (+ audit.evento) =====
+SELECT priv AS privilegio,
+       count(*) FILTER (WHERE has_table_privilege(current_user, t.oid, priv)) AS tablas_con_privilegio,
+       count(*) AS tablas_totales
+  FROM pg_class t
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+ CROSS JOIN unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) AS priv
+ WHERE t.relkind = 'r' AND (n.nspname = 'public' OR (n.nspname = 'audit' AND t.relname = 'evento'))
+ GROUP BY priv
+ ORDER BY array_position(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'], priv);
+ privilegio | tablas_con_privilegio | tablas_totales 
+------------+-----------------------+----------------
+ SELECT     |                    11 |             12
+ INSERT     |                     0 |             12
+ UPDATE     |                     0 |             12
+ DELETE     |                     0 |             12
+ TRUNCATE   |                     0 |             12
+ REFERENCES |                     0 |             12
+ TRIGGER    |                     0 |             12
+(7 rows)
+
+
+===== [T3] Lectura directa de una tabla de dinero: SELECT * FROM public.cuenta =====
+SELECT * FROM public.cuenta;
+ id | usuario_id | rol | numero_cuenta | balance | creado_en 
+----+------------+-----+---------------+---------+-----------
+(0 rows)
+
+
+===== [T4] Lectura de otra tabla: SELECT count(*) FROM public.transaccion =====
+SELECT count(*) FROM public.transaccion;
+ count 
+-------
+     0
+(1 row)
+
+
+===== [T5] password_hash directo: SELECT password_hash FROM public.usuario =====
+SELECT password_hash FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T6] SELECT * FROM public.usuario (incluye password_hash) =====
+SELECT * FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T7] Evasion: to_jsonb(u) sobre la fila completa =====
+SELECT to_jsonb(u) FROM public.usuario u;
+ERROR:  permission denied for table usuario
+
+===== [T8] Columnas permitidas de usuario (todas menos password_hash) =====
+SELECT id, username, nombres, apellidos, cedula, correo, telefono, rol, estado FROM public.usuario;
+ id | username | nombres | apellidos | cedula | correo | telefono | rol | estado 
+----+----------+---------+-----------+--------+--------+----------+-----+--------
+(0 rows)
+
+
+===== [T9] Por columna: que columnas de usuario puede leer este rol =====
+SELECT a.attname AS columna,
+       has_column_privilege(current_user, 'public.usuario'::regclass, a.attnum, 'SELECT') AS puede_leer
+  FROM pg_attribute a
+ WHERE a.attrelid = 'public.usuario'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+   AND a.attname IN ('username', 'password_hash', 'correo', 'cedula')
+ ORDER BY a.attname;
+    columna    | puede_leer 
+---------------+------------
+ cedula        | t
+ correo        | t
+ password_hash | f
+ username      | t
+(4 rows)
+
+
+===== [T10] Auditoria: SELECT count(*) FROM audit.evento =====
+SELECT count(*) FROM audit.evento;
+ count 
+-------
+     0
+(1 row)
+
+
+===== [T11] Escrituras directas (dentro de BEGIN ... ROLLBACK) =====
+BEGIN READ WRITE;
+BEGIN
+-- [T11a] UPDATE public.cuenta SET balance = balance + 1000000;
+UPDATE public.cuenta SET balance = balance + 1000000;
+ERROR:  permission denied for table cuenta
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11b] INSERT INTO public.transaccion DEFAULT VALUES;
+INSERT INTO public.transaccion DEFAULT VALUES;
+ERROR:  permission denied for table transaccion
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11c] DELETE FROM public.usuario;
+DELETE FROM public.usuario;
+ERROR:  permission denied for table usuario
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11d] TRUNCATE public.transaccion;
+TRUNCATE public.transaccion;
+ROLLBACK;
+ERROR:  permission denied for table transaccion
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11e] UPDATE public.parametro SET tasa_mora_anual = 99;
+UPDATE public.parametro SET tasa_mora_anual = 99;
+ROLLBACK;
+ERROR:  permission denied for table parametro
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11f] CREATE TABLE public.intruso (i int);
+CREATE TABLE public.intruso (i int);
+ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE public.intruso (i int);
+                     ^
+ROLLBACK;
+ROLLBACK
+
+===== [T12] Matriz resumen (cada sentencia en su propio sub-bloque; SQLSTATE 42501 = permission denied) =====
+BEGIN READ WRITE;
+BEGIN
+DO $$
+DECLARE
+  s text;
+  sentencias text[] := ARRAY[
+    'SELECT * FROM public.cuenta',
+    'SELECT * FROM public.usuario',
+    'SELECT password_hash FROM public.usuario',
+    'SELECT username FROM public.usuario',
+    'SELECT count(*) FROM audit.evento',
+    'UPDATE public.cuenta SET balance = balance + 1000000',
+    'INSERT INTO public.transaccion DEFAULT VALUES',
+    'DELETE FROM public.usuario',
+    'TRUNCATE public.transaccion',
+    'UPDATE public.parametro SET tasa_mora_anual = 99',
+    'CREATE TABLE public.intruso (i int)'
+  ];
+BEGIN
+  FOREACH s IN ARRAY sentencias LOOP
+    BEGIN
+      EXECUTE s;
+      RAISE NOTICE '% | %  ->  PERMITIDO', current_user, s;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE '% | %  ->  DENEGADO (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    WHEN OTHERS THEN
+      RAISE NOTICE '% | %  ->  OTRO ERROR (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    END;
+  END LOOP;
+END
+$$;
+NOTICE:  banco_dev | SELECT * FROM public.cuenta  ->  PERMITIDO
+NOTICE:  banco_dev | SELECT * FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_dev | SELECT password_hash FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_dev | SELECT username FROM public.usuario  ->  PERMITIDO
+NOTICE:  banco_dev | SELECT count(*) FROM audit.evento  ->  PERMITIDO
+NOTICE:  banco_dev | UPDATE public.cuenta SET balance = balance + 1000000  ->  DENEGADO (SQLSTATE 42501: permission denied for table cuenta)
+NOTICE:  banco_dev | INSERT INTO public.transaccion DEFAULT VALUES  ->  DENEGADO (SQLSTATE 42501: permission denied for table transaccion)
+NOTICE:  banco_dev | DELETE FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_dev | TRUNCATE public.transaccion  ->  DENEGADO (SQLSTATE 42501: permission denied for table transaccion)
+NOTICE:  banco_dev | UPDATE public.parametro SET tasa_mora_anual = 99  ->  DENEGADO (SQLSTATE 42501: permission denied for table parametro)
+NOTICE:  banco_dev | CREATE TABLE public.intruso (i int)  ->  DENEGADO (SQLSTATE 42501: permission denied for schema public)
+DO
+ROLLBACK;
+ROLLBACK
+
+################################################################################
+## ROL: banco_app
+################################################################################
+
+===== [T1] Quien soy =====
+SELECT current_user AS rol,
+       (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS superusuario,
+       current_database() AS base_de_datos,
+       current_setting('default_transaction_read_only') AS solo_lectura_por_defecto;
+    rol    | superusuario | base_de_datos | solo_lectura_por_defecto 
+-----------+--------------+---------------+--------------------------
+ banco_app | f            | banco         | off
+(1 row)
+
+
+===== [T2] Privilegios sobre las 11 tablas de public (+ audit.evento) =====
+SELECT priv AS privilegio,
+       count(*) FILTER (WHERE has_table_privilege(current_user, t.oid, priv)) AS tablas_con_privilegio,
+       count(*) AS tablas_totales
+  FROM pg_class t
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+ CROSS JOIN unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) AS priv
+ WHERE t.relkind = 'r' AND (n.nspname = 'public' OR (n.nspname = 'audit' AND t.relname = 'evento'))
+ GROUP BY priv
+ ORDER BY array_position(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'], priv);
+ privilegio | tablas_con_privilegio | tablas_totales 
+------------+-----------------------+----------------
+ SELECT     |                     0 |             12
+ INSERT     |                     0 |             12
+ UPDATE     |                     0 |             12
+ DELETE     |                     0 |             12
+ TRUNCATE   |                     0 |             12
+ REFERENCES |                     0 |             12
+ TRIGGER    |                     0 |             12
+(7 rows)
+
+
+===== [T3] Lectura directa de una tabla de dinero: SELECT * FROM public.cuenta =====
+SELECT * FROM public.cuenta;
+ERROR:  permission denied for table cuenta
+
+===== [T4] Lectura de otra tabla: SELECT count(*) FROM public.transaccion =====
+SELECT count(*) FROM public.transaccion;
+ERROR:  permission denied for table transaccion
+
+===== [T5] password_hash directo: SELECT password_hash FROM public.usuario =====
+SELECT password_hash FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T6] SELECT * FROM public.usuario (incluye password_hash) =====
+SELECT * FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T7] Evasion: to_jsonb(u) sobre la fila completa =====
+SELECT to_jsonb(u) FROM public.usuario u;
+ERROR:  permission denied for table usuario
+
+===== [T8] Columnas permitidas de usuario (todas menos password_hash) =====
+SELECT id, username, nombres, apellidos, cedula, correo, telefono, rol, estado FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T9] Por columna: que columnas de usuario puede leer este rol =====
+SELECT a.attname AS columna,
+       has_column_privilege(current_user, 'public.usuario'::regclass, a.attnum, 'SELECT') AS puede_leer
+  FROM pg_attribute a
+ WHERE a.attrelid = 'public.usuario'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+   AND a.attname IN ('username', 'password_hash', 'correo', 'cedula')
+ ORDER BY a.attname;
+    columna    | puede_leer 
+---------------+------------
+ cedula        | f
+ correo        | f
+ password_hash | f
+ username      | f
+(4 rows)
+
+
+===== [T10] Auditoria: SELECT count(*) FROM audit.evento =====
+SELECT count(*) FROM audit.evento;
+
+===== [T11] Escrituras directas (dentro de BEGIN ... ROLLBACK) =====
+BEGIN READ WRITE;
+ERROR:  permission denied for schema audit
+LINE 1: SELECT count(*) FROM audit.evento;
+                             ^
+BEGIN
+-- [T11a] UPDATE public.cuenta SET balance = balance + 1000000;
+UPDATE public.cuenta SET balance = balance + 1000000;
+ROLLBACK;
+ERROR:  permission denied for table cuenta
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11b] INSERT INTO public.transaccion DEFAULT VALUES;
+INSERT INTO public.transaccion DEFAULT VALUES;
+ROLLBACK;
+ERROR:  permission denied for table transaccion
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11c] DELETE FROM public.usuario;
+DELETE FROM public.usuario;
+ERROR:  permission denied for table usuario
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11d] TRUNCATE public.transaccion;
+TRUNCATE public.transaccion;
+ERROR:  permission denied for table transaccion
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11e] UPDATE public.parametro SET tasa_mora_anual = 99;
+UPDATE public.parametro SET tasa_mora_anual = 99;
+ERROR:  permission denied for table parametro
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11f] CREATE TABLE public.intruso (i int);
+CREATE TABLE public.intruso (i int);
+ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE public.intruso (i int);
+                     ^
+ROLLBACK;
+ROLLBACK
+
+===== [T12] Matriz resumen (cada sentencia en su propio sub-bloque; SQLSTATE 42501 = permission denied) =====
+BEGIN READ WRITE;
+BEGIN
+DO $$
+DECLARE
+  s text;
+  sentencias text[] := ARRAY[
+    'SELECT * FROM public.cuenta',
+    'SELECT * FROM public.usuario',
+    'SELECT password_hash FROM public.usuario',
+    'SELECT username FROM public.usuario',
+    'SELECT count(*) FROM audit.evento',
+    'UPDATE public.cuenta SET balance = balance + 1000000',
+    'INSERT INTO public.transaccion DEFAULT VALUES',
+    'DELETE FROM public.usuario',
+    'TRUNCATE public.transaccion',
+    'UPDATE public.parametro SET tasa_mora_anual = 99',
+    'CREATE TABLE public.intruso (i int)'
+  ];
+BEGIN
+  FOREACH s IN ARRAY sentencias LOOP
+    BEGIN
+      EXECUTE s;
+      RAISE NOTICE '% | %  ->  PERMITIDO', current_user, s;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE '% | %  ->  DENEGADO (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    WHEN OTHERS THEN
+      RAISE NOTICE '% | %  ->  OTRO ERROR (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    END;
+  END LOOP;
+END
+$$;
+NOTICE:  banco_app | SELECT * FROM public.cuenta  ->  DENEGADO (SQLSTATE 42501: permission denied for table cuenta)
+NOTICE:  banco_app | SELECT * FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_app | SELECT password_hash FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_app | SELECT username FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_app | SELECT count(*) FROM audit.evento  ->  DENEGADO (SQLSTATE 42501: permission denied for schema audit)
+NOTICE:  banco_app | UPDATE public.cuenta SET balance = balance + 1000000  ->  DENEGADO (SQLSTATE 42501: permission denied for table cuenta)
+NOTICE:  banco_app | INSERT INTO public.transaccion DEFAULT VALUES  ->  DENEGADO (SQLSTATE 42501: permission denied for table transaccion)
+NOTICE:  banco_app | DELETE FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_app | TRUNCATE public.transaccion  ->  DENEGADO (SQLSTATE 42501: permission denied for table transaccion)
+NOTICE:  banco_app | UPDATE public.parametro SET tasa_mora_anual = 99  ->  DENEGADO (SQLSTATE 42501: permission denied for table parametro)
+NOTICE:  banco_app | CREATE TABLE public.intruso (i int)  ->  DENEGADO (SQLSTATE 42501: permission denied for schema public)
+DO
+ROLLBACK;
+ROLLBACK
+
+################################################################################
+## ROL: banco_lector
+################################################################################
+
+===== [T1] Quien soy =====
+SELECT current_user AS rol,
+       (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS superusuario,
+       current_database() AS base_de_datos,
+       current_setting('default_transaction_read_only') AS solo_lectura_por_defecto;
+     rol      | superusuario | base_de_datos | solo_lectura_por_defecto 
+--------------+--------------+---------------+--------------------------
+ banco_lector | f            | banco         | on
+(1 row)
+
+
+===== [T2] Privilegios sobre las 11 tablas de public (+ audit.evento) =====
+SELECT priv AS privilegio,
+       count(*) FILTER (WHERE has_table_privilege(current_user, t.oid, priv)) AS tablas_con_privilegio,
+       count(*) AS tablas_totales
+  FROM pg_class t
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+ CROSS JOIN unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) AS priv
+ WHERE t.relkind = 'r' AND (n.nspname = 'public' OR (n.nspname = 'audit' AND t.relname = 'evento'))
+ GROUP BY priv
+ ORDER BY array_position(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'], priv);
+ privilegio | tablas_con_privilegio | tablas_totales 
+------------+-----------------------+----------------
+ SELECT     |                    11 |             12
+ INSERT     |                     0 |             12
+ UPDATE     |                     0 |             12
+ DELETE     |                     0 |             12
+ TRUNCATE   |                     0 |             12
+ REFERENCES |                     0 |             12
+ TRIGGER    |                     0 |             12
+(7 rows)
+
+
+===== [T3] Lectura directa de una tabla de dinero: SELECT * FROM public.cuenta =====
+SELECT * FROM public.cuenta;
+ id | usuario_id | rol | numero_cuenta | balance | creado_en 
+----+------------+-----+---------------+---------+-----------
+(0 rows)
+
+
+===== [T4] Lectura de otra tabla: SELECT count(*) FROM public.transaccion =====
+SELECT count(*) FROM public.transaccion;
+ count 
+-------
+     0
+(1 row)
+
+
+===== [T5] password_hash directo: SELECT password_hash FROM public.usuario =====
+SELECT password_hash FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T6] SELECT * FROM public.usuario (incluye password_hash) =====
+SELECT * FROM public.usuario;
+ERROR:  permission denied for table usuario
+
+===== [T7] Evasion: to_jsonb(u) sobre la fila completa =====
+SELECT to_jsonb(u) FROM public.usuario u;
+ERROR:  permission denied for table usuario
+
+===== [T8] Columnas permitidas de usuario (todas menos password_hash) =====
+SELECT id, username, nombres, apellidos, cedula, correo, telefono, rol, estado FROM public.usuario;
+ id | username | nombres | apellidos | cedula | correo | telefono | rol | estado 
+----+----------+---------+-----------+--------+--------+----------+-----+--------
+(0 rows)
+
+
+===== [T9] Por columna: que columnas de usuario puede leer este rol =====
+SELECT a.attname AS columna,
+       has_column_privilege(current_user, 'public.usuario'::regclass, a.attnum, 'SELECT') AS puede_leer
+  FROM pg_attribute a
+ WHERE a.attrelid = 'public.usuario'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+   AND a.attname IN ('username', 'password_hash', 'correo', 'cedula')
+ ORDER BY a.attname;
+    columna    | puede_leer 
+---------------+------------
+ cedula        | t
+ correo        | t
+ password_hash | f
+ username      | t
+(4 rows)
+
+
+===== [T10] Auditoria: SELECT count(*) FROM audit.evento =====
+SELECT count(*) FROM audit.evento;
+ count 
+-------
+     0
+(1 row)
+
+
+===== [T11] Escrituras directas (dentro de BEGIN ... ROLLBACK) =====
+BEGIN READ WRITE;
+BEGIN
+-- [T11a] UPDATE public.cuenta SET balance = balance + 1000000;
+UPDATE public.cuenta SET balance = balance + 1000000;
+ROLLBACK;
+ERROR:  permission denied for table cuenta
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11b] INSERT INTO public.transaccion DEFAULT VALUES;
+INSERT INTO public.transaccion DEFAULT VALUES;
+ERROR:  permission denied for table transaccion
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11c] DELETE FROM public.usuario;
+DELETE FROM public.usuario;
+ERROR:  permission denied for table usuario
+ROLLBACK;
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11d] TRUNCATE public.transaccion;
+TRUNCATE public.transaccion;
+ROLLBACK;
+ERROR:  permission denied for table transaccion
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11e] UPDATE public.parametro SET tasa_mora_anual = 99;
+UPDATE public.parametro SET tasa_mora_anual = 99;
+ROLLBACK;
+ERROR:  permission denied for table parametro
+ROLLBACK
+BEGIN READ WRITE;
+BEGIN
+-- [T11f] CREATE TABLE public.intruso (i int);
+CREATE TABLE public.intruso (i int);
+ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE public.intruso (i int);
+                     ^
+ROLLBACK;
+ROLLBACK
+
+===== [T12] Matriz resumen (cada sentencia en su propio sub-bloque; SQLSTATE 42501 = permission denied) =====
+BEGIN READ WRITE;
+BEGIN
+DO $$
+DECLARE
+  s text;
+  sentencias text[] := ARRAY[
+    'SELECT * FROM public.cuenta',
+    'SELECT * FROM public.usuario',
+    'SELECT password_hash FROM public.usuario',
+    'SELECT username FROM public.usuario',
+    'SELECT count(*) FROM audit.evento',
+    'UPDATE public.cuenta SET balance = balance + 1000000',
+    'INSERT INTO public.transaccion DEFAULT VALUES',
+    'DELETE FROM public.usuario',
+    'TRUNCATE public.transaccion',
+    'UPDATE public.parametro SET tasa_mora_anual = 99',
+    'CREATE TABLE public.intruso (i int)'
+  ];
+BEGIN
+  FOREACH s IN ARRAY sentencias LOOP
+    BEGIN
+      EXECUTE s;
+      RAISE NOTICE '% | %  ->  PERMITIDO', current_user, s;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE NOTICE '% | %  ->  DENEGADO (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    WHEN OTHERS THEN
+      RAISE NOTICE '% | %  ->  OTRO ERROR (SQLSTATE %: %)', current_user, s, SQLSTATE, SQLERRM;
+    END;
+  END LOOP;
+END
+$$;
+NOTICE:  banco_lector | SELECT * FROM public.cuenta  ->  PERMITIDO
+NOTICE:  banco_lector | SELECT * FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_lector | SELECT password_hash FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_lector | SELECT username FROM public.usuario  ->  PERMITIDO
+NOTICE:  banco_lector | SELECT count(*) FROM audit.evento  ->  PERMITIDO
+NOTICE:  banco_lector | UPDATE public.cuenta SET balance = balance + 1000000  ->  DENEGADO (SQLSTATE 42501: permission denied for table cuenta)
+NOTICE:  banco_lector | INSERT INTO public.transaccion DEFAULT VALUES  ->  DENEGADO (SQLSTATE 42501: permission denied for table transaccion)
+NOTICE:  banco_lector | DELETE FROM public.usuario  ->  DENEGADO (SQLSTATE 42501: permission denied for table usuario)
+NOTICE:  banco_lector | TRUNCATE public.transaccion  ->  DENEGADO (SQLSTATE 42501: permission denied for table transaccion)
+DO
+NOTICE:  banco_lector | UPDATE public.parametro SET tasa_mora_anual = 99  ->  DENEGADO (SQLSTATE 42501: permission denied for table parametro)
+NOTICE:  banco_lector | CREATE TABLE public.intruso (i int)  ->  DENEGADO (SQLSTATE 42501: permission denied for schema public)
+ROLLBACK;
+ROLLBACK

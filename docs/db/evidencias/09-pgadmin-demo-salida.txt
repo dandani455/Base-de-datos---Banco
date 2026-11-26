@@ -1,0 +1,52 @@
+-- Salida real de 09-pgadmin-demo.sql ejecutado contra la BD banco (recien aplicada: reset + apply) con: docker compose -f db/compose.dev.yml exec -T db psql -X -U postgres -d banco -v ON_ERROR_STOP=1 < docs/db/evidencias/09-pgadmin-demo.sql
+-- Fecha: 2026-11-24 19:22:37 -0500. Los NOTICE son lo que pgAdmin muestra en la pestaña Messages.
+
+BEGIN
+NOTICE:  Hoy del banco: 2026-11-24. Ana tiene 8149953.00 en la cuenta. Tasa de mora de la demo: 30 % anual (provisional)
+NOTICE:  1) credito bf4b0b0b-18b2-4a6d-b50a-a3c36c72b949: cuotas 12 de 910463.77; capital_pendiente 10000000.00; cuenta 18149953.00
+NOTICE:  2) pagar_cuota(credito, numero 1) devuelve: {"mora": 0.00, "fecha": "2026-11-24T19:22:08.873285-05:00", "numero": 1, "pagado": 910463.77}
+NOTICE:     cuota 1: pagada=t, capital_pagado=771579.47, intereses_pagados=138884.30; capital_pendiente 9228420.53; fecha_interes = 2026-12-24 (el vencimiento de la cuota 1: futura)
+NOTICE:       pata: CREDITO_CUOTA CREDITO S $771579.47
+NOTICE:       pata: CREDITO_CUOTA CUENTA S $910463.77
+NOTICE:       pata: CREDITO_CUOTA RESULTADO S $138884.30
+NOTICE:     vista_creditos: [{"id": "bf4b0b0b-18b2-4a6d-b50a-a3c36c72b949", "saldo": 9228420.53, "producto": "Demo Libre inversion", "interes_mes": 0.00, "cuotas_pagadas": 1, "mora_acumulada": 0.00, "cuotas_faltantes": 11, "descuento_automatico": false}]
+NOTICE:     doble clic con numero=1: Recurso no encontrado (no paga la cuota 2)
+NOTICE:     numero=5 (no es la proxima): Recurso no encontrado (no se salta ninguna)
+NOTICE:     cuotas pagadas tras los dos intentos: 1 (solo la 1)
+NOTICE:  3) reloj en 2027-01-08 (15 dias dentro del periodo de la cuota 2). vista_creditos: [{"id": "bf4b0b0b-18b2-4a6d-b50a-a3c36c72b949", "saldo": 9228420.53, "producto": "Demo Libre inversion", "interes_mes": 62016.91, "cuotas_pagadas": 1, "mora_acumulada": 0.00, "cuotas_faltantes": 11, "descuento_automatico": false}]
+NOTICE:     abonar_credito($1.000.000): {"mora": 0.00, "fecha": "2027-01-08T19:22:08.892158-05:00", "saldo": 8290437.44, "capital": 937983.09, "interes": 62016.91, "cuota_nueva": 812502.27} 
+NOTICE:     capital 9228420.53 -> 8290437.44; cuotas impagas 11 (antes 11 de 910.463,77): cuota 2 = 812502.27, cuota 12 = 812502.30; vencimientos y plazo intactos (cuotas totales 12)
+NOTICE:     suma de capital de las impagas = 8290437.44 = capital_pendiente (ct_credito_plan); valor_cuota_original de la 2 NO cambia: 910463.77
+NOTICE:       pata: CREDITO_ABONO CREDITO S $937983.09
+NOTICE:       pata: CREDITO_ABONO CUENTA S $1000000.00
+NOTICE:       pata: CREDITO_ABONO RESULTADO S $62016.91
+NOTICE:     abono de $0: Monto inválido (el interes de este periodo ya se cobro: un segundo abono de $1.000 SI bajaria capital)
+NOTICE:     abono de $99.000.000 (excede la liquidacion): Monto fuera de rango
+NOTICE:  4) reloj en 2027-02-03: cuota 2 vencida hace 10 dias (valor 812502.27). mora derivada = round(812502.27 x 30 % / 365 x 10, 2) = 6678.10; vista_creditos.mora_acumulada = 6678.10
+NOTICE:     pagar_cuota (sin numero) cobra cuota + mora en DOS grupos: {"mora": 6678.10, "fecha": "2027-02-03T19:22:08.906614-05:00", "numero": 2, "pagado": 819180.37}
+NOTICE:       pata: CREDITO_CUOTA CREDITO S $753074.57
+NOTICE:       pata: CREDITO_CUOTA CUENTA S $812502.27
+NOTICE:       pata: CREDITO_CUOTA RESULTADO S $59427.70
+NOTICE:       pata: CREDITO_MORA CUENTA S $6678.10
+NOTICE:       pata: CREDITO_MORA RESULTADO S $6678.10
+NOTICE:  5) Beto (saldo 500.00) paga su cuota: Saldo insuficiente (nada escrito: cuotas pagadas 0, grupos de cuota 0)
+NOTICE:     Beto intenta pagar el credito de Ana: Recurso no encontrado (no se distingue ajeno de inexistente)
+NOTICE:  6) (el reloj de la demo ya esta en 2027-02-03: todas las fechas de Carla son relativas a ese dia, T)
+NOTICE:     activar_descuento_automatico: {"id": "d02f0f0f-8617-4e0f-88d5-9543dfaaff48", "descuento_automatico": true}; cobro_hasta (cursor) = hoy = 2027-02-03; saldo de la cuenta = 1000.00
+NOTICE:     reloj +55 dias (hoy = 2027-03-30); cuota 1 vence el 2027-03-03; el CDT vence el 2027-03-15
+NOTICE:     tras UNA lectura: cuotas pagadas = 1, cobro_hasta = 2027-03-30 (= hoy)
+NOTICE:       orden 63: CDT_VENCIMIENTO CUENTA $24023537.45 con fecha 2027-03-15
+NOTICE:       orden 65: CREDITO_CUOTA CUENTA $910463.77 con fecha 2027-03-15
+NOTICE:       orden 67: CREDITO_MORA CUENTA $8979.92 con fecha 2027-03-15
+NOTICE:     (el CDT se cierra PRIMERO con la fecha de su vencimiento y la cuota se cobra DESPUES, en esa misma fecha, con mora de 12 dias: del vencimiento de la cuota al cierre del CDT, no hasta hoy)
+NOTICE:     segunda lectura: patas escritas = 0 (idempotente: no escribe nada)
+NOTICE:     desactivar: {"id": "d02f0f0f-8617-4e0f-88d5-9543dfaaff48", "descuento_automatico": false} ; cobro_hasta = <NULL> (NULL: el credito deja de procesarse)
+NOTICE:  7) plantillas del libro: 20; banco_app ejecuta 24 funciones publicas (las 3 de E9 incluidas: abonar_credito, activar_descuento_automatico, pagar_cuota)
+NOTICE:  8) v_integridad_global.ok = t (defensas fallidas=0, grupos con error=0, cuentas con desvio=0, creditos con plan incoherente=0, grupos de credito sin plantilla=0)
+DO
+ROLLBACK
+                                            resultado                                             
+--------------------------------------------------------------------------------------------------
+ Demo terminada: ROLLBACK ejecutado (el reloj, la tasa de mora y los datos quedaron como estaban)
+(1 row)
+

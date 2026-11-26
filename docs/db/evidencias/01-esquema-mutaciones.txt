@@ -1,0 +1,38 @@
+Banco Digital - Etapa 1 - pruebas de mutacion (¿las pruebas detectan de verdad un esquema roto?)
+Fecha: 2026-11-21   Rama: feat/db-core   Base: banco_test (desechable; `ctl test` la recrea limpia)
+
+Metodo: se rompe UNA cosa a proposito en banco_test, se ejecuta el archivo de pruebas correspondiente con
+psql -v ON_ERROR_STOP=1 y se comprueba que FALLA. Una prueba que no falla ante la mutacion no protege nada.
+M1-M4 se aplicaron de forma acumulativa en una misma corrida; M5-M12 se aplicaron cada una sobre una
+banco_test recien recreada (independientes).
+
+Resultado: 12 de 12 mutaciones detectadas.
+
+M1  Se elimina la matriz contable (DROP CONSTRAINT ck_transaccion_tipo_contenedor_sentido)
+    -> 05_libro_mayor: FAIL: matriz: las 133 combinaciones prohibidas se rechazan (check_violation) (esperado=133, actual=...)
+M2  Se concede SELECT de TABLA sobre usuario a banco_lector (password_hash quedaria legible)
+    -> 08_permisos: FAIL: banco_lector NO tiene SELECT a nivel de TABLA sobre usuario (solo por columna) (esperado=f, actual=t)
+M3  La FK transaccion->bolsillo pasa a ON DELETE CASCADE (el libro deja de estar protegido)
+    -> 06_borrados: FAIL: NO se puede borrar un BOLSILLO que tiene movimientos (se esperaba violar "fk_transaccion_bolsillo" ...)
+M4  Se elimina el CHECK ck_cuenta_rol_cliente
+    -> 04_restricciones: FAIL: cuenta: NO se puede forzar rol ADMIN en cuenta (CHECK) (se esperaba violar "ck_cuenta_rol_cliente" ...)
+M5  Se elimina el indice unico parcial uq_credito_vivo_por_producto
+    -> 04_restricciones: FAIL: credito: segundo credito ACTIVO del mismo producto en la misma cuenta (se esperaba violar "uq_credito_vivo_p...")
+M6  Se agrega un UNIQUE de nombre de bolsillo (restriccion NO solicitada)
+    -> 04_restricciones: ERROR: duplicate key value violates unique constraint "uq_bolsillo_nombre"
+       (los datos base incluyen dos bolsillos con el mismo nombre: el esquema ya no los admite)
+M7  Se elimina ck_usuario_subtipo (un ADMIN podria tener referidor)
+    -> 04_restricciones: FAIL: usuario: un ADMIN no puede tener referidor (subtipo) (se esperaba violar "ck_usuario_subtipo" y la sentencia tuvo exito)
+M8  La FK compuesta de cuenta se sustituye por una FK simple a usuario(id) y se quita el CHECK (un ADMIN podria tener cuenta)
+    -> 04_restricciones: FAIL: cuenta: NO se puede crear una cuenta para un ADMIN (FK compuesta, rol por defecto) (se esperaba violar "fk_c...")
+M9  Se concede SELECT(password_hash) por columna a banco_lector
+    -> 08_permisos: FAIL: banco_lector NO tiene SELECT sobre password_hash (esperado=f, actual=t)
+M10 banco_app recibe UPDATE sobre cuenta
+    -> 08_permisos: FAIL: banco_app: CERO privilegios de tabla en las 12 tablas (esperado=0, actual=1)
+M11 La columna generada lado se convierte en una columna normal (DROP EXPRESSION)
+    -> 05_libro_mayor: FAIL: matriz: el lado D/C generado coincide con la tabla contable en las 37 permitidas (esperado=0, actual=37)
+M12 Se crea un trigger de usuario (E1 no debe tener triggers)
+    -> 03_schema: FAIL: no hay vistas ni funciones del banco todavia en public (E1 es solo estructura) (esperado=0, actual=1)
+
+Ademas, 09_idempotencia.test.sql incluye una mutacion propia: concede UPDATE sobre cuenta a banco_app y comprueba que
+reaplicar 05_permisos.sql lo revoca (el script CONVERGE al estado correcto) y que la huella del catalogo vuelve a ser identica.

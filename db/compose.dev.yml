@@ -1,0 +1,75 @@
+# Entorno de desarrollo de la capa de base de datos: PostgreSQL 16 + pgAdmin 4.
+# NO es el docker-compose.yml final del proyecto (ese es del frente Docker); vive aqui para no chocar con el.
+# Uso recomendado: db\ctl.cmd up   (o db\ctl.ps1 up)   -> ver docs/db/00-entorno.md
+name: banco-db
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en db/.env}
+      POSTGRES_DB: banco
+      TZ: America/Bogota
+      PGTZ: America/Bogota
+    command:
+      - postgres
+      - -c
+      - timezone=America/Bogota
+      - -c
+      - log_timezone=America/Bogota
+      - -c
+      - log_statement=none
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Solo fija la zona horaria de la BD en el primer arranque. NO crea el esquema.
+      - ./docker/postgres/00_bootstrap.sql:/docker-entrypoint-initdb.d/00_bootstrap.sql:ro
+      # SQL y pruebas, de solo lectura, para que psql los lea dentro del contenedor.
+      - ./sql:/work/sql:ro
+      - ./tests:/work/tests:ro
+      # (E14) catalogo, seed de demostracion y respaldo/restauracion: db/seed, de solo lectura.
+      - ./seed:/work/seed:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d banco"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:9.19.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin_local}
+      # Modo escritorio: sin pantalla de login ni contrasena maestra.
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      # Se usan solo para generar el archivo de contrasenas (pgpass) al arrancar.
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en db/.env}
+    # Genera /tmp/pgpass dentro del contenedor (nada se escribe en el repositorio) y arranca pgAdmin.
+    # Las contraseñas de banco_dev/banco_app/banco_lector son las de DESARROLLO LOCAL definidas en db/sql/01_roles.sql.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - printf '%s\n' "db:5432:*:$${POSTGRES_USER}:$${POSTGRES_PASSWORD}" "db:5432:*:banco_dev:banco_dev_dev" "db:5432:*:banco_app:banco_app_dev" "db:5432:*:banco_lector:banco_lector_dev" > /tmp/pgpass && chmod 600 /tmp/pgpass && exec /entrypoint.sh
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      # Para abrir los .sql del repositorio desde el Query Tool (Open File > /work/sql). Solo lectura.
+      - ./sql:/work/sql:ro
+      - ./tests:/work/tests:ro
+      # (E14) catalogo, seed de demostracion y respaldo/restauracion: db/seed, de solo lectura.
+      - ./seed:/work/seed:ro
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  pgadmin-data:

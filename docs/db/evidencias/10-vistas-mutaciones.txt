@@ -1,0 +1,97 @@
+# Mutaciones de E10 (M306-M340, 35): M306-M339 en la corrida completa con DESDE=306 (34 de 34) y M340 (correccion de auditoria: la defensa de la vista debe FALLAR si la vista no existe) por separado con SOLO=M340. Fecha: 2026-11-24 22:42:34 -0500
+
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+M306  DETECTADA  una pata BOLSILLO de un BOLSO_INGRESO tambien es visible (una fila por PATA y no por operacion)
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M307  DETECTADA  BOLSO_MOVIMIENTO muestra las DOS patas de bolsillo (la E y la S)
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M308  DETECTADA  la pata CDT es siempre visible (CDT_CREACION y CDT_VENCIMIENTO salen dos veces)
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M309  DETECTADA  el historial incluye las patas RESULTADO (interes y mora como filas extra)
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M310  DETECTADA  la direccion se invierte (S = recibo, E = envio)
+      -> 65_vistas_historial: ERROR:  FAIL: A2 las 19 filas no-interes-de-bolsillo, en orden de insercion: tipo real, direccion por sentido, monto, contraparte (con la cuenta SOLO 
+M311  DETECTADA  la cuenta de la contraparte sale tambien en los movimientos del banco (bono de referido)
+      -> 65_vistas_historial: ERROR:  FAIL: A11 sin snapshot de contraparte: el bolsillo, el CDT y el producto dan su NOMBRE (JOIN de la vista), un ingreso sin nada "Banco Digital"
+M312  DETECTADA  la contraparte sin snapshot no toma el nombre del bolsillo / CDT / producto
+      -> 65_vistas_historial: ERROR:  FAIL: A11 sin snapshot de contraparte: el bolsillo, el CDT y el producto dan su NOMBRE (JOIN de la vista), un ingreso sin nada "Banco Digital"
+M313  DETECTADA  la contraparte sin nada queda NULL (sin el respaldo Banco Digital)
+      -> 65_vistas_historial: ERROR:  FAIL: A2 las 19 filas no-interes-de-bolsillo, en orden de insercion: tipo real, direccion por sentido, monto, contraparte (con la cuenta SOLO 
+M314  DETECTADA  D8: la regla mostrar_bolso se ignora (siempre visibles)
+      -> 65_vistas_historial: ERROR:  FAIL: F1 mostrar_bolso = false oculta SOLO los movimientos cuenta<->bolsillo (n -> n - bolso) (esperado=31, actual=34)
+M315  DETECTADA  D8: los intereses de CDT quedan siempre ocultos
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M316  DETECTADA  D8: los intereses de bolsillo quedan siempre ocultos
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M317  DETECTADA  el historial se ordena por fecha y no por orden (un cobro atrasado quedaria en su sitio cronologico, no por descubrimiento)
+      -> 65_vistas_historial: ERROR:  FAIL: B2 con limite 2 el corte es por orden de ESCRITURA: trae las 2 filas escritas al descubrir el cierre (CDT_VENCIMIENTO e INTERES_CDT, fec
+M318  DETECTADA  el limite maximo de _reglas_historial se ignora (50 fijo)
+      -> 65_vistas_historial: ERROR:  FAIL: F3 limite_max = 10 acota tambien p_limite = 50 y NULL; la contraparte de respaldo sale de la regla (Banco X en un ingreso sin snapshot) 
+M319  DETECTADA  p_limite = 0 devuelve [] (sin el piso de 1)
+      -> 65_vistas_historial: ERROR:  FAIL: A9 p_limite: NULL y 1000 = todas (23), 51 = 23, 5 = 5, 1 = 1 y 0 / -7 se acotan a 1 (sin error ni mensaje nuevo) (esperado=23|23|23|5|1|
+M320  DETECTADA  el formateador no filtra por la cuenta (devuelve el historial de TODOS)
+      -> 65_vistas_historial: ERROR:  FAIL: A1 una fila por OPERACION: tantas filas como grupos con una pata de liquidez (CUENTA/BOLSILLO/CDT) de la cuenta (oraculo independiente, 
+M321  DETECTADA  vista_historial NO corre el motor antes de leer
+      -> 65_vistas_historial: ERROR:  FAIL: B1 el cierre del CDT (fecha dia 30) se escribio DESPUES del recibo del dia 35: aparece PRIMERO (por orden) y conserva su fecha real, ant
+M322  DETECTADA  vista_dashboard NO corre el motor antes de leer (no cobra ni devenga)
+      -> 65_vistas_historial: ERROR:  FAIL: C2 nombre = nombres; balance_total = vista_balance.total (la MISMA funcion); transacciones = las 8 primeras de vista_historial (esperado
+M323  DETECTADA  vista_dashboard toma la instantanea del reloj DOS veces
+      -> 65_vistas_historial: ERROR:  FAIL: E1 vista_dashboard y vista_historial: _avanzar_hasta( y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; sin leer el rel
+M324  DETECTADA  vista_historial pasa now() al motor en vez del ahora de la instantanea
+      -> 65_vistas_historial: ERROR:  FAIL: E1 vista_dashboard y vista_historial: _avanzar_hasta( y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; sin leer el rel
+M325  DETECTADA  dashboard: cdts.generado suma tambien los CDT CERRADOS
+      -> 65_vistas_historial: ERROR:  FAIL: C3 cdts = (cantidad y Σ generado) de los CDT ACTIVOS de vista_cdts: el cerrado NO suma; hay 1 activo con interes > 0 (esperado=1|t|t, a
+M326  DETECTADA  dashboard: cuota_por_pagar usa el capital de la cuota y no su valor
+      -> 65_vistas_historial: ERROR:  FAIL: C4 creditos: interes_corriendo = Σ interes_mes de vista_creditos; cuota_por_pagar = Σ valor_cuota de la PROXIMA cuota impaga de cada c
+M327  DETECTADA  dashboard: interes_corriendo toma solo el mayor de los creditos (max en vez de sum)
+      -> 65_vistas_historial: ERROR:  FAIL: C4 creditos: interes_corriendo = Σ interes_mes de vista_creditos; cuota_por_pagar = Σ valor_cuota de la PROXIMA cuota impaga de cada c
+M328  DETECTADA  dashboard: trae 10 transacciones y no 8
+      -> 65_vistas_historial: ERROR:  FAIL: C2 nombre = nombres; balance_total = vista_balance.total (la MISMA funcion); transacciones = las 8 primeras de vista_historial (esperado
+M329  DETECTADA  dashboard: el saludo usa los apellidos
+      -> 65_vistas_historial: ERROR:  FAIL: C2 nombre = nombres; balance_total = vista_balance.total (la MISMA funcion); transacciones = las 8 primeras de vista_historial (esperado
+M330  DETECTADA  dashboard: balance_total es solo la cuenta principal (no la funcion unica balance_total)
+      -> 65_vistas_historial: ERROR:  FAIL: C2 nombre = nombres; balance_total = vista_balance.total (la MISMA funcion); transacciones = las 8 primeras de vista_historial (esperado
+M331  DETECTADA  vista_historial pierde su SET TimeZone (la fecha depende de la sesion)
+      -> 65_vistas_historial: ERROR:  FAIL: E1 vista_dashboard y vista_historial: _avanzar_hasta( y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; sin leer el rel
+M332  DETECTADA  pagar_cuota pierde su SET TimeZone (D-E10-8: la fecha de un asiento depende de la sesion)
+      -> 67_contrato: ERROR:  FAIL: B2 TODA fecha (fecha, fecha_cierre) es ISO 8601 con la zona de Bogota (-05:00) aunque la sesion este en UTC: solicitar_credito, pagar_cu
+M333  DETECTADA  vista_cdts vuelve a devolver fecha_cierre solo como fecha (D-E10-5: el front la mostraria un dia antes)
+      -> 67_contrato: ERROR:  FAIL: B2 TODA fecha (fecha, fecha_cierre) es ISO 8601 con la zona de Bogota (-05:00) aunque la sesion este en UTC: solicitar_credito, pagar_cu
+M334  DETECTADA  banco_app recibe SELECT sobre v_transaccion_usuario (leeria el historial de CUALQUIERA)
+      -> 65_vistas_historial: ERROR:  FAIL: E3 la vista v_transaccion_usuario: SELECT para banco_lector y banco_dev (herencia), NINGUNO para banco_app ni PUBLIC (mira a todos los u
+M335  DETECTADA  banco_app recibe EXECUTE del formateador interno _json_transacciones
+      -> 65_vistas_historial: ERROR:  FAIL: E2 banco_app ejecuta las 2 publicas y NINGUNA de las 2 internas; PUBLIC ninguna de las 4; banco_lector SOLO _reglas_historial (la necesi
+M336  DETECTADA  banco_app pierde EXECUTE de vista_dashboard (el front no podria abrir el inicio)
+      -> 65_vistas_historial: ERROR:  FAIL: E2 banco_app ejecuta las 2 publicas y NINGUNA de las 2 internas; PUBLIC ninguna de las 4; banco_lector SOLO _reglas_historial (la necesi
+M337  DETECTADA  vista_historial pierde su SECURITY DEFINER
+      -> 65_vistas_historial: ERROR:  FAIL: E1 vista_dashboard y vista_historial: _avanzar_hasta( y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; sin leer el rel
+M338  DETECTADA  banco_lector pierde EXECUTE de _reglas_historial (ya no puede leer la vista)
+      -> 65_vistas_historial: ERROR:  FAIL: E2 banco_app ejecuta las 2 publicas y NINGUNA de las 2 internas; PUBLIC ninguna de las 4; banco_lector SOLO _reglas_historial (la necesi
+M339  DETECTADA  PUBLIC recibe SELECT sobre v_transaccion_usuario
+      -> 65_vistas_historial: ERROR:  FAIL: E3 la vista v_transaccion_usuario: SELECT para banco_lector y banco_dev (herencia), NINGUNO para banco_app ni PUBLIC (mira a todos los u
+
+
+# --- M340 (SOLO=M340, con la mutacion corregida: sin la guarda IS NOT NULL y con el defecto original COALESCE(..., true)) ---
+M340  DETECTADA  la defensa de v_transaccion_usuario da ok = true cuando la vista desaparece (COALESCE(..., true)); la prueba 65/E6 borra la vista y exige ok = false
+      -> 65_vistas_historial: ERROR:  FAIL: E6 si la vista DESAPARECE, la defensa FALLA (ok = false, detalle "VISTA AUSENTE") y v_integridad_global.ok tambien: un control sobre alg
+RESUMEN: 1 de 1 mutaciones detectadas
+
+RESUMEN: 35 de 35 mutaciones detectadas (M306-M340)

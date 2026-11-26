@@ -1,0 +1,27 @@
+== E14 - volumen acotado (reales/59_volumen.sh): 300 clientes y ~15.556 patas creados por las funciones reales, en la BD aislada banco_vol (se elimina al terminar)
+== Extracto de la corrida completa (14-seed-qa.txt); los tiempos son de esta maquina
+   ok    V0 la carga con funciones reales termina bien (300 clientes, 300 bolsillos, 6.000 transferencias)
+   info: carga 29 s: cuentas=300 grupos=7778 patas=15556
+   ok    V1 el banco tiene >= 300 clientes y mas de 15.000 patas en el libro, y la integridad esta en orden tras la carga
+   info: admin_listar_usuarios('volumenbfa') = 1 fila(s) en 12 ms
+   ok    V2 la busqueda de admin por nombre encuentra al cliente (150) y tarda menos de 2 s con 300 clientes
+   info: admin_tabla('transaccion', ultima pagina) = 6 fila(s) en 138 ms (50 por pagina)
+   ok    V3 la ULTIMA pagina de transaccion (mas de 15.000 filas) responde en menos de 2 s y trae como maximo 50 filas
+   info: vista_historial(50) del cliente con mas movimientos = 50 fila(s) en 22 ms (conexion real de banco_app)
+   ok    V4 el historial de 50 del cliente con mas movimientos tarda menos de 1 s por la conexion real de banco_app
+   info: EXPLAIN historial (indice ix_transaccion_cuenta_orden):
+   info:   Limit
+   info:     ->  Sort
+   info:           Sort Key: orden DESC
+   info:           ->  Bitmap Heap Scan on transaccion t
+   info:                 Recheck Cond: (cuenta_id = 'f1c52e84-31a7-4eac-a7f2-e16e44f9601b'::uuid)
+   info:                 ->  Bitmap Index Scan on ix_transaccion_cuenta_orden
+   info:                       Index Cond: (cuenta_id = 'f1c52e84-31a7-4eac-a7f2-e16e44f9601b'::uuid)
+   ok    V5 el plan del historial sobre el libro grande usa el indice ix_transaccion_cuenta_orden
+   info: EXPLAIN de la busqueda de admin con seqscan desactivado (muestra si algun indice sirve): Nested Loop   ->  Index Scan using pk_usuario on usuario us         Filter: (unaccent(((nombres || ' '::text) || apellidos)) ~~* unaccent('%volumenbfa%'::text))   ->  Index Only Scan using uq_cuenta_usuario on cuenta c         Index Cond: (usuario_id = us.id) 
+   info: sp_avanzar_todos con trabajo real en todas las cuentas: 2 s -> {"grupos": 300, "cuentas": 300, "errores": [], "con_error": 0, "hoy_desde": "2027-01-04", "hoy_hasta": "2027-01-04", "procesadas": 300, "con_cambios": 300, "omitidas_por_timeout_de_bloqueo": 0}
+   ok    V6 sp_avanzar_todos pone al dia las >= 300 cuentas (cada una con un bolsillo que devengo 40 dias): con_cambios = cuentas con bolsillo, sin errores ni omitidas
+   ok    V7 el cierre completo con >= 300 cuentas y trabajo real tarda menos de 120 s (cota amplia)
+   ok    V8 una segunda corrida no escribe nada (idempotente a escala) y el banco sigue integro
+
+HALLAZGO: los indices GIN pg_trgm/unaccent de la busqueda de admin, diferidos de E1 a E11, NO existen (04_indices.sql solo los menciona). Con 300 clientes la busqueda secuencial tarda ~12 ms; con decenas de miles de clientes convendria crearlos (requiere un script nuevo en db/sql: fuera del alcance de E14, que no modifica db/sql).

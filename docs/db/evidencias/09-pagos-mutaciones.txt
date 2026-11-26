@@ -1,0 +1,198 @@
+# Mutaciones de E9 (M218-M305, 88): corrida completa final con DESDE=218 (incluye M305 de la correccion de auditoria). Comando: docker compose -f db/compose.dev.yml exec -T -e DESDE=218 db sh -c "tr -d '\r' < /work/tests/mutaciones/mutaciones.sh | sh -s"
+# Fecha: 2026-11-24 19:22:37 -0500. M268 es una mutacion EQUIVALENTE (rama defensiva inalcanzable bajo el bloqueo de la cuenta), declarada como tal y no contada como hueco.
+
+=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+M218  DETECTADA  la base de dias de la mora pasa de 365 a 360 (_reglas_pago)
+      -> 60_pagos_calculo: ERROR:  FAIL: 910.463,77 con 30 % y 30 dias = 22.449,79 (simple nominal); 1 dia = 748,33; 0 y negativos = 0 (esperado=22449.79|748.33|0.00|0.00, actua
+M219  DETECTADA  la tasa de mora NULL no da 0 (la mora queda NULL: se rompe 'sin tasa no se inventa mora')
+      -> 60_pagos_calculo: ERROR:  FAIL: sin tasa de mora (parametro.tasa_mora_anual NULL, el estado real hasta que el equipo decida D7) la mora es 0 siempre (esperado=true|0.00
+M220  DETECTADA  la mora no se redondea a centavos
+      -> 60_pagos_calculo: ERROR:  FAIL: 910.463,77 con 30 % y 30 dias = 22.449,79 (simple nominal); 1 dia = 748,33; 0 y negativos = 0 (esperado=22449.79|748.33|0.00|0.00, actua
+M221  DETECTADA  la mora pasa a E.A. compuesta (otra convencion en la funcion central)
+      -> 60_pagos_calculo: ERROR:  FAIL: 910.463,77 con 30 % y 30 dias = 22.449,79 (simple nominal); 1 dia = 748,33; 0 y negativos = 0 (esperado=22449.79|748.33|0.00|0.00, actua
+M222  DETECTADA  los dias de mora cuentan el dia del vencimiento (+1)
+      -> 60_pagos_calculo: ERROR:  FAIL: _dias_mora: max(0, fecha - max(vencimiento, mora_hasta)); mora_hasta NULL = desde el vencimiento (esperado=5|3|0|0|0, actual=6|4|0|1|0)
+M223  DETECTADA  los dias de mora ignoran mora_hasta (la mora de un abono se cobra otra vez)
+      -> 60_pagos_calculo: ERROR:  FAIL: _dias_mora: max(0, fecha - max(vencimiento, mora_hasta)); mora_hasta NULL = desde el vencimiento (esperado=5|3|0|0|0, actual=5|5|5|0|0)
+M224  DETECTADA  la mora de una cuota usa el valor ORIGINAL de la cuota y no el vigente tras un abono
+      -> 64_pagos_huecos: ERROR:  FAIL: H2 pagar_cuota cobra valor vigente + su mora de 10 dias (pagado y mora coinciden con la referencia) (esperado=t|t, actual=t|f)
+M225  DETECTADA  la mora de una cuota se calcula tambien sobre cuotas PAGADAS
+      -> 60_pagos_calculo: ERROR:  FAIL: una cuota pagada ya no genera mora (esperado=0.00, actual=11224.90)
+M226  DETECTADA  la mora pendiente suma tambien las cuotas PAGADAS
+      -> 61_pagos: ERROR:  FAIL: la mora se DETIENE al pagar: la mora mostrada despues es 0 (la cuota 2 vence el dia 60) (esperado=0.00, actual=7483.26)
+M227  DETECTADA  la mora pendiente toma solo la cuota vencida mas grande (max en vez de sum)
+      -> 60_pagos_calculo: ERROR:  FAIL: _mora_pendiente = suma de las cuotas impagas vencidas a la fecha; el dia del vencimiento aun no hay mora (esperado=14966.53|0.00|748.33,
+M228  DETECTADA  el periodo de la cuota 1 no arranca en el desembolso (usa la cuota anterior inexistente)
+      -> 64_pagos_huecos: ERROR:  FAIL: H1 la cuota 1 queda con el interes del RESTO del periodo j0 = K'·i·0,5 (referencia float8, +-0,02) y NO con 0 (periodo inicial mal cal
+M229  DETECTADA  la proxima cuota es la ULTIMA impaga y no la primera
+      -> 61_pagos: ERROR:  FAIL: paga la cuota 1 completa: pagado = 910.463,77, mora 0 (esperado=1|910463.77|0.00, actual=12|910463.73|0.00)
+M230  DETECTADA  el recalculo ignora el primer periodo corto en la cuota fija (usa el capital a secas)
+      -> 60_pagos_calculo: ERROR:  FAIL: ejemplo del diseno (10M, 12 m, 18 %; cuota 1 pagada; dia 15 de 30; abono de 1.000.000): K' = 8.292.504,67, j0 = 57.584,94; las 11 cuotas
+M231  DETECTADA  el recalculo no deja que la ULTIMA cuota absorba el redondeo
+      -> 60_pagos_calculo: ERROR:  FAIL: ejemplo del diseno (10M, 12 m, 18 %; cuota 1 pagada; dia 15 de 30; abono de 1.000.000): K' = 8.292.504,67, j0 = 57.584,94; las 11 cuotas
+M232  DETECTADA  el recalculo cobra el primer periodo con interes completo (ignora j0)
+      -> 60_pagos_calculo: ERROR:  FAIL: ejemplo del diseno (10M, 12 m, 18 %; cuota 1 pagada; dia 15 de 30; abono de 1.000.000): K' = 8.292.504,67, j0 = 57.584,94; las 11 cuotas
+M233  DETECTADA  la guardia del cursor deja de rechazar un retroceso fecha -> fecha anterior
+      -> 62_cobro_automatico: ERROR:  FAIL: R2(c) la guardia rechaza un UPDATE directo hacia atras (fecha -> fecha anterior) (esperado=Libro mayor: cobro_hasta solo puede avanzar (
+M234  DETECTADA  la guardia del cursor tambien rechaza NULL -> fecha (no se podria activar el descuento)
+      -> 61_pagos: ERROR:  Libro mayor: cobro_hasta solo puede avanzar (desactivar y reactivar el descuento lo reinicia)
+M235  DETECTADA  se elimina el trigger trg_cobro_hasta_monotono
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M236  DETECTADA  se elimina el CHECK descuento_automatico = (cobro_hasta IS NOT NULL)
+      -> 62_cobro_automatico: ERROR:  FAIL: R2(c) fecha -> NULL y NULL -> fecha (con descuento coherente) se permiten, y el CHECK exige descuento_automatico = (cobro_hasta IS NOT N
+M237  DETECTADA  _credito_propio no filtra por la cuenta (se opera un credito AJENO)
+      -> 61_pagos: ERROR:  FAIL: credito ajeno, mal formado, NULL y numero invalido: Recurso no encontrado (sin distinguir) y sin rastro (esperado=Recurso no encontrado|
+M238  DETECTADA  _credito_propio acepta creditos ya PAGADOS
+      -> 64_pagos_huecos: ERROR:  FAIL: H3 sobre el credito PAGADO: pagar_cuota, abonar_credito y activar_descuento_automatico responden Recurso no encontrado (esperado=Recurso
+M239  DETECTADA  _credito_propio no valida el formato del uuid (un texto malo llega al cast como error de driver)
+      -> 61_pagos: ERROR:  FAIL: credito ajeno, mal formado, NULL y numero invalido: Recurso no encontrado (sin distinguir) y sin rastro (esperado=Recurso no encontrado|
+M240  DETECTADA  la mora de un pago llega hasta HOY y no hasta la fecha real del intento
+      -> 61_pagos: ERROR:  FAIL: ni las 3 publicas ni los helpers de E9 leen el reloj por su cuenta (now, current_date, clock_timestamp, hoy_banco, ahora_banco, _ahora_r
+M241  DETECTADA  la mora nunca se cobra (no hay grupo CREDITO_MORA)
+      -> 61_pagos: ERROR:  FAIL: la mora va en un grupo APARTE: CREDITO_CUOTA de 3 patas y CREDITO_MORA de 2 (CUENTA S + RESULTADO S), con la fecha de pago del dia 40 (e
+M242  DETECTADA  la cuota pagada no se marca pagada (el plan no cuadra con el libro)
+      -> 61_pagos: ERROR:  new row for relation "cuota" violates check constraint "ck_cuota_pagada_con_fecha"
+M243  DETECTADA  fecha_pago usa hoy en vez de la fecha del intento
+      -> 61_pagos: ERROR:  FAIL: ni las 3 publicas ni los helpers de E9 leen el reloj por su cuenta (now, current_date, clock_timestamp, hoy_banco, ahora_banco, _ahora_r
+M244  DETECTADA  intereses_pagados no suma el interes de la cuota
+      -> 61_pagos: ERROR:  FAIL: la cuota queda pagada con fecha_pago = hoy, capital_pagado = capital_programado e intereses_pagados = interes_programado (esperado=t|0|t
+M245  DETECTADA  el ancla fecha_interes puede RETROCEDER al pagar una cuota anterior (regla R)
+      -> 64_pagos_huecos: ERROR:  FAIL: H4 pagar la cuota 1 (vence el dia 30) con el ancla ya en el dia 100: el ancla NO retrocede (esperado=OK:1|100, actual=OK:1|30)
+M246  DETECTADA  la ultima cuota pagada no cierra el credito (sigue ACTIVO con capital 0)
+      -> 61_pagos: ERROR:  Ya tienes un crédito vigente de este producto
+M247  DETECTADA  la cuota sin pata de interes (RESULTADO) deja el grupo descuadrado
+      -> 61_pagos: ERROR:  Libro mayor: el grupo a1cc5543-69d1-49a4-b278-0184d55469ba está descuadrado (débitos=771579.47, créditos=910463.77)
+M248  DETECTADA  el cursor cobro_hasta no avanza tras el cobro (se re-procesa lo ya cobrado)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(a) el cursor avanza a hoy (dia 30) y las otras 11 cuotas siguen impagas (esperado=30|11, actual=0|11)
+M249  DETECTADA  los CDT NO se cierran antes de cada ronda de cobro (el vencimiento no financia la cuota)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(a) la cuota del dia 15 se paga con fecha del dia 20 (cuando el CDT acredito), NO el 30 ni el 15 (esperado=1:20|20, actual=-|-)
+M250  DETECTADA  la ronda no cobra la cuota MAS ANTIGUA primero (orden por id)
+      -> 64_pagos_huecos: ERROR:  FAIL: H6a el dia 20 cierra el CDT y alcanza para UNA cuota: se paga la del dia 10 (credito de id MAYOR) y la del dia 12 sigue impaga (esperado
+M251  DETECTADA  el desempate de la ronda ignora la fecha de desembolso (solo id)
+      -> 64_pagos_huecos: ERROR:  FAIL: H6b el CDT cierra el dia 15 con fondos para UNA cuota: se paga la del credito de desembolso MAS ANTIGUO (id mayor) y la del mas nuevo si
+M252  DETECTADA  el saldo disponible incluye lo que ENTRO despues de la fecha del intento
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(f) un ingreso por operacion de otra cuenta (dia 20) NO paga una cuota del dia 15 con fecha 15: se cobra HOY (dia 30) con mora de 15 d
+M253  DETECTADA  el cobro automatico ignora la mora al decidir si alcanza el saldo (queda a medias)
+      -> 64_pagos_huecos: ERROR:  FAIL: H7b con 0,01 menos que cuota + mora de 15 dias la lectura NO falla y NO cobra nada (todo o nada) (esperado=ok|-|-|921688.66, actual=Sald
+M254  DETECTADA  un credito sin saldo ABORTA la ronda (los demas creditos no cobran)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(e) el credito de la cuota mas antigua (inalcanzable con 200.000) NO bloquea al otro: el pequeno se paga el dia 14 y el grande sigue i
+M255  DETECTADA  la ventana de un credito incluye su propio dia de cursor (d >= cobro_hasta)
+      -> 64_pagos_huecos: ERROR:  FAIL: H8 A cobra su cuota el dia 20 (evento propio, mora 0); B NO cobra con fecha 20 (d = su cursor no es ventana) sino HOY (dia 30) con mora 
+M256  DETECTADA  los cierres de CDT se buscan solo desde hoy y no desde el MENOR cursor
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(a) la cuota del dia 15 se paga con fecha del dia 20 (cuando el CDT acredito), NO el 30 ni el 15 (esperado=1:20|20, actual=1:30|30)
+M257  DETECTADA  las fechas-evento usan el menor cursor para los vencimientos de TODOS los creditos
+      -> 64_pagos_huecos: ERROR:  FAIL: H9 el ingreso del dia 14 llega por una operacion de otra cuenta: A cobra HOY (dia 30) con mora de 18 dias y B tambien hoy con mora de 12
+M258  DETECTADA  los cobros atrasados se fechan con la instantanea de hoy y no con el dia del vencimiento
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(a) la cuota del dia 15 se paga con fecha del dia 20 (cuando el CDT acredito), NO el 30 ni el 15 (esperado=1:20|20, actual=1:20|30)
+M259  DETECTADA  la mora de un cobro automatico llega hasta HOY y no hasta la fecha del intento d
+      -> 64_pagos_huecos: ERROR:  FAIL: H7a la cuota del dia 15 se paga EL DIA 15 con el saldo justo (mora 0 a esa fecha), sin grupo de mora, y la cuenta queda en 0 (esperado=1
+M260  DETECTADA  con el reloj por detras del cursor (cobro_hasta > hoy) el motor SIGUE cobrando (no se pausa)
+      -> 64_pagos_huecos: ERROR:  FAIL: H10b el motor entra por A (sin saldo para su cuota) pero B, en pausa (cursor 10 > hoy 0), NO cobra su cuota vencida aunque hay saldo; lo
+M261  DETECTADA  la ronda de la fecha d cobra tambien cuotas que vencen DESPUES de d (hasta hoy)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(b) CDT del dia 10 (antes del vencimiento): la cuota se paga el dia 15 con mora 0 (sin grupo de mora) (esperado=1:15|-, actual=1:10|-)
+M262  DETECTADA  pagar_cuota NO corre el motor antes de decidir que cuota toca
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M263  DETECTADA  pagar_cuota con numero ya NO exige que sea la proxima (paga otra: sin idempotencia)
+      -> 61_pagos: ERROR:  FAIL: D-E9-8: con `numero` la cuota ya pagada (1) o una que NO es la proxima (3) responde Recurso no encontrado y NO paga otra (esperado=Recur
+M264  DETECTADA  pagar_cuota no bloquea la cuenta (dos pagos simultaneos pagan la misma cuota)
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M265  DETECTADA  pagar_cuota toma la instantanea del reloj DOS veces
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M266  DETECTADA  pagar_cuota informa 'pagado' sin la mora
+      -> 61_pagos: ERROR:  FAIL: pagado = cuota + mora, mora de 10 dias en el resultado (esperado=917947.03|7483.26, actual=910463.77|7483.26)
+M267  DETECTADA  pagar_cuota no verifica ct_credito_plan antes de volver
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M268  *** NO DETECTADA ***  pagar_cuota no traduce la carrera con el borrado del usuario (error 'Libro mayor' en vez de 'Sesion invalida')
+      -> EQUIVALENTE (no observable, no es un hueco de pruebas): la rama traduce un error del libro cuando la cuenta ya no existe, pero _bloquear_cuentas toma el FOR NO KEY UPDATE de la cuenta antes y el borrado en cascada espera ese bloqueo: bajo el bloqueo la cuenta NO puede desaparecer (defensa en profundidad, como en E5-E8)
+M269  DETECTADA  abonar_credito no cobra la mora vencida
+      -> 61_pagos: ERROR:  FAIL: R3(b) abono anticipado: mora 0, interes 0 (el periodo no empezo), TODO el abono baja capital: saldo 9.228.420,53 - 1.000.000 = 8.228.420
+M270  DETECTADA  abonar_credito no cobra el interes corriendo (todo el abono baja capital)
+      -> 61_pagos: ERROR:  FAIL: R3(b) abono anticipado: mora 0, interes 0 (el periodo no empezo), TODO el abono baja capital: saldo 9.228.420,53 - 1.000.000 = 8.228.420
+M271  DETECTADA  el abono no descuenta la mora del capital abonado (cobra mora ADEMAS del monto)
+      -> 61_pagos: ERROR:  FAIL: abono con la cuota 1 vencida: mora de 10 dias + interes COMPLETO del periodo (138.884,30) + resto a capital (esperado=7483.26|138884.30|
+M272  DETECTADA  un abono igual a mora + interes (no baja capital) se acepta
+      -> 61_pagos: ERROR:  FAIL: abono <= mora + interes (no reduce capital) = Monto fuera de rango; mora + interes + 0,01 si se acepta; sobre la liquidacion (+0,01) = M
+M273  DETECTADA  un abono mayor que la liquidacion se acepta
+      -> 61_pagos: ERROR:  FAIL: abono <= mora + interes (no reduce capital) = Monto fuera de rango; mora + interes + 0,01 si se acepta; sobre la liquidacion (+0,01) = M
+M274  DETECTADA  la liquidacion no marca pagadas las cuotas restantes
+      -> 61_pagos: ERROR:  Créditos: el plan del crédito fa2820fb-711b-4460-a384-d4e6beb666c3 no cuadra con su capital pendiente (capital_pendiente=0.00, capital de la
+M275  DETECTADA  la liquidacion no cierra el credito (sigue ACTIVO con capital 0)
+      -> 61_pagos: ERROR:  FAIL: el credito queda PAGADO; las 12 cuotas siguen existiendo y quedan pagadas el dia 15 (extinguidas por abono: capital_pagado 0); intereses
+M276  DETECTADA  el primer periodo corto usa la fraccion transcurrida (1 - f) y no la que FALTA del periodo completo
+      -> 61_pagos: ERROR:  Créditos: _plan_restante recibió capital, cuotas o interés inválidos (capital=8228420.53, m=11, j0=-76186.56)
+M277  DETECTADA  el primer periodo corto no multiplica por la tasa mensual
+      -> 61_pagos: ERROR:  FAIL: R3(d) la cuota 2 queda solo con el resto del periodo: interes = round(K'''·i·15/30, 2); Σ capital impago = capital pendiente; 11 impa
+M278  DETECTADA  tras el abono el ancla fecha_interes no se actualiza
+      -> 61_pagos: ERROR:  FAIL: R3(d) abono de 600.000 a mitad de periodo: cobra primero el interes corriendo y el resto baja capital; el ancla pasa al dia 45 (esperado
+M279  DETECTADA  el ancla tras el abono puede RETROCEDER (ignora la fecha_interes actual)
+      -> 64_pagos_huecos: ERROR:  FAIL: H5 ...y el ancla NO retrocede (sigue en el dia 15) y el primer periodo corto usa lo que falta desde el ancla (rem = 0,5), no el periodo 
+M280  DETECTADA  el ancla tras el abono puede salirse del periodo (sin el tope v_j)
+      -> 61_pagos: ERROR:  Créditos: _plan_restante recibió capital, cuotas o interés inválidos (capital=9146367.56, m=12, j0=-42342.90)
+M281  DETECTADA  el interes cobrado en el abono no se suma a intereses_pagados de la cuota
+      -> 61_pagos: ERROR:  FAIL: R3(d) la cuota 2 queda solo con el resto del periodo: interes = round(K'''·i·15/30, 2); Σ capital impago = capital pendiente; 11 impa
+M282  DETECTADA  la mora cobrada en un abono no se recuerda (mora_hasta): se cobra DOS veces
+      -> 61_pagos: ERROR:  FAIL: la cuota 1 queda con interes_programado 0 (rem = 0) y valor = capital; el ancla en su vencimiento (dia 30, NO en hoy); intereses_pagados
+M283  DETECTADA  abonar_credito NO corre el motor antes de calcular mora e interes
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M284  DETECTADA  abonar_credito no bloquea la cuenta (abonos simultaneos se pisan)
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M285  DETECTADA  activar el descuento arranca el cursor en el DESEMBOLSO (cobros retroactivos)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(h) estado previo: cursores A = dia 10 y B = dia 20; el CDT sigue ACTIVO; nada pagado (esperado=10|20|ACTIVO|-|-, actual=0|10|ACTIVO|-
+M286  DETECTADA  activar un credito ya activo mueve el cursor (no es idempotente)
+      -> 62_cobro_automatico: ERROR:  Libro mayor: cobro_hasta solo puede avanzar (desactivar y reactivar el descuento lo reinicia)
+M287  DETECTADA  activar_descuento_automatico NO corre el motor antes de cambiar el cursor
+      -> 61_pagos: ERROR:  FAIL: las 3 funciones nuevas: _avanzar_hasta( EXACTAMENTE 1 vez y _reloj_instantanea() EXACTAMENTE 1 vez con la instantanea ANTES; _bloquear_c
+M288  DETECTADA  desactivar el descuento no limpia el cursor
+      -> 62_cobro_automatico: ERROR:  new row for relation "credito" violates check constraint "ck_credito_cobro_hasta"
+M289  DETECTADA  activar_descuento_automatico acepta un booleano NULL
+      -> 61_pagos: ERROR:  FAIL: boolean NULL = Recurso no encontrado; activar un credito ajeno = Recurso no encontrado (esperado=Recurso no encontrado|Recurso no encont
+M290  DETECTADA  _avanzar_hasta ya no llama al cobro automatico de creditos
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(a) la cuota del dia 15 se paga con fecha del dia 20 (cuando el CDT acredito), NO el 30 ni el 15 (esperado=1:20|20, actual=-|-)
+M291  DETECTADA  la salida rapida de _avanzar_hasta ignora los creditos con descuento (una lectura no cobra lo vencido)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(e) el credito de la cuota mas antigua (inalcanzable con 200.000) NO bloquea al otro: el pequeno se paga el dia 14 y el grande sigue i
+M292  DETECTADA  la salida rapida ignora una cuota vencida impaga cuando el cursor ya es hoy (no se reintenta con saldo nuevo)
+      -> 62_cobro_automatico: ERROR:  FAIL: R2(a) la primera ronda con fecha >= activacion la cobra el dia 10 (no el 5) con mora de 5 dias; ningun asiento anterior al dia 10 (esper
+M293  DETECTADA  vista_creditos muestra mora_acumulada 0
+      -> 61_pagos: ERROR:  FAIL: vista_creditos: 1 pagada, 11 faltantes, saldo = capital pendiente, y los 2 campos nuevos (descuento_automatico false, mora_acumulada 0) 
+M294  DETECTADA  vista_creditos muestra siempre descuento_automatico false
+      -> 61_pagos: ERROR:  FAIL: activar: descuento_automatico true, cursor = hoy; el libro NO se toca (huella intacta); vista_creditos lo muestra (esperado=t|0|t|true, 
+M295  DETECTADA  la plantilla CREDITO_MORA pasa su pata RESULTADO a sentido E (la mora no se podria asentar)
+      -> 61_pagos: ERROR:  Libro mayor: el grupo da45f352-29c4-4673-a843-d855c9f35ec9 no corresponde a ninguna forma contable válida ({CREDITO_MORA|CUENTA|S,CREDITO_MOR
+M296  DETECTADA  la plantilla CREDITO_ABONO_SIN_INTERES pasa el capital a sentido E
+      -> 61_pagos: ERROR:  Libro mayor: el grupo b59f6939-2a39-4144-9c40-99fe42e020bf no corresponde a ninguna forma contable válida ({CREDITO_ABONO|CREDITO|S,CREDITO_A
+M297  DETECTADA  banco_app pierde EXECUTE de pagar_cuota
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M298  DETECTADA  banco_app recibe EXECUTE de la interna _cobrar_creditos
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M299  DETECTADA  banco_app recibe EXECUTE de la interna _pagar_cuota_interna (pagar sin pasar por el motor)
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M300  DETECTADA  banco_lector recibe EXECUTE de abonar_credito
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M301  DETECTADA  pagar_cuota pierde su SECURITY DEFINER
+      -> 61_pagos: ERROR:  FAIL: las 3 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner (esperado=true, actual=false)
+M302  DETECTADA  abonar_credito pierde su SECURITY DEFINER
+      -> 61_pagos: ERROR:  FAIL: las 3 publicas son SECURITY DEFINER con search_path fijo y dueño banco_owner (esperado=true, actual=false)
+M303  DETECTADA  banco_app recibe UPDATE sobre credito.cobro_hasta (mover el cursor a mano)
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M304  DETECTADA  banco_dev recibe EXECUTE de la interna _plan_restante
+      -> 61_pagos: ERROR:  FAIL: R3(b) el libro: CREDITO_ABONO SIN pata de interes (CUENTA S 1.000.000 + CREDITO S 1.000.000) y la integridad del plan en orden (esperado
+M305  DETECTADA  el saldo disponible de la ronda historica se corta al FIN del dia d (una transferencia externa del mismo dia d, despues de las 00:00, paga la cuota)
+      -> 62_cobro_automatico: ERROR:  FAIL: R1(i) la cuota del dia 15 NO se paga en la ronda historica del dia 20 (CDT de 500.000 no alcanza y la transferencia del mismo dia aun no
+
+RESUMEN: 88 de 88 mutaciones detectadas

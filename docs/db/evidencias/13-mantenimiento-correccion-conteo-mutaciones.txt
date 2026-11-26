@@ -1,0 +1,37 @@
+﻿=== Pruebas de mutacion de E2 (cada una rompe UNA defensa y exige que alguna prueba falle) ===
+
+=== Pruebas de mutacion de E3 (reloj bancario, opcion A) ===
+
+=== Correccion de auditoria E3: _reloj_instantanea() toma PRIMERO el bloqueo y DESPUES el instante (reloj de pared) ===
+
+=== Pruebas de mutacion de E4 (autenticacion y registro) ===
+
+=== Mutaciones de E5 (transferencias) ===
+
+=== Mutaciones de E6 (bolsillos y vista_balance) ===
+
+=== Mutaciones de E7 (motor de devengo, CDT y guardia monotonica) ===
+
+=== Mutaciones de E8 (creditos: tasa, plan frances, topes, regla de edad, interes corriendo, ct_credito_plan, devengo previo, permisos) ===
+
+=== Mutaciones de E9 (pagos, abonos, mora, recalculo, cobro automatico cronologico, cursor, plantillas, permisos) ===
+
+=== Mutaciones de E10 (vistas del contrato: fila visible del historial, direccion, contraparte, D8, dashboard, motor, zona horaria, permisos) ===
+
+=== Mutaciones de E11 (administracion: control de acceso, alcance solo-clientes, detalle con motor, bloqueo, borrado, ajuste, reloj, tasas, auditoria y permisos) ===
+
+=== Mutaciones de E12 (Control: lista blanca, hash, paginacion, orden, esquema, solo lectura, control de acceso y permisos) ===
+
+=== Mutaciones de E13 (mantenimiento: COMMIT por cuenta, search_path en cada transaccion, 55P03, motor, resumen, evento, informe de integridad y permisos) ===
+M463  DETECTADA  sin estado por cuenta ni bandera de exito (una cuenta que falla arrastra el v_g de la anterior y se cuenta lo revertido)
+      -> reales/56_mantenimiento: FAIL: C1b ...y el RESUMEN no cuenta lo revertido: grupos = EXACTAMENTE los grupos que quedaron CONFIRMADOS en el libro en esta corrida, con_cambios = 
+M464  DETECTADA  una cuenta omitida por timeout de bloqueo se cuenta como cuenta con cambios y suma un grupo
+      -> reales/56_mantenimiento: FAIL: D6 ...y el resumen NO arrastra a la omitida: grupos = grupos confirmados en el libro en esa corrida, con_cambios = cuentas con patas confirmadas
+M465  DETECTADA  una cuenta con error se cuenta como cuenta con cambios y suma un grupo (contadores dentro del manejador)
+      -> reales/56_mantenimiento: FAIL: C1b ...y el RESUMEN no cuenta lo revertido: grupos = EXACTAMENTE los grupos que quedaron CONFIRMADOS en el libro en esta corrida, con_cambios = 
+M466  *** NO DETECTADA ***  sin reinicio de v_g por cuenta (queda la bandera de exito)
+      -> EQUIVALENTE (no observable, no es un hueco de pruebas): defensa redundante: la bandera de exito ya impide contar una cuenta fallida, aunque v_g conserve el valor de la anterior (el reinicio y la bandera son dos defensas del mismo defecto; cada una por si sola basta)
+M467  *** NO DETECTADA ***  sin bandera de exito (queda el reinicio de v_g por cuenta)
+      -> EQUIVALENTE (no observable, no es un hueco de pruebas): defensa redundante: el reinicio de v_g a 0 por cuenta ya impide contar una cuenta fallida (no asigna nada antes de fallar), aunque no haya bandera; las dos defensas son independientes
+
+RESUMEN: 5 de 5 mutaciones detectadas
